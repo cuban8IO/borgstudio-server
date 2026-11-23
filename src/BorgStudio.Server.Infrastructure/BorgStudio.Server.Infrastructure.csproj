@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Implementations of the application interfaces: operating system, later database and borg. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\BorgStudio.Server.Application\BorgStudio.Server.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BorgStudio.Server.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,49 @@
+@page "/"
+@using BorgStudio.Server.Application.Status
+@inject IDispatcher Dispatcher
+
+<PageTitle>@Strings.NavOverview · BorgStudio Server</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.NavOverview</MudText>
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-6">@Strings.OverviewIntro</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ServerStatusTitle</MudText>
+            @if (status is null)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else
+            {
+                <dl class="status-list">
+                    <dt>@Strings.StatusVersion</dt>
+                    <dd>@VersionText</dd>
+                    <dt>@Strings.StatusOperatingSystem</dt>
+                    <dd>@status.OperatingSystem</dd>
+                    <dt>@Strings.StatusRuntime</dt>
+                    <dd>@status.Runtime</dd>
+                    <dt>@Strings.StatusRunningSince</dt>
+                    <dd>@status.StartedAt.ToLocalTime().ToString("g")</dd>
+                </dl>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private ServerStatus? status;
+
+    private string VersionText => status!.Version switch
+    {
+        { IsDevelopmentBuild: true, Commit: { } commit } => string.Format(Strings.StatusDevelopmentBuildWithCommit, commit),
+        { IsDevelopmentBuild: true } => Strings.StatusDevelopmentBuild,
+        var version => version.Version,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        status = await Dispatcher.QueryAsync(new GetServerStatusQuery());
+    }
+}

@@ -1,0 +1,88 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<MudThemeProvider @ref="themeProvider"
+                  Theme="BorgStudioTheme.Theme"
+                  IsDarkMode="isDarkMode"
+                  ObserveSystemDarkModeChange="false" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="app-bar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       aria-label="@Strings.ToggleNavigation"
+                       OnClick="ToggleDrawer" />
+        <img src="favicon.svg" alt="" class="app-logo" />
+        <MudText Typo="Typo.h6" Class="ml-2">BorgStudio Server</MudText>
+        <MudSpacer />
+        <ThemeMenu Mode="themeMode" ModeChanged="SetThemeModeAsync" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Class="app-drawer">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    /// <summary>Name of the cascading value that carries the color scheme of the first request.</summary>
+    public const string InitialThemeModeName = "InitialThemeMode";
+
+    [CascadingParameter(Name = InitialThemeModeName)]
+    public ThemeMode InitialThemeMode { get; set; }
+
+    private MudThemeProvider themeProvider = default!;
+    private ThemeMode themeMode;
+    private bool? systemPrefersDark;
+    private bool isDarkMode = true;
+    private bool drawerOpen = true;
+
+    protected override void OnInitialized()
+    {
+        themeMode = InitialThemeMode;
+        ApplyThemeMode();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !RendererInfo.IsInteractive)
+        {
+            return;
+        }
+
+        systemPrefersDark = await themeProvider.GetSystemDarkModeAsync();
+        await themeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChangedAsync);
+        ApplyThemeMode();
+        StateHasChanged();
+    }
+
+    private Task OnSystemDarkModeChangedAsync(bool prefersDark)
+    {
+        systemPrefersDark = prefersDark;
+        ApplyThemeMode();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetThemeModeAsync(ThemeMode mode)
+    {
+        themeMode = mode;
+        ApplyThemeMode();
+        await JS.InvokeVoidAsync(
+            "borgStudio.setThemePreference",
+            ThemePreference.CookieName,
+            ThemePreference.ToCookieValue(mode));
+    }
+
+    private void ApplyThemeMode() => isDarkMode = ThemePreference.IsDark(themeMode, systemPrefersDark);
+
+    private void ToggleDrawer() => drawerOpen = !drawerOpen;
+}

@@ -1,0 +1,32 @@
+<MudMenu Icon="@CurrentIcon"
+         Color="Color.Inherit"
+         AriaLabel="@Strings.ThemeMenuLabel"
+         AnchorOrigin="Origin.BottomRight"
+         TransformOrigin="Origin.TopRight"
+         Dense="true">
+    @foreach (var option in Options)
+    {
+        <MudMenuItem Icon="@option.Icon"
+                     IconColor="@(option.Mode == Mode ? Color.Primary : Color.Default)"
+                     OnClick="() => ModeChanged.InvokeAsync(option.Mode)">
+            @option.Label
+        </MudMenuItem>
+    }
+</MudMenu>
+
+@code {
+    [Parameter]
+    public ThemeMode Mode { get; set; }
+
+    [Parameter]
+    public EventCallback<ThemeMode> ModeChanged { get; set; }
+
+    private static IEnumerable<(ThemeMode Mode, string Icon, string Label)> Options =>
+    [
+        (ThemeMode.System, Icons.Material.Filled.BrightnessAuto, Strings.ThemeSystem),
+        (ThemeMode.Light, Icons.Material.Filled.LightMode, Strings.ThemeLight),
+        (ThemeMode.Dark, Icons.Material.Filled.DarkMode, Strings.ThemeDark),
+    ];
+
+    private string CurrentIcon => Options.First(o => o.Mode == Mode).Icon;
+}

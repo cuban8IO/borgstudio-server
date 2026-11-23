@@ -12,6 +12,22 @@ repositories.
 - **Managed backup targets**: the server creates borg repositories and restricted SSH keys per machine, so BorgStudio
   can use it as a backup target – like a hosted service, but run by yourself.
 
+## Development
+
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download). The solution follows Clean Architecture:
+
+| Project | Role |
+| --- | --- |
+| `BorgStudio.Server.Domain` | Business types, no dependencies |
+| `BorgStudio.Server.Application` | Commands and queries with their handlers, interfaces for the outer layers |
+| `BorgStudio.Server.Infrastructure` | Implementations of those interfaces (operating system, later database and borg) |
+| `BorgStudio.Server.Web` | Blazor Server interface with [MudBlazor](https://mudblazor.com/), host of the server |
+
+```sh
+dotnet run --project src/BorgStudio.Server.Web   # http://localhost:5280
+dotnet test
+```
+
 ## Related
 
 - [BorgStudio](https://github.com/cuban8IO/borgstudio) – the desktop app

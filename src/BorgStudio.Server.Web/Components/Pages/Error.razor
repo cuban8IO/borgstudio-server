@@ -1,0 +1,22 @@
+@page "/Error"
+@attribute [ExcludeFromInteractiveRouting]
+@using System.Diagnostics
+
+<PageTitle>@Strings.ErrorTitle · BorgStudio Server</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Color="Color.Error" GutterBottom="true">@Strings.ErrorTitle</MudText>
+<MudText Typo="Typo.body1" GutterBottom="true">@Strings.ErrorMessage</MudText>
+
+@if (!string.IsNullOrEmpty(requestId))
+{
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">@Strings.ErrorRequestId: <code>@requestId</code></MudText>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? requestId;
+
+    protected override void OnInitialized() => requestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

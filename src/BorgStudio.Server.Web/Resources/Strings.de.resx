@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="NavOverview" xml:space="preserve">
+    <value>Übersicht</value>
+  </data>
+  <data name="ToggleNavigation" xml:space="preserve">
+    <value>Navigation ein- oder ausblenden</value>
+  </data>
+  <data name="ThemeMenuLabel" xml:space="preserve">
+    <value>Farbschema</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>Systemeinstellung</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>Hell</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>Dunkel</value>
+  </data>
+  <data name="OverviewIntro" xml:space="preserve">
+    <value>Hier erscheinen die Rechner und ihre Sicherungen, sobald sie an diesen Server melden.</value>
+  </data>
+  <data name="ServerStatusTitle" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="StatusVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="StatusDevelopmentBuild" xml:space="preserve">
+    <value>Entwicklungsversion</value>
+  </data>
+  <data name="StatusDevelopmentBuildWithCommit" xml:space="preserve">
+    <value>Entwicklungsversion ({0})</value>
+  </data>
+  <data name="StatusOperatingSystem" xml:space="preserve">
+    <value>Betriebssystem</value>
+  </data>
+  <data name="StatusRuntime" xml:space="preserve">
+    <value>Laufzeit</value>
+  </data>
+  <data name="StatusRunningSince" xml:space="preserve">
+    <value>Läuft seit</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Bei der Verarbeitung der Anfrage ist ein Fehler aufgetreten.</value>
+  </data>
+  <data name="ErrorRequestId" xml:space="preserve">
+    <value>Anfrage-ID</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Seite nicht gefunden</value>
+  </data>
+  <data name="NotFoundMessage" xml:space="preserve">
+    <value>Die angeforderte Seite gibt es nicht.</value>
+  </data>
+  <data name="BackToOverview" xml:space="preserve">
+    <value>Zurück zur Übersicht</value>
+  </data>
+</root>
