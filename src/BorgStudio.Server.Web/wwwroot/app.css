@@ -1,0 +1,31 @@
+.app-logo {
+    width: 28px;
+    height: 28px;
+    margin-left: 4px;
+}
+
+.app-bar,
+.app-drawer {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.app-drawer {
+    border-bottom: none;
+    border-right: 1px solid var(--mud-palette-lines-default);
+}
+
+.status-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 24px;
+    margin: 0;
+}
+
+.status-list dt {
+    color: var(--mud-palette-text-secondary);
+}
+
+.status-list dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}

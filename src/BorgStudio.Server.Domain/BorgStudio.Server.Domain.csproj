@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Innermost layer: business types only, no references to other layers or frameworks. -->
+
+</Project>
