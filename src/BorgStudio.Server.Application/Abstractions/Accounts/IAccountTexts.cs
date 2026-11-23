@@ -14,4 +14,12 @@ public interface IAccountTexts
     string InvalidAuthenticatorCode { get; }
 
     string LockedOut { get; }
+
+    string LastAdministrator { get; }
+
+    string NotOnYourOwnAccount { get; }
+
+    string InvalidPublicUrl { get; }
+
+    string InvitationInvalid { get; }
 }

@@ -15,6 +15,20 @@ public interface IAccountService
 
     Task<IReadOnlyList<AccountInfo>> GetInRoleAsync(string role, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<AccountInfo>> ListAsync(CancellationToken cancellationToken);
+
+    Task<AccountResult> SetUserNameAsync(string userId, string userName, CancellationToken cancellationToken);
+
+    Task<AccountResult> SetEmailAsync(string userId, string? email, CancellationToken cancellationToken);
+
+    /// <summary>Gives the account exactly this role.</summary>
+    Task SetRoleAsync(string userId, string role, CancellationToken cancellationToken);
+
+    /// <summary>A disabled account cannot sign in; its sessions end at their next check.</summary>
+    Task SetDisabledAsync(string userId, bool disabled, CancellationToken cancellationToken);
+
+    Task<AccountResult> DeleteAsync(string userId, CancellationToken cancellationToken);
+
     Task<bool> CheckPasswordAsync(string userId, string password, CancellationToken cancellationToken);
 
     Task<AccountResult> ChangePasswordAsync(
@@ -35,6 +49,12 @@ public interface IAccountService
     /// <summary>The current authenticator key, or <c>null</c> if there is none.</summary>
     Task<string?> GetAuthenticatorKeyAsync(string userId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Creates the first authenticator key of an account without one. Unlike a reset this keeps the
+    /// security stamp, so open sessions are not signed out just because a QR code was shown.
+    /// </summary>
+    Task<string> CreateAuthenticatorKeyAsync(string userId, CancellationToken cancellationToken);
+
     /// <summary>Creates a new authenticator key; the old one stops working at once.</summary>
     Task<string> ResetAuthenticatorKeyAsync(string userId, CancellationToken cancellationToken);
 
@@ -54,10 +74,11 @@ public interface IAccountService
     Task InvalidateSessionsAsync(string userId, CancellationToken cancellationToken);
 }
 
+/// <param name="Password">The first password; <c>null</c> for an invited user who sets it later.</param>
 public sealed record NewAccount(
     string UserName,
     string? Email,
-    string Password,
+    string? Password,
     string Role,
     AccountTasks Tasks);
 
@@ -70,7 +91,12 @@ public sealed record AccountInfo(
     int RecoveryCodesLeft,
     AccountTasks Tasks,
     ThemeMode ThemeMode,
-    DateTimeOffset? LockedOutUntil);
+    DateTimeOffset? LockedOutUntil,
+    bool IsDisabled,
+    bool HasPassword)
+{
+    public bool IsAdministrator => Roles.Contains(Domain.Users.Roles.Administrator);
+}
 
 public enum CodeCheck
 {

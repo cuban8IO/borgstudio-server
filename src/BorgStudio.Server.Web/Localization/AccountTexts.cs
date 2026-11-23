@@ -18,6 +18,14 @@ internal sealed class AccountTexts : IAccountTexts
     public string InvalidAuthenticatorCode => Strings.ErrorInvalidAuthenticatorCode;
 
     public string LockedOut => Strings.ErrorLockedOut;
+
+    public string LastAdministrator => Strings.ErrorLastAdministrator;
+
+    public string NotOnYourOwnAccount => Strings.ErrorNotOnYourOwnAccount;
+
+    public string InvalidPublicUrl => Strings.ErrorInvalidPublicUrl;
+
+    public string InvitationInvalid => Strings.ErrorInvitationInvalid;
 }
 
 /// <summary>ASP.NET Core Identity's messages in the user's language (English and German).</summary>

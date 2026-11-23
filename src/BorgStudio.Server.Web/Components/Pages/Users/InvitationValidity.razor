@@ -1,0 +1,17 @@
+@using BorgStudio.Server.Domain.Users
+
+<MudSelect T="int" Value="Days" ValueChanged="DaysChanged" Label="@Strings.InvitationValidLabel"
+           Variant="Variant.Outlined" Margin="Margin.Dense">
+    @foreach (var days in Invitation.ValidityDays)
+    {
+        <MudSelectItem T="int" Value="days">@(days == 1 ? Strings.InvitationValidOneDay : string.Format(Strings.InvitationValidDays, days))</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+    [Parameter]
+    public int Days { get; set; } = 7;
+
+    [Parameter]
+    public EventCallback<int> DaysChanged { get; set; }
+}

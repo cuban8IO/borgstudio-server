@@ -25,6 +25,12 @@ internal sealed class SignInWithRecoveryCodeCommandHandler(
 {
     public async Task<RecoverySignInResult> HandleAsync(SignInWithRecoveryCodeCommand command, CancellationToken cancellationToken)
     {
+        // A disabled account cannot get in, not even with a valid code (which stays unused).
+        if (await accounts.FindByNameAsync(command.UserName.Trim(), cancellationToken) is { IsDisabled: true })
+        {
+            return new RecoverySignInResult(CodeCheck.Invalid, null);
+        }
+
         var status = await accounts.RedeemRecoveryCodeAsync(command.UserName.Trim(), command.Code, cancellationToken);
         if (status != CodeCheck.Valid)
         {

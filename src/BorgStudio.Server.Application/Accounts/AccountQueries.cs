@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Abstractions.Validation;
 using BorgStudio.Server.Domain.Users;
 
 namespace BorgStudio.Server.Application.Accounts;
@@ -35,4 +36,25 @@ internal sealed class ChangePasswordCommandHandler(IAccountService accounts, IAc
         command.NewPassword != command.ConfirmPassword
             ? Task.FromResult(AccountResult.Failed(texts.PasswordsDoNotMatch))
             : accounts.ChangePasswordAsync(command.UserId, command.CurrentPassword, command.NewPassword, cancellationToken);
+}
+
+/// <summary>The user changes their own e-mail address; the password confirms it is really them.</summary>
+public sealed record ChangeOwnEmailCommand(
+    [property: Required] string UserId,
+    [property: OptionalEmail] string? Email,
+    [property: Required] string Password) : ICommand<AccountResult>;
+
+internal sealed class ChangeOwnEmailCommandHandler(IAccountService accounts, IAccountTexts texts)
+    : ICommandHandler<ChangeOwnEmailCommand, AccountResult>
+{
+    public async Task<AccountResult> HandleAsync(ChangeOwnEmailCommand command, CancellationToken cancellationToken)
+    {
+        if (!await accounts.CheckPasswordAsync(command.UserId, command.Password, cancellationToken))
+        {
+            return AccountResult.Failed(texts.WrongPassword);
+        }
+
+        var email = string.IsNullOrWhiteSpace(command.Email) ? null : command.Email.Trim();
+        return await accounts.SetEmailAsync(command.UserId, email, cancellationToken);
+    }
 }

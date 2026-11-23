@@ -9,6 +9,35 @@
         setThemePreference(name, value) {
             setCookie(name, value, 31536000);
         },
+
+        // The clipboard API needs HTTPS (or localhost); plain HTTP in a LAN falls back to the old way.
+        async copyText(text) {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                }
+            } catch {
+                // fall through
+            }
+
+            const area = document.createElement("textarea");
+            area.value = text;
+            area.setAttribute("readonly", "");
+            area.style.position = "fixed";
+            area.style.opacity = "0";
+            document.body.appendChild(area);
+            area.select();
+            let copied = false;
+            try {
+                copied = document.execCommand("copy");
+            } catch {
+                copied = false;
+            }
+
+            area.remove();
+            return copied;
+        },
     };
 
     // The browser's own light/dark setting, so "use system setting" renders right on the server too.

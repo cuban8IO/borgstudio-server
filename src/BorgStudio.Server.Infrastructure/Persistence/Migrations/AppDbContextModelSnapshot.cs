@@ -22,6 +22,10 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("PublicUrl")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ServerName")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -37,6 +41,38 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                             Id = 1,
                             ServerName = "BorgStudio Server"
                         });
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Users.Invitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Invitations", (string)null);
                 });
 
             modelBuilder.Entity("BorgStudio.Server.Infrastructure.Identity.ApplicationUser", b =>
@@ -56,6 +92,9 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDisabled")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("LockoutEnabled")
@@ -235,6 +274,15 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Users.Invitation", b =>
+                {
+                    b.HasOne("BorgStudio.Server.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

@@ -3,6 +3,7 @@ using BorgStudio.Server.Infrastructure.Identity;
 using BorgStudio.Server.Web.Theming;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Identity;
 
 namespace BorgStudio.Server.Web.Authentication;
 
@@ -18,6 +19,23 @@ internal static class SignInFlow
         navigation.NavigateTo(user.PendingTasks != AccountTasks.None
             ? CompletePath
             : AccountEndpoints.LocalUrl(returnUrl, "/"));
+    }
+
+    /// <summary>
+    /// Renews the sign-in cookie with the account as it is now (pending tasks, security stamp).
+    /// Uses a fresh service scope: the request's own one may still hold the user as it was loaded
+    /// before a command changed it, and a cookie with that old stamp would be rejected.
+    /// </summary>
+    public static async Task RefreshSignInAsync(HttpContext context, string userId)
+    {
+        await using var scope = context.RequestServices.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        signInManager.Context = context;
+        var user = await signInManager.UserManager.FindByIdAsync(userId);
+        if (user is not null)
+        {
+            await signInManager.RefreshSignInAsync(user);
+        }
     }
 
     /// <summary>Codes from authenticator apps are often typed or pasted with spaces or dashes.</summary>

@@ -1,0 +1,43 @@
+@using System.Globalization
+@using BorgStudio.Server.Application.Users
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+@* Shows a temporary password or an invitation link the one time it exists in readable form. *@
+<MudDialog>
+    <DialogContent>
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@Strings.UserAccessShownOnce</MudAlert>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            @if (Grant.TemporaryPassword is not null)
+            {
+                @string.Format(Strings.UserAccessPasswordIntro, Grant.UserName)
+            }
+            else
+            {
+                @string.Format(Strings.UserAccessLinkIntro, Grant.UserName,
+                    Grant.InvitationExpiresAt?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
+            }
+        </MudText>
+        <div class="access-secret" data-testid="access-secret">@Secret</div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyAsync">@Strings.Copy</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => MudDialog.Close()">@Strings.Done</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public UserAccessGrant Grant { get; set; } = default!;
+
+    private string Secret => Grant.TemporaryPassword ?? Grant.InvitationLink ?? string.Empty;
+
+    private async Task CopyAsync()
+    {
+        var copied = await JS.InvokeAsync<bool>("borgStudio.copyText", Secret);
+        Snackbar.Add(copied ? Strings.Copied : Strings.CopyFailed, copied ? Severity.Success : Severity.Warning);
+    }
+}

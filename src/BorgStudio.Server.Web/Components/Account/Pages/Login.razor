@@ -88,6 +88,10 @@ else if (Status == "locked")
         {
             errors = [Strings.ErrorLockedOut];
         }
+        else if (result.IsNotAllowed)
+        {
+            errors = [Strings.ErrorAccountDisabled];
+        }
         else
         {
             errors = [Strings.ErrorInvalidSignIn];

@@ -10,7 +10,7 @@ namespace BorgStudio.Server.Application.Accounts;
 
 /// <summary>
 /// Emergency access from the server's console: gives an administrator a temporary password, turns
-/// two-factor authentication off and lifts a lockout. At the next sign-in the administrator sets a new
+/// two-factor authentication off, lifts a lockout and enables the account again. At the next sign-in the administrator sets a new
 /// password, is offered two-factor authentication again and gets new recovery codes.
 /// </summary>
 /// <param name="UserName">The administrator; may be left out when there is only one.</param>
@@ -73,6 +73,7 @@ internal sealed class ResetAdministratorCommandHandler(
         await accounts.SetTwoFactorEnabledAsync(account.Id, false, cancellationToken);
         await accounts.ResetAuthenticatorKeyAsync(account.Id, cancellationToken);
         await accounts.UnlockAsync(account.Id, cancellationToken);
+        await accounts.SetDisabledAsync(account.Id, false, cancellationToken);
         await accounts.SetTasksAsync(
             account.Id,
             AccountTasks.ChangePassword | AccountTasks.OfferTwoFactor | AccountTasks.ShowRecoveryCodes,

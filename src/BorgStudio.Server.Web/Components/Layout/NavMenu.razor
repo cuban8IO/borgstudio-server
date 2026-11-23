@@ -5,4 +5,13 @@
     <MudNavLink Href="account" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ManageAccounts">
         @Strings.NavAccount
     </MudNavLink>
+    <AuthorizeView Roles="@Roles.Administrator">
+        <MudDivider Class="my-2" />
+        <MudNavLink Href="users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">
+            @Strings.NavUsers
+        </MudNavLink>
+        <MudNavLink Href="settings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings">
+            @Strings.NavSettings
+        </MudNavLink>
+    </AuthorizeView>
 </MudNavMenu>

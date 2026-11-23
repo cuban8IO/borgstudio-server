@@ -1,0 +1,23 @@
+@* Asks how long a new invitation link stays valid. *@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@string.Format(Strings.UserNewInvitationHint, UserName)</MudText>
+        <InvitationValidity @bind-Days="days" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => MudDialog.Close(DialogResult.Ok(days))">
+            @Strings.UserNewInvitationSubmit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string UserName { get; set; } = string.Empty;
+
+    private int days = 7;
+}

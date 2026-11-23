@@ -10,4 +10,14 @@ public sealed class ApplicationUser : IdentityUser
     public AccountTasks PendingTasks { get; set; }
 
     public ThemeMode ThemeMode { get; set; }
+
+    /// <summary>Disabled by an administrator: cannot sign in until enabled again.</summary>
+    public bool IsDisabled { get; set; }
+}
+
+/// <summary>Disabled accounts count as not confirmed, so the sign-in manager refuses them.</summary>
+internal sealed class AccountConfirmation : IUserConfirmation<ApplicationUser>
+{
+    public Task<bool> IsConfirmedAsync(UserManager<ApplicationUser> manager, ApplicationUser user) =>
+        Task.FromResult(!user.IsDisabled);
 }

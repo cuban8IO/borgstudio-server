@@ -240,14 +240,7 @@ else if (step == AccountTasks.ShowRecoveryCodes)
     }
 
     /// <summary>Renews the cookie: pending tasks and the security stamp are part of it.</summary>
-    private async Task RefreshSignInAsync()
-    {
-        var user = await SignInManager.UserManager.FindByIdAsync(userId);
-        if (user is not null)
-        {
-            await SignInManager.RefreshSignInAsync(user);
-        }
-    }
+    private Task RefreshSignInAsync() => SignInFlow.RefreshSignInAsync(HttpContext, userId);
 
     private async Task ContinueAsync()
     {
