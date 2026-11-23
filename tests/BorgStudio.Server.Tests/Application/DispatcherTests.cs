@@ -75,19 +75,16 @@ public sealed class DispatcherTests
     }
 
     [Fact]
-    public async Task Handlers_AreResolvedFromTheCurrentScope()
+    public async Task EveryRequest_RunsInAScopeOfItsOwn()
     {
         await using var services = CreateServices();
+        var dispatcher = services.GetRequiredService<IDispatcher>();
 
-        await using (var first = services.CreateAsyncScope())
-        {
-            await first.ServiceProvider.GetRequiredService<IDispatcher>().SendAsync(new CountInScope());
-            await first.ServiceProvider.GetRequiredService<IDispatcher>().SendAsync(new CountInScope());
-            Assert.Equal(2, first.ServiceProvider.GetRequiredService<ScopedCounter>().Value);
-        }
+        await dispatcher.SendAsync(new CountInScope());
+        await dispatcher.SendAsync(new CountInScope());
 
-        await using var second = services.CreateAsyncScope();
-        Assert.Equal(0, second.ServiceProvider.GetRequiredService<ScopedCounter>().Value);
+        // A fresh scoped counter each time: both handlers saw it at 1.
+        Assert.Equal(["1", "1"], services.GetRequiredService<Memory>().Items);
     }
 
     private static ServiceProvider CreateServices()
@@ -144,11 +141,12 @@ public sealed class DispatcherTests
         }
     }
 
-    public sealed class CountInScopeHandler(ScopedCounter counter) : ICommandHandler<CountInScope>
+    public sealed class CountInScopeHandler(ScopedCounter counter, Memory memory) : ICommandHandler<CountInScope>
     {
         public Task HandleAsync(CountInScope command, CancellationToken cancellationToken)
         {
             counter.Value++;
+            memory.Items.Add(counter.Value.ToString());
             return Task.CompletedTask;
         }
     }

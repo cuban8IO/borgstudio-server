@@ -2,7 +2,8 @@ namespace BorgStudio.Server.Application.Abstractions.Messaging;
 
 /// <summary>
 /// Sends commands and queries to their handler. Requests are validated first with their
-/// data annotations; invalid requests throw <see cref="RequestValidationException"/>.
+/// data annotations; invalid requests throw <see cref="RequestValidationException"/>. Every request
+/// runs in a service scope of its own.
 /// </summary>
 public interface IDispatcher
 {

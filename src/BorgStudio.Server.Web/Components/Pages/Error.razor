@@ -1,8 +1,9 @@
 @page "/Error"
+@attribute [AllowAnonymous]
 @attribute [ExcludeFromInteractiveRouting]
 @using System.Diagnostics
 
-<PageTitle>@Strings.ErrorTitle · BorgStudio Server</PageTitle>
+<AppPageTitle Title="@Strings.ErrorTitle" />
 
 <MudText Typo="Typo.h4" HtmlTag="h1" Color="Color.Error" GutterBottom="true">@Strings.ErrorTitle</MudText>
 <MudText Typo="Typo.body1" GutterBottom="true">@Strings.ErrorMessage</MudText>

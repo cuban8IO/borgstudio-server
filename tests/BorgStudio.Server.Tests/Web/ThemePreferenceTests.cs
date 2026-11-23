@@ -1,3 +1,4 @@
+using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Web.Theming;
 
 namespace BorgStudio.Server.Tests.Web;

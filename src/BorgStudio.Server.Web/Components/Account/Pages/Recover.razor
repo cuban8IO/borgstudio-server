@@ -1,0 +1,85 @@
+@page "/account/recover"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Accounts
+@inject IDispatcher Dispatcher
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.RecoverTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.RecoverTitle</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">@Strings.RecoverIntro</MudText>
+
+<FormErrors Errors="errors" />
+
+<EditForm Model="Input" method="post" OnValidSubmit="SubmitAsync" FormName="recover">
+    <DataAnnotationsValidator />
+
+    <FormField Label="@Strings.UserNameLabel" For="user-name">
+        <InputText id="user-name" @bind-Value="Input.UserName" class="form-input" autocomplete="username" />
+        <ValidationMessage For="() => Input.UserName" class="form-error" />
+    </FormField>
+
+    <FormField Label="@Strings.RecoveryCodeLabel" For="code">
+        <InputText id="code" @bind-Value="Input.Code" class="form-input" autocomplete="off" />
+        <ValidationMessage For="() => Input.Code" class="form-error" />
+    </FormField>
+
+    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+        @Strings.SignInSubmit
+    </MudButton>
+</EditForm>
+
+<MudText Typo="Typo.body2" Class="mt-6">
+    <MudLink Href="account/login">@Strings.BackToSignIn</MudLink>
+</MudText>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "userName")]
+    private string? UserNameFromQuery { get; set; }
+
+    [SupplyParameterFromForm]
+    private RecoverModel Input { get; set; } = default!;
+
+    private IReadOnlyList<string>? errors;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new() { UserName = UserNameFromQuery ?? string.Empty };
+    }
+
+    private async Task SubmitAsync()
+    {
+        var result = await Dispatcher.SendAsync(new SignInWithRecoveryCodeCommand(Input.UserName, Input.Code));
+        switch (result.Status)
+        {
+            case CodeCheck.Valid:
+                var user = await SignInManager.UserManager.FindByIdAsync(result.UserId!)
+                    ?? throw new InvalidOperationException("The account was not found.");
+                await HttpContext.ForgetTwoFactorUserAsync();
+                await SignInManager.SignInAsync(user, isPersistent: false);
+                SignInFlow.Continue(HttpContext, Navigation, user, returnUrl: null);
+                break;
+            case CodeCheck.LockedOut:
+                errors = [Strings.ErrorLockedOut];
+                break;
+            default:
+                errors = [Strings.ErrorInvalidRecoveryCode];
+                break;
+        }
+    }
+
+    private sealed class RecoverModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string Code { get; set; } = string.Empty;
+    }
+}

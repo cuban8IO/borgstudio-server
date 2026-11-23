@@ -1,0 +1,252 @@
+@page "/account"
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Accounts
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+@inject RecoveryCodeFlash CodeFlash
+
+<AppPageTitle Title="@Strings.NavAccount" />
+
+<MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.NavAccount</MudText>
+
+@if (StatusText is { } statusText)
+{
+    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-4">@statusText</MudAlert>
+}
+
+@if (account is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    return;
+}
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 h-100">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ProfileTitle</MudText>
+            <dl class="status-list">
+                <dt>@Strings.UserNameLabel</dt>
+                <dd>@account.UserName</dd>
+                <dt>@Strings.RoleLabel</dt>
+                <dd>@string.Join(", ", account.Roles.Select(RoleName))</dd>
+                <dt>@Strings.EmailLabel</dt>
+                <dd>@(account.Email ?? "–")</dd>
+            </dl>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 h-100">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ChangePasswordTitle</MudText>
+            <FormErrors Errors="passwordErrors" />
+            <MudTextField @bind-Value="currentPassword" Label="@Strings.CurrentPasswordLabel" InputType="InputType.Password"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="current-password" />
+            <MudTextField @bind-Value="newPassword" Label="@Strings.NewPasswordLabel" InputType="InputType.Password"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@Strings.PasswordRules" autocomplete="new-password" />
+            <MudTextField @bind-Value="confirmPassword" Label="@Strings.ConfirmPasswordLabel" InputType="InputType.Password"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="new-password" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="ChangePasswordAsync"
+                       Disabled="busy || string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword)">
+                @Strings.ChangePasswordSubmit
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 h-100">
+            <div class="d-flex align-center gap-2 mb-2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">@Strings.TwoFactorTitle</MudText>
+                <MudChip T="string" Size="Size.Small" Color="@(account.TwoFactorEnabled ? Color.Success : Color.Default)">
+                    @(account.TwoFactorEnabled ? Strings.StateOn : Strings.StateOff)
+                </MudChip>
+            </div>
+            <MudText Typo="Typo.body2" Class="mb-3">@Strings.TwoFactorExplanation</MudText>
+            <FormErrors Errors="twoFactorErrors" />
+
+            @if (account.TwoFactorEnabled)
+            {
+                <MudTextField @bind-Value="twoFactorPassword" Label="@Strings.CurrentPasswordLabel" InputType="InputType.Password"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="current-password" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-3" OnClick="DisableTwoFactorAsync"
+                           Disabled="busy || string.IsNullOrEmpty(twoFactorPassword)">
+                    @Strings.DisableTwoFactorSubmit
+                </MudButton>
+            }
+            else if (authenticator is null)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartTwoFactorAsync" Disabled="busy">
+                    @Strings.SetUpTwoFactor
+                </MudButton>
+            }
+            else
+            {
+                <AuthenticatorInstructions Setup="authenticator" />
+                <MudTextField @bind-Value="authenticatorCode" Label="@Strings.AuthenticatorCodeLabel"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="one-time-code" InputMode="InputMode.numeric" />
+                <div class="d-flex gap-2 mt-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="EnableTwoFactorAsync"
+                               Disabled="busy || string.IsNullOrWhiteSpace(authenticatorCode)">
+                        @Strings.EnableTwoFactorSubmit
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" OnClick="() => authenticator = null">@Strings.Cancel</MudButton>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 h-100">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.RecoveryCodesTitle</MudText>
+            @if (recoveryCodes is not null)
+            {
+                <RecoveryCodesPanel Codes="recoveryCodes" UserName="@account.UserName" />
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="mb-3">@string.Format(Strings.RecoveryCodesLeft, account.RecoveryCodesLeft)</MudText>
+                <FormErrors Errors="codeErrors" />
+                <MudTextField @bind-Value="codesPassword" Label="@Strings.CurrentPasswordLabel" InputType="InputType.Password"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="current-password" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3" OnClick="RegenerateCodesAsync"
+                           Disabled="busy || string.IsNullOrEmpty(codesPassword)">
+                    @Strings.RecoveryCodesRegenerate
+                </MudButton>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? Status { get; set; }
+
+    private string userId = string.Empty;
+    private AccountInfo? account;
+    private AuthenticatorSetup? authenticator;
+    private IReadOnlyList<string>? recoveryCodes;
+    private bool busy;
+
+    private string? currentPassword;
+    private string? newPassword;
+    private string? confirmPassword;
+    private string? twoFactorPassword;
+    private string? authenticatorCode;
+    private string? codesPassword;
+
+    private IReadOnlyList<string>? passwordErrors;
+    private IReadOnlyList<string>? twoFactorErrors;
+    private IReadOnlyList<string>? codeErrors;
+
+    private string? StatusText => Status switch
+    {
+        "password-changed" => Strings.PasswordChanged,
+        "two-factor-on" => Strings.TwoFactorTurnedOn,
+        "two-factor-off" => Strings.TwoFactorTurnedOff,
+        _ => null,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthenticationState).User;
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        account = await Dispatcher.QueryAsync(new GetAccountQuery(userId));
+
+        // Codes created just before the page was reloaded to renew the sign-in (see EnableTwoFactorAsync).
+        // Only the interactive render takes them, so they are shown exactly once.
+        if (RendererInfo.IsInteractive)
+        {
+            recoveryCodes = CodeFlash.Take(userId);
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        busy = true;
+        var result = await Dispatcher.SendAsync(
+            new ChangePasswordCommand(userId, currentPassword ?? string.Empty, newPassword ?? string.Empty, confirmPassword ?? string.Empty));
+        busy = false;
+        if (!result.Succeeded)
+        {
+            passwordErrors = result.Errors;
+            return;
+        }
+
+        RenewSignIn("password-changed");
+    }
+
+    private async Task StartTwoFactorAsync()
+    {
+        twoFactorErrors = null;
+        authenticator = await Dispatcher.SendAsync(new PrepareAuthenticatorCommand(userId));
+    }
+
+    private async Task EnableTwoFactorAsync()
+    {
+        busy = true;
+        var result = await Dispatcher.SendAsync(new EnableTwoFactorCommand(userId, SignInFlow.NormalizeCode(authenticatorCode)));
+        busy = false;
+        switch (result.Status)
+        {
+            case CodeCheck.Valid:
+                CodeFlash.Put(userId, result.RecoveryCodes);
+                RenewSignIn("two-factor-on");
+                break;
+            case CodeCheck.LockedOut:
+                twoFactorErrors = [Strings.ErrorLockedOut];
+                break;
+            default:
+                twoFactorErrors = [Strings.ErrorInvalidAuthenticatorCode];
+                break;
+        }
+    }
+
+    private async Task DisableTwoFactorAsync()
+    {
+        busy = true;
+        var result = await Dispatcher.SendAsync(new DisableTwoFactorCommand(userId, twoFactorPassword ?? string.Empty));
+        busy = false;
+        if (!result.Succeeded)
+        {
+            twoFactorErrors = result.Errors;
+            return;
+        }
+
+        RenewSignIn("two-factor-off");
+    }
+
+    private async Task RegenerateCodesAsync()
+    {
+        busy = true;
+        var result = await Dispatcher.SendAsync(new RegenerateRecoveryCodesCommand(userId, codesPassword ?? string.Empty));
+        busy = false;
+        codesPassword = null;
+        if (!result.Succeeded)
+        {
+            codeErrors = result.Errors;
+            return;
+        }
+
+        recoveryCodes = result.Value;
+    }
+
+    /// <summary>
+    /// Password and two-factor changes renew the account's security stamp; reloading through
+    /// /account/refresh puts the new stamp into this browser's cookie, so the user stays signed in.
+    /// </summary>
+    private void RenewSignIn(string status)
+    {
+        var returnUrl = Uri.EscapeDataString($"/account?status={status}");
+        Navigation.NavigateTo($"account/refresh?returnUrl={returnUrl}", forceLoad: true);
+    }
+
+    private static string RoleName(string role) => role switch
+    {
+        Roles.Administrator => Strings.RoleAdministrator,
+        Roles.User => Strings.RoleUser,
+        _ => role,
+    };
+}

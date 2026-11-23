@@ -1,6 +1,8 @@
 @page "/not-found"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
 
-<PageTitle>@Strings.NotFoundTitle · BorgStudio Server</PageTitle>
+<AppPageTitle Title="@Strings.NotFoundTitle" />
 
 <MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.NotFoundTitle</MudText>
 <MudText Typo="Typo.body1" Class="mb-4">@Strings.NotFoundMessage</MudText>

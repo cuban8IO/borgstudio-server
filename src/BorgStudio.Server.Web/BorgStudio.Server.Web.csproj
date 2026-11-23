@@ -9,12 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="MudBlazor" Version="9.14.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BorgStudio.Server.Application\BorgStudio.Server.Application.csproj" />
     <ProjectReference Include="..\BorgStudio.Server.Infrastructure\BorgStudio.Server.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BorgStudio.Server.Tests" />
   </ItemGroup>
 
   <!-- UI texts: Strings.resx (English, default) + Strings.<culture>.resx. The Strings class is generated at build time. -->

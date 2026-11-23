@@ -1,0 +1,14 @@
+@if (Errors is { Count: > 0 })
+{
+    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4" role="alert">
+        @foreach (var error in Errors)
+        {
+            <div>@error</div>
+        }
+    </MudAlert>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<string>? Errors { get; set; }
+}
