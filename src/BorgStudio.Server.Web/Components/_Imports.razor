@@ -1,5 +1,7 @@
 @using System.Net.Http
 @using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
@@ -8,8 +10,12 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @using BorgStudio.Server.Application.Abstractions.Messaging
+@using BorgStudio.Server.Domain.Users
 @using BorgStudio.Server.Web
+@using BorgStudio.Server.Web.Authentication
 @using BorgStudio.Server.Web.Components
+@using BorgStudio.Server.Web.Components.Account.Shared
 @using BorgStudio.Server.Web.Components.Layout
+@using BorgStudio.Server.Web.Components.Shared
 @using BorgStudio.Server.Web.Resources
 @using BorgStudio.Server.Web.Theming

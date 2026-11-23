@@ -1,0 +1,104 @@
+@page "/setup"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@using BorgStudio.Server.Application.Abstractions.Validation
+@using BorgStudio.Server.Application.Setup
+@using BorgStudio.Server.Domain.Settings
+@inject IDispatcher Dispatcher
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.SetupTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.SetupTitle</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">@Strings.SetupIntro</MudText>
+
+<FormErrors Errors="errors" />
+
+<EditForm Model="Input" method="post" OnValidSubmit="SubmitAsync" FormName="setup">
+    <DataAnnotationsValidator />
+
+    <FormField Label="@Strings.SetupCodeLabel" For="setup-code" Hint="@Strings.SetupCodeHint">
+        <InputText id="setup-code" @bind-Value="Input.SetupCode" class="form-input" autocomplete="off" autofocus />
+        <ValidationMessage For="() => Input.SetupCode" class="form-error" />
+    </FormField>
+
+    <FormField Label="@Strings.ServerNameLabel" For="server-name" Hint="@Strings.ServerNameHint">
+        <InputText id="server-name" @bind-Value="Input.ServerName" class="form-input" placeholder="@ServerSettings.DefaultServerName" />
+        <ValidationMessage For="() => Input.ServerName" class="form-error" />
+    </FormField>
+
+    <MudText Typo="Typo.subtitle1" HtmlTag="h2" Class="mt-6 mb-2">@Strings.SetupAdministrator</MudText>
+
+    <FormField Label="@Strings.UserNameLabel" For="user-name">
+        <InputText id="user-name" @bind-Value="Input.UserName" class="form-input" autocomplete="username" />
+        <ValidationMessage For="() => Input.UserName" class="form-error" />
+    </FormField>
+
+    <FormField Label="@Strings.EmailOptionalLabel" For="email">
+        <InputText id="email" type="email" @bind-Value="Input.Email" class="form-input" autocomplete="email" />
+        <ValidationMessage For="() => Input.Email" class="form-error" />
+    </FormField>
+
+    <FormField Label="@Strings.PasswordLabel" For="password" Hint="@Strings.PasswordRules">
+        <InputText id="password" type="password" @bind-Value="Input.Password" class="form-input" autocomplete="new-password" />
+        <ValidationMessage For="() => Input.Password" class="form-error" />
+    </FormField>
+
+    <FormField Label="@Strings.ConfirmPasswordLabel" For="confirm-password">
+        <InputText id="confirm-password" type="password" @bind-Value="Input.ConfirmPassword" class="form-input" autocomplete="new-password" />
+        <ValidationMessage For="() => Input.ConfirmPassword" class="form-error" />
+    </FormField>
+
+    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+        @Strings.SetupSubmit
+    </MudButton>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private SetupModel Input { get; set; } = default!;
+
+    private IReadOnlyList<string>? errors;
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task SubmitAsync()
+    {
+        var result = await Dispatcher.SendAsync(new CompleteSetupCommand(
+            Input.SetupCode, Input.ServerName, Input.UserName, Input.Email, Input.Password, Input.ConfirmPassword));
+        if (!result.Succeeded)
+        {
+            errors = result.Errors;
+            return;
+        }
+
+        var user = await SignInManager.UserManager.FindByIdAsync(result.Value!)
+            ?? throw new InvalidOperationException("The new administrator was not found.");
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        Navigation.NavigateTo(SignInFlow.CompletePath);
+    }
+
+    private sealed class SetupModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string SetupCode { get; set; } = string.Empty;
+
+        [MaxLength(ServerSettings.MaxServerNameLength,
+            ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationServerNameTooLong))]
+        public string? ServerName { get; set; }
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string UserName { get; set; } = string.Empty;
+
+        [OptionalEmail(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationEmail))]
+        public string? Email { get; set; }
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        [Compare(nameof(Password), ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ErrorPasswordsDoNotMatch))]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

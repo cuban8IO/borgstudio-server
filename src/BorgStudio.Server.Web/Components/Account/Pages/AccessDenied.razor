@@ -1,0 +1,23 @@
+@page "/account/access-denied"
+@attribute [Authorize(Policy = Policies.AccountTasks)]
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.AccessDeniedTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.AccessDeniedTitle</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">@Strings.AccessDeniedMessage</MudText>
+<MudButton Href="" Variant="Variant.Filled" Color="Color.Primary">@Strings.BackToOverview</MudButton>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        // Pages are closed while account tasks are due; send the user to finish them.
+        if (HttpContext.User.GetPendingTasks() != AccountTasks.None)
+        {
+            Navigation.NavigateTo(SignInFlow.CompletePath);
+        }
+    }
+}

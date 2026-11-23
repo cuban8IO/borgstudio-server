@@ -19,7 +19,7 @@ public static class DependencyInjection
     /// <summary>Registers the dispatcher and every command and query handler of the application layer.</summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IDispatcher, Dispatcher>();
+        services.AddSingleton<IDispatcher, Dispatcher>();
         services.AddRequestHandlers(typeof(DependencyInjection).Assembly);
         return services;
     }

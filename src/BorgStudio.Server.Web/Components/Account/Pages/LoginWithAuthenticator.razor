@@ -1,0 +1,90 @@
+@page "/account/login-2fa"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.TwoFactorSignInTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.TwoFactorSignInTitle</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">@Strings.TwoFactorSignInIntro</MudText>
+
+<FormErrors Errors="errors" />
+
+<EditForm Model="Input" method="post" OnValidSubmit="SubmitAsync" FormName="login-2fa">
+    <DataAnnotationsValidator />
+
+    <FormField Label="@Strings.AuthenticatorCodeLabel" For="code">
+        <InputText id="code" @bind-Value="Input.Code" class="form-input" autocomplete="one-time-code" inputmode="numeric" autofocus />
+        <ValidationMessage For="() => Input.Code" class="form-error" />
+    </FormField>
+
+    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+        @Strings.SignInSubmit
+    </MudButton>
+</EditForm>
+
+<MudText Typo="Typo.body2" Class="mt-6">
+    <MudLink Href="@($"account/recover?userName={Uri.EscapeDataString(userName ?? string.Empty)}")">@Strings.UseRecoveryCodeLink</MudLink>
+</MudText>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private bool RememberMe { get; set; }
+
+    [SupplyParameterFromForm]
+    private CodeModel Input { get; set; } = default!;
+
+    private IReadOnlyList<string>? errors;
+    private string? userName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        var user = await SignInManager.GetTwoFactorAuthenticationUserAsync();
+        if (user is null)
+        {
+            // The first step expired or never happened.
+            Navigation.NavigateTo("account/login");
+            return;
+        }
+
+        userName = user.UserName;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (userName is null)
+        {
+            return;
+        }
+
+        var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(
+            SignInFlow.NormalizeCode(Input.Code), RememberMe, rememberClient: false);
+        if (result.Succeeded)
+        {
+            var user = await SignInManager.UserManager.FindByNameAsync(userName);
+            SignInFlow.Continue(HttpContext, Navigation, user!, ReturnUrl);
+        }
+        else if (result.IsLockedOut)
+        {
+            errors = [Strings.ErrorLockedOut];
+        }
+        else
+        {
+            errors = [Strings.ErrorInvalidAuthenticatorCode];
+        }
+    }
+
+    private sealed class CodeModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string Code { get; set; } = string.Empty;
+    }
+}

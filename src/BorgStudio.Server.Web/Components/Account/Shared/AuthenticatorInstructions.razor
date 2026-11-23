@@ -1,0 +1,16 @@
+@using BorgStudio.Server.Application.Accounts
+
+<MudText Typo="Typo.body2" Class="mb-3">@Strings.AuthenticatorStep1</MudText>
+<div class="authenticator-setup">
+    <img src="@Setup.QrCodeDataUri" alt="@Strings.AuthenticatorQrAlt" class="authenticator-qr" />
+    <div>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@Strings.AuthenticatorKeyLabel</MudText>
+        <code class="authenticator-key" data-testid="authenticator-key">@Setup.SharedKey</code>
+    </div>
+</div>
+<MudText Typo="Typo.body2" Class="mt-3 mb-2">@Strings.AuthenticatorStep2</MudText>
+
+@code {
+    [Parameter, EditorRequired]
+    public AuthenticatorSetup Setup { get; set; } = default!;
+}

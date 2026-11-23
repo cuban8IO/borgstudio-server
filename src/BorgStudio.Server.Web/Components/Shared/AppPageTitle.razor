@@ -1,0 +1,11 @@
+<PageTitle>@Title · @(ServerName ?? BorgStudio.Server.Domain.Settings.ServerSettings.DefaultServerName)</PageTitle>
+
+@code {
+    public const string ServerNameCascade = "ServerName";
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [CascadingParameter(Name = ServerNameCascade)]
+    public string? ServerName { get; set; }
+}

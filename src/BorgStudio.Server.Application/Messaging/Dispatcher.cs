@@ -8,44 +8,48 @@ using Microsoft.Extensions.DependencyInjection;
 namespace BorgStudio.Server.Application.Messaging;
 
 /// <summary>
-/// Resolves the handler of a request from the current service scope. The typed call into the
-/// handler is built once per request type and cached, so dispatching needs no reflection afterwards.
+/// Runs every request in its own service scope, so each command or query is one unit of work with
+/// fresh database access, also inside long-lived Blazor circuits. The typed call into the handler is
+/// built once per request type and cached, so dispatching needs no reflection afterwards.
 /// </summary>
-internal sealed class Dispatcher(IServiceProvider services) : IDispatcher
+internal sealed class Dispatcher(IServiceScopeFactory scopeFactory) : IDispatcher
 {
     // One cache per request kind: a type could in theory be both a command and a query.
     private static readonly ConcurrentDictionary<Type, CommandInvoker> CommandInvokers = new();
     private static readonly ConcurrentDictionary<Type, object> ResultCommandInvokers = new();
     private static readonly ConcurrentDictionary<Type, object> QueryInvokers = new();
 
-    public Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
+    public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(command);
         Validate(command);
         var invoker = CommandInvokers.GetOrAdd(
             command.GetType(),
             static type => (CommandInvoker)Create(typeof(CommandInvoker<>).MakeGenericType(type)));
-        return invoker.InvokeAsync(command, services, cancellationToken);
+        await using var scope = scopeFactory.CreateAsyncScope();
+        await invoker.InvokeAsync(command, scope.ServiceProvider, cancellationToken);
     }
 
-    public Task<TResult> SendAsync<TResult>(ICommand<TResult> command, CancellationToken cancellationToken = default)
+    public async Task<TResult> SendAsync<TResult>(ICommand<TResult> command, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(command);
         Validate(command);
         var invoker = (ResultCommandInvoker<TResult>)ResultCommandInvokers.GetOrAdd(
             command.GetType(),
             static type => Create(typeof(ResultCommandInvoker<,>).MakeGenericType(type, typeof(TResult))));
-        return invoker.InvokeAsync(command, services, cancellationToken);
+        await using var scope = scopeFactory.CreateAsyncScope();
+        return await invoker.InvokeAsync(command, scope.ServiceProvider, cancellationToken);
     }
 
-    public Task<TResult> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken cancellationToken = default)
+    public async Task<TResult> QueryAsync<TResult>(IQuery<TResult> query, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
         Validate(query);
         var invoker = (QueryInvoker<TResult>)QueryInvokers.GetOrAdd(
             query.GetType(),
             static type => Create(typeof(QueryInvoker<,>).MakeGenericType(type, typeof(TResult))));
-        return invoker.InvokeAsync(query, services, cancellationToken);
+        await using var scope = scopeFactory.CreateAsyncScope();
+        return await invoker.InvokeAsync(query, scope.ServiceProvider, cancellationToken);
     }
 
     private static object Create(Type invokerType) => Activator.CreateInstance(invokerType)!;
