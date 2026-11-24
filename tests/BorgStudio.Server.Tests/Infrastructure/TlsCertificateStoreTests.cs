@@ -18,7 +18,7 @@ public sealed class TlsCertificateStoreTests : IDisposable
     [Fact]
     public void SelfSigned_IsCreatedOnce_AndKept()
     {
-        var first = CreateStore().Current;
+        var first = CreateStore().Current!;
 
         Assert.Equal(TlsCertificateSource.SelfSigned, first.Source);
         Assert.Contains("localhost", first.Names);
@@ -26,7 +26,7 @@ public sealed class TlsCertificateStoreTests : IDisposable
         Assert.True(first.NotAfter > DateTimeOffset.UtcNow.AddYears(4));
         Assert.True(File.Exists(Path.Combine(dataDirectory, "tls", "self-signed.pfx")));
 
-        Assert.Equal(first.Thumbprint, CreateStore().Current.Thumbprint);
+        Assert.Equal(first.Thumbprint, CreateStore().Current!.Thumbprint);
     }
 
     [Fact]
@@ -37,15 +37,15 @@ public sealed class TlsCertificateStoreTests : IDisposable
 
         Assert.Equal(TlsCertificateError.Unreadable, await store.UploadPfxAsync(pfx, "wrong", CancellationToken.None));
         Assert.Equal(TlsCertificateError.None, await store.UploadPfxAsync(pfx, "secret", CancellationToken.None));
-        Assert.Equal(TlsCertificateSource.Uploaded, store.Current.Source);
-        Assert.Equal("CN=backup.example.org", store.Current.Subject);
+        Assert.Equal(TlsCertificateSource.Uploaded, store.Current!.Source);
+        Assert.Equal("CN=backup.example.org", store.Current!.Subject);
         Assert.True(store.Certificate.HasPrivateKey);
 
         // Survives a restart.
-        Assert.Equal(TlsCertificateSource.Uploaded, CreateStore().Current.Source);
+        Assert.Equal(TlsCertificateSource.Uploaded, CreateStore().Current!.Source);
 
         await store.RemoveUploadedAsync(CancellationToken.None);
-        Assert.Equal(TlsCertificateSource.SelfSigned, store.Current.Source);
+        Assert.Equal(TlsCertificateSource.SelfSigned, store.Current!.Source);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class TlsCertificateStoreTests : IDisposable
         var error = await store.UploadPemAsync(certificate.ExportCertificatePem(), key.ExportPkcs8PrivateKeyPem(), CancellationToken.None);
 
         Assert.Equal(TlsCertificateError.None, error);
-        Assert.Equal(certificate.Thumbprint, store.Current.Thumbprint);
+        Assert.Equal(certificate.Thumbprint, store.Current!.Thumbprint);
         Assert.True(store.Certificate.HasPrivateKey);
     }
 
@@ -79,7 +79,7 @@ public sealed class TlsCertificateStoreTests : IDisposable
         Assert.Equal(TlsCertificateError.Unreadable,
             await store.UploadPemAsync("-----BEGIN CERTIFICATE-----", "nonsense", CancellationToken.None));
 
-        Assert.Equal(TlsCertificateSource.SelfSigned, store.Current.Source);
+        Assert.Equal(TlsCertificateSource.SelfSigned, store.Current!.Source);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class TlsCertificateStoreTests : IDisposable
 
         var store = CreateStore(new HttpsEndpointOptions { CertificatePath = file, CertificatePassword = "pw" });
 
-        Assert.Equal(TlsCertificateSource.Configured, store.Current.Source);
+        Assert.Equal(TlsCertificateSource.Configured, store.Current!.Source);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public sealed class TlsCertificateStoreTests : IDisposable
     {
         var store = CreateStore(new HttpsEndpointOptions { CertificatePath = Path.Combine(dataDirectory, "missing.pfx") });
 
-        Assert.Equal(TlsCertificateSource.SelfSigned, store.Current.Source);
+        Assert.Equal(TlsCertificateSource.SelfSigned, store.Current!.Source);
     }
 
     [Fact]
@@ -112,6 +112,20 @@ public sealed class TlsCertificateStoreTests : IDisposable
         Assert.Contains("nas", names.EnumerateDnsNames());
         Assert.Contains(IPAddress.Parse("192.168.1.20"), names.EnumerateIPAddresses());
         Assert.True(certificate.HasPrivateKey);
+    }
+
+    [Fact]
+    public async Task HttpsOff_CreatesNoCertificate_ButTakesAnUpload()
+    {
+        var store = CreateStore(new HttpsEndpointOptions { Enabled = false });
+
+        Assert.False(store.HttpsEnabled);
+        Assert.Null(store.Current);
+        Assert.False(Directory.Exists(Path.Combine(dataDirectory, "tls")));
+
+        Assert.Equal(TlsCertificateError.None,
+            await store.UploadPfxAsync(ExportWithPassword(NewCertificate(), "pw"), "pw", CancellationToken.None));
+        Assert.Equal(TlsCertificateSource.Uploaded, store.Current!.Source);
     }
 
     public void Dispose()

@@ -8,6 +8,11 @@
 <MudPaper Outlined="true" Class="pa-4">
     <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.TlsTitle</MudText>
 
+    @if (status is { HttpsEnabled: false })
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">@Strings.TlsHttpsOff</MudAlert>
+    }
+
     @if (certificate is not null)
     {
         <dl class="status-list mb-3">
@@ -74,7 +79,7 @@
     [Parameter, EditorRequired]
     public string ActingUserId { get; set; } = string.Empty;
 
-    private TlsCertificateInfo? certificate;
+    private TlsCertificateStatus? status;
     private bool pem;
     private byte[]? pfx;
     private string? password;
@@ -83,13 +88,15 @@
     private IReadOnlyList<string>? errors;
     private bool busy;
 
+    private TlsCertificateInfo? certificate => status?.Certificate;
+
     private bool CanUpload => pem ? certificatePem is not null && keyPem is not null : pfx is not null;
 
     protected override async Task OnParametersSetAsync()
     {
         if (!string.IsNullOrEmpty(ActingUserId))
         {
-            certificate = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
+            status = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
         }
     }
 
@@ -130,7 +137,7 @@
         pfx = null;
         certificatePem = null;
         keyPem = null;
-        certificate = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
+        status = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
         Snackbar.Add(Strings.TlsUploaded, Severity.Success);
     }
 
@@ -138,7 +145,7 @@
     {
         busy = true;
         await Dispatcher.SendAsync(new RemoveUploadedTlsCertificateCommand(ActingUserId));
-        certificate = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
+        status = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
         busy = false;
         Snackbar.Add(Strings.TlsRemoved, Severity.Success);
     }

@@ -576,6 +576,9 @@
   <data name="TlsTitle" xml:space="preserve">
     <value>HTTPS-Zertifikat</value>
   </data>
+  <data name="TlsHttpsOff" xml:space="preserve">
+    <value>HTTPS ist in dieser Installation aus (z. B. hinter einem Reverse Proxy, der HTTPS übernimmt). Ein hier hochgeladenes Zertifikat wird verwendet, sobald HTTPS eingeschaltet ist.</value>
+  </data>
   <data name="TlsSubject" xml:space="preserve">
     <value>Ausgestellt für</value>
   </data>

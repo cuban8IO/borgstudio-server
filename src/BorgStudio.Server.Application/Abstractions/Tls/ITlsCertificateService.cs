@@ -3,8 +3,11 @@ namespace BorgStudio.Server.Application.Abstractions.Tls;
 /// <summary>The certificate the server's HTTPS endpoint presents.</summary>
 public interface ITlsCertificateService
 {
-    /// <summary>The certificate in use, and where it comes from.</summary>
-    TlsCertificateInfo Current { get; }
+    /// <summary>Whether the server listens on HTTPS at all (off e.g. in a container behind a reverse proxy).</summary>
+    bool HttpsEnabled { get; }
+
+    /// <summary>The certificate in use and where it comes from; <c>null</c> while HTTPS is off and none was given.</summary>
+    TlsCertificateInfo? Current { get; }
 
     /// <summary>Checks a PKCS#12 file (.pfx/.p12) and, if it is usable, makes it the server's certificate.</summary>
     Task<TlsCertificateError> UploadPfxAsync(byte[] pfx, string? password, CancellationToken cancellationToken);
@@ -39,6 +42,8 @@ public enum TlsCertificateError
 
     Expired,
 }
+
+public sealed record TlsCertificateStatus(bool HttpsEnabled, TlsCertificateInfo? Certificate);
 
 public sealed record TlsCertificateInfo(
     string Subject,

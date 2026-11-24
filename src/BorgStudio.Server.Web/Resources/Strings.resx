@@ -576,6 +576,9 @@
   <data name="TlsTitle" xml:space="preserve">
     <value>HTTPS certificate</value>
   </data>
+  <data name="TlsHttpsOff" xml:space="preserve">
+    <value>HTTPS is off in this installation (e.g. behind a reverse proxy that handles HTTPS). A certificate uploaded here is used once HTTPS is turned on.</value>
+  </data>
   <data name="TlsSubject" xml:space="preserve">
     <value>Issued to</value>
   </data>

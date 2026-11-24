@@ -49,18 +49,21 @@ public sealed class TlsCertificateStore : ITlsCertificateService
     private string SelfSignedFile => Path.Combine(TlsDirectory, "self-signed.pfx");
 
     /// <summary>The certificate to present; loaded (or created) on first use.</summary>
-    public X509Certificate2 Certificate => Load().Certificate;
+    public X509Certificate2 Certificate => Load(createSelfSigned: true)!.Value.Certificate;
 
-    public TlsCertificateInfo Current
+    public bool HttpsEnabled => options.Enabled;
+
+    public TlsCertificateInfo? Current
     {
         get
         {
-            var (certificate, source) = Load();
-            return Describe(certificate, source);
+            // Without HTTPS (e.g. a container behind a reverse proxy) no self-signed certificate is made.
+            var loaded = Load(createSelfSigned: options.Enabled);
+            return loaded is { } value ? Describe(value.Certificate, value.Source) : null;
         }
     }
 
-    public async Task<TlsCertificateError> UploadPfxAsync(byte[] pfx, string? password, CancellationToken cancellationToken)
+    public Task<TlsCertificateError> UploadPfxAsync(byte[] pfx, string? password, CancellationToken cancellationToken)
     {
         X509Certificate2 certificate;
         try
@@ -69,13 +72,13 @@ public sealed class TlsCertificateStore : ITlsCertificateService
         }
         catch (CryptographicException)
         {
-            return TlsCertificateError.Unreadable;
+            return Task.FromResult(TlsCertificateError.Unreadable);
         }
 
-        return await AcceptUploadAsync(certificate, cancellationToken);
+        return AcceptUploadAsync(certificate);
     }
 
-    public async Task<TlsCertificateError> UploadPemAsync(string certificatePem, string keyPem, CancellationToken cancellationToken)
+    public Task<TlsCertificateError> UploadPemAsync(string certificatePem, string keyPem, CancellationToken cancellationToken)
     {
         X509Certificate2 certificate;
         try
@@ -84,10 +87,10 @@ public sealed class TlsCertificateStore : ITlsCertificateService
         }
         catch (Exception exception) when (exception is CryptographicException or ArgumentException)
         {
-            return TlsCertificateError.Unreadable;
+            return Task.FromResult(TlsCertificateError.Unreadable);
         }
 
-        return await AcceptUploadAsync(certificate, cancellationToken);
+        return AcceptUploadAsync(certificate);
     }
 
     public Task RemoveUploadedAsync(CancellationToken cancellationToken)
@@ -102,27 +105,26 @@ public sealed class TlsCertificateStore : ITlsCertificateService
             current = null;
         }
 
-        Load();
+        Load(createSelfSigned: options.Enabled);
         return Task.CompletedTask;
     }
 
-    private async Task<TlsCertificateError> AcceptUploadAsync(X509Certificate2 certificate, CancellationToken cancellationToken)
+    private Task<TlsCertificateError> AcceptUploadAsync(X509Certificate2 certificate)
     {
         using (certificate)
         {
             if (!certificate.HasPrivateKey)
             {
-                return TlsCertificateError.NoPrivateKey;
+                return Task.FromResult(TlsCertificateError.NoPrivateKey);
             }
 
             if (certificate.NotAfter.ToUniversalTime() <= timeProvider.GetUtcNow().UtcDateTime)
             {
-                return TlsCertificateError.Expired;
+                return Task.FromResult(TlsCertificateError.Expired);
             }
 
             // Stored without a password, protected like the rest of the data folder.
-            var pfx = certificate.Export(X509ContentType.Pkcs12);
-            await WriteProtectedAsync(UploadedFile, pfx, cancellationToken);
+            WriteProtected(UploadedFile, certificate.Export(X509ContentType.Pkcs12));
         }
 
         lock (gate)
@@ -130,11 +132,11 @@ public sealed class TlsCertificateStore : ITlsCertificateService
             current = null;
         }
 
-        Load();
-        return TlsCertificateError.None;
+        Load(createSelfSigned: options.Enabled);
+        return Task.FromResult(TlsCertificateError.None);
     }
 
-    private (X509Certificate2 Certificate, TlsCertificateSource Source) Load()
+    private (X509Certificate2 Certificate, TlsCertificateSource Source)? Load(bool createSelfSigned)
     {
         lock (gate)
         {
@@ -143,7 +145,12 @@ public sealed class TlsCertificateStore : ITlsCertificateService
                 return loaded;
             }
 
-            current = LoadUploaded() ?? LoadConfigured() ?? LoadSelfSigned();
+            current = LoadUploaded() ?? LoadConfigured() ?? (createSelfSigned ? LoadSelfSigned() : null);
+            if (current is null)
+            {
+                return null;
+            }
+
             var (certificate, source) = current.Value;
             logger.LogInformation(
                 "HTTPS certificate: {Subject} ({Source}), valid until {NotAfter:yyyy-MM-dd}.",
@@ -231,7 +238,7 @@ public sealed class TlsCertificateStore : ITlsCertificateService
         }
 
         var pfx = CreateSelfSigned(Dns.GetHostName(), LocalAddresses(), timeProvider.GetUtcNow());
-        WriteProtectedAsync(SelfSignedFile, pfx, CancellationToken.None).GetAwaiter().GetResult();
+        WriteProtected(SelfSignedFile, pfx);
         logger.LogInformation("A self-signed HTTPS certificate was created in {File}.", SelfSignedFile);
         return (X509CertificateLoader.LoadPkcs12(pfx, null), TlsCertificateSource.SelfSigned);
     }
@@ -297,7 +304,11 @@ public sealed class TlsCertificateStore : ITlsCertificateService
             source);
     }
 
-    private async Task WriteProtectedAsync(string path, byte[] content, CancellationToken cancellationToken)
+    /// <summary>
+    /// Synchronous on purpose: this runs inside a lock, possibly while a Blazor page renders, where
+    /// blocking on an asynchronous write would deadlock.
+    /// </summary>
+    private void WriteProtected(string path, byte[] content)
     {
         paths.EnsureDataDirectory();
         Directory.CreateDirectory(TlsDirectory);
@@ -307,7 +318,7 @@ public sealed class TlsCertificateStore : ITlsCertificateService
             fileOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
         }
 
-        await using var stream = new FileStream(path, fileOptions);
-        await stream.WriteAsync(content, cancellationToken);
+        using var stream = new FileStream(path, fileOptions);
+        stream.Write(content);
     }
 }

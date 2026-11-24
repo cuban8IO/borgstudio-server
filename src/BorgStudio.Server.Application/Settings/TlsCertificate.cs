@@ -10,15 +10,15 @@ using Microsoft.Extensions.Logging;
 namespace BorgStudio.Server.Application.Settings;
 
 /// <summary>The HTTPS certificate in use (administrators only).</summary>
-public sealed record GetTlsCertificateQuery([property: Required] string ActingUserId) : IQuery<TlsCertificateInfo>;
+public sealed record GetTlsCertificateQuery([property: Required] string ActingUserId) : IQuery<TlsCertificateStatus>;
 
 internal sealed class GetTlsCertificateQueryHandler(UserAdministration admin, ITlsCertificateService certificates)
-    : IQueryHandler<GetTlsCertificateQuery, TlsCertificateInfo>
+    : IQueryHandler<GetTlsCertificateQuery, TlsCertificateStatus>
 {
-    public async Task<TlsCertificateInfo> HandleAsync(GetTlsCertificateQuery query, CancellationToken cancellationToken)
+    public async Task<TlsCertificateStatus> HandleAsync(GetTlsCertificateQuery query, CancellationToken cancellationToken)
     {
         await admin.RequireAdministratorAsync(query.ActingUserId, cancellationToken);
-        return certificates.Current;
+        return new TlsCertificateStatus(certificates.HttpsEnabled, certificates.Current);
     }
 }
 
@@ -66,7 +66,7 @@ internal sealed class UploadTlsCertificateCommandHandler(
             });
         }
 
-        logger.LogInformation("A new HTTPS certificate was uploaded: {Subject}.", certificates.Current.Subject);
+        logger.LogInformation("A new HTTPS certificate was uploaded: {Subject}.", certificates.Current?.Subject);
         return AccountResult.Success;
     }
 }

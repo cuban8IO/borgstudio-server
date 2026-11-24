@@ -264,6 +264,22 @@ public sealed class UserManagementTests
     }
 
     [Fact]
+    public async Task SettingsPage_ShowsServerAndCertificate()
+    {
+        using var server = new TestServer();
+        using var browser = await SignInTests.CompleteSetupAsync(server, twoFactor: false);
+
+        var page = await browser.GetAsync("/settings");
+
+        Assert.Equal("/settings", page.Path);
+        Assert.Contains("Test Server", page.Text);
+        Assert.Contains("HTTPS certificate", page.Text);
+        // The test server runs without HTTPS: no self-signed certificate is made just for the page.
+        Assert.Contains("HTTPS is off in this installation", page.Text);
+        Assert.False(Directory.Exists(Path.Combine(server.DataDirectory, "tls")));
+    }
+
+    [Fact]
     public async Task OwnEmail_NeedsThePassword_AndKeepsTheSession()
     {
         using var server = new TestServer();
