@@ -1,0 +1,24 @@
+# Example: BorgStudio Server with Docker Compose.
+#
+#   docker compose up -d
+#   docker compose logs borgstudio-server     # shows the setup code on the first start
+#
+# Put a reverse proxy with HTTPS in front of port 8080 (e.g. Caddy, Traefik, nginx), or switch on
+# HTTPS in the container (see below).
+services:
+  borgstudio-server:
+    image: ghcr.io/cuban8io/borgstudio-server:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      # - "8443:8443"
+    volumes:
+      - borgstudio-data:/app/data
+    environment:
+      # Trust X-Forwarded-* from the reverse proxy (only if the container is reachable through it alone).
+      BorgStudio__ForwardedHeaders: "false"
+      # HTTPS in the container, with a self-signed or uploaded certificate:
+      # BorgStudio__Https__Enabled: "true"
+
+volumes:
+  borgstudio-data:

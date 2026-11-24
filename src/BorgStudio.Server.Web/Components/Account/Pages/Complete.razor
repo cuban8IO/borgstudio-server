@@ -1,0 +1,266 @@
+@page "/account/complete"
+@attribute [Authorize(Policy = Policies.AccountTasks)]
+@using System.ComponentModel.DataAnnotations
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Accounts
+@inject IDispatcher Dispatcher
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+@* Steps due after signing in (see AccountTasks): new password → authenticator → offer two-factor
+   authentication → recovery codes. Each step is a form post, so the sign-in cookie can be renewed. *@
+
+<AppPageTitle Title="@Strings.CompleteTitle" />
+
+@if (recoveryCodes is not null)
+{
+    <MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.RecoveryCodesTitle</MudText>
+    <RecoveryCodesPanel Codes="recoveryCodes" UserName="@account?.UserName" ContinueUrl="@SignInFlow.CompletePath" />
+}
+else if (step == AccountTasks.ChangePassword)
+{
+    <MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.NewPasswordTitle</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">@Strings.NewPasswordIntro</MudText>
+    <FormErrors Errors="errors" />
+
+    <EditForm Model="PasswordInput" method="post" OnValidSubmit="SetPasswordAsync" FormName="new-password">
+        <DataAnnotationsValidator />
+        <FormField Label="@Strings.NewPasswordLabel" For="new-password" Hint="@Strings.PasswordRules">
+            <InputText id="new-password" type="password" @bind-Value="PasswordInput.NewPassword" class="form-input" autocomplete="new-password" autofocus />
+            <ValidationMessage For="() => PasswordInput.NewPassword" class="form-error" />
+        </FormField>
+        <FormField Label="@Strings.ConfirmPasswordLabel" For="confirm-password">
+            <InputText id="confirm-password" type="password" @bind-Value="PasswordInput.ConfirmPassword" class="form-input" autocomplete="new-password" />
+            <ValidationMessage For="() => PasswordInput.ConfirmPassword" class="form-error" />
+        </FormField>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+            @Strings.Continue
+        </MudButton>
+    </EditForm>
+}
+else if (step == AccountTasks.VerifyAuthenticator && !SettingUpAuthenticator)
+{
+    <MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.VerifyAuthenticatorTitle</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">@Strings.VerifyAuthenticatorIntro</MudText>
+    <FormErrors Errors="errors" />
+
+    <EditForm Model="VerifyInput" method="post" OnValidSubmit="VerifyAuthenticatorAsync" FormName="verify-authenticator">
+        <DataAnnotationsValidator />
+        <FormField Label="@Strings.AuthenticatorCodeLabel" For="verify-code">
+            <InputText id="verify-code" @bind-Value="VerifyInput.Code" class="form-input" autocomplete="one-time-code" inputmode="numeric" autofocus />
+            <ValidationMessage For="() => VerifyInput.Code" class="form-error" />
+        </FormField>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+            @Strings.VerifyAuthenticatorSubmit
+        </MudButton>
+    </EditForm>
+
+    <form method="post" @onsubmit="StartOverAsync" @formname="lost-authenticator" class="mt-4">
+        <AntiforgeryToken />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Secondary" FullWidth="true">
+            @Strings.AuthenticatorLost
+        </MudButton>
+    </form>
+}
+else if (SettingUpAuthenticator)
+{
+    <MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">
+        @(step == AccountTasks.VerifyAuthenticator ? Strings.NewAuthenticatorTitle : Strings.OfferTwoFactorTitle)
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">
+        @(step == AccountTasks.VerifyAuthenticator ? Strings.NewAuthenticatorIntro : Strings.OfferTwoFactorIntro)
+    </MudText>
+    <FormErrors Errors="errors" />
+
+    @if (authenticator is not null)
+    {
+        <AuthenticatorInstructions Setup="authenticator" />
+    }
+
+    <EditForm Model="EnableInput" method="post" OnValidSubmit="EnableTwoFactorAsync" FormName="enable-two-factor">
+        <DataAnnotationsValidator />
+        <FormField Label="@Strings.AuthenticatorCodeLabel" For="enable-code">
+            <InputText id="enable-code" @bind-Value="EnableInput.Code" class="form-input" autocomplete="one-time-code" inputmode="numeric" />
+            <ValidationMessage For="() => EnableInput.Code" class="form-error" />
+        </FormField>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+            @Strings.EnableTwoFactorSubmit
+        </MudButton>
+    </EditForm>
+
+    @if (step == AccountTasks.OfferTwoFactor)
+    {
+        <form method="post" @onsubmit="SkipTwoFactorAsync" @formname="skip-two-factor" class="mt-2">
+            <AntiforgeryToken />
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" FullWidth="true">@Strings.SkipForNow</MudButton>
+        </form>
+    }
+}
+else if (step == AccountTasks.ShowRecoveryCodes)
+{
+    <MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.RecoveryCodesTitle</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">@Strings.RecoveryCodesIntro</MudText>
+
+    <form method="post" @onsubmit="RevealRecoveryCodesAsync" @formname="reveal-codes">
+        <AntiforgeryToken />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+            @Strings.RecoveryCodesReveal
+        </MudButton>
+    </form>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "new-password")]
+    private NewPasswordModel PasswordInput { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "verify-authenticator")]
+    private CodeModel VerifyInput { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "enable-two-factor")]
+    private CodeModel EnableInput { get; set; } = default!;
+
+    private string userId = string.Empty;
+    private AccountInfo? account;
+    private AccountTasks step;
+    private AuthenticatorSetup? authenticator;
+    private IReadOnlyList<string>? recoveryCodes;
+    private IReadOnlyList<string>? errors;
+
+    // A form is only handled if it is part of the page, so the setup form must also be there when its
+    // own post arrives (after "authenticator lost" it is not part of the normal verify step).
+    private bool SettingUpAuthenticator =>
+        authenticator is not null
+        || step == AccountTasks.OfferTwoFactor
+        || (HttpMethods.IsPost(HttpContext.Request.Method) && HttpContext.Request.Form["_handler"] == "enable-two-factor");
+
+    protected override async Task OnInitializedAsync()
+    {
+        PasswordInput ??= new();
+        VerifyInput ??= new();
+        EnableInput ??= new();
+
+        userId = SignInManager.UserManager.GetUserId(HttpContext.User) ?? string.Empty;
+        await LoadAsync();
+        if (step == AccountTasks.None && HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            await RefreshSignInAsync();
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        if (step == AccountTasks.OfferTwoFactor)
+        {
+            authenticator = await Dispatcher.SendAsync(new PrepareAuthenticatorCommand(userId));
+        }
+    }
+
+    private async Task SetPasswordAsync()
+    {
+        var result = await Dispatcher.SendAsync(
+            new SetNewPasswordCommand(userId, PasswordInput.NewPassword, PasswordInput.ConfirmPassword));
+        if (!result.Succeeded)
+        {
+            errors = result.Errors;
+            return;
+        }
+
+        await ContinueAsync();
+    }
+
+    private async Task VerifyAuthenticatorAsync()
+    {
+        var check = await Dispatcher.SendAsync(new VerifyAuthenticatorCommand(userId, SignInFlow.NormalizeCode(VerifyInput.Code)));
+        switch (check)
+        {
+            case CodeCheck.Valid:
+                await ContinueAsync();
+                break;
+            case CodeCheck.LockedOut:
+                await SignInManager.SignOutAsync();
+                Navigation.NavigateTo("account/login?status=locked");
+                break;
+            default:
+                errors = [Strings.ErrorInvalidAuthenticatorCode];
+                break;
+        }
+    }
+
+    private async Task StartOverAsync()
+    {
+        // The old authenticator stops working now; the user scans the new key below.
+        authenticator = await Dispatcher.SendAsync(new PrepareAuthenticatorCommand(userId, StartOver: true));
+        await RefreshSignInAsync();
+    }
+
+    private async Task EnableTwoFactorAsync()
+    {
+        var result = await Dispatcher.SendAsync(new EnableTwoFactorCommand(userId, SignInFlow.NormalizeCode(EnableInput.Code)));
+        switch (result.Status)
+        {
+            case CodeCheck.Valid:
+                await LoadAsync();
+                await RefreshSignInAsync();
+                recoveryCodes = result.RecoveryCodes;
+                break;
+            case CodeCheck.LockedOut:
+                await SignInManager.SignOutAsync();
+                Navigation.NavigateTo("account/login?status=locked");
+                break;
+            default:
+                errors = [Strings.ErrorInvalidAuthenticatorCode];
+                // A replaced authenticator is never shown twice; with a lost one the user scans a fresh key.
+                authenticator = await Dispatcher.SendAsync(
+                    new PrepareAuthenticatorCommand(userId, StartOver: step == AccountTasks.VerifyAuthenticator));
+                await RefreshSignInAsync();
+                break;
+        }
+    }
+
+    private async Task SkipTwoFactorAsync()
+    {
+        await Dispatcher.SendAsync(new SkipTwoFactorCommand(userId));
+        await ContinueAsync();
+    }
+
+    private async Task RevealRecoveryCodesAsync()
+    {
+        recoveryCodes = await Dispatcher.SendAsync(new RevealRecoveryCodesCommand(userId));
+        await LoadAsync();
+        await RefreshSignInAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        account = await Dispatcher.QueryAsync(new GetAccountQuery(userId))
+            ?? throw new InvalidOperationException("The account does not exist.");
+        step = account.Tasks.Next();
+    }
+
+    /// <summary>Renews the cookie: pending tasks and the security stamp are part of it.</summary>
+    private Task RefreshSignInAsync() => SignInFlow.RefreshSignInAsync(HttpContext, userId);
+
+    private async Task ContinueAsync()
+    {
+        await RefreshSignInAsync();
+        Navigation.NavigateTo(SignInFlow.CompletePath);
+    }
+
+    private sealed class NewPasswordModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        [Compare(nameof(NewPassword), ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ErrorPasswordsDoNotMatch))]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    private sealed class CodeModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string Code { get; set; } = string.Empty;
+    }
+}

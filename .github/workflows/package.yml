@@ -1,0 +1,95 @@
+name: package
+
+# Reusable: builds the release packages.
+#   - self-contained archives for linux-x64, linux-arm64 and win-x64, with the install scripts
+#   - framework-dependent Linux builds for the container image (artifacts docker-amd64/-arm64)
+# build.yml calls it to check packaging on every change, release.yml to publish the result.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version baked into the binaries and file names
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: package (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: win-x64, os: windows-latest }
+          - { rid: linux-x64, os: ubuntu-latest, docker: amd64 }
+          - { rid: linux-arm64, os: ubuntu-latest, docker: arm64 }
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ inputs.version }}
+      RID: ${{ matrix.rid }}
+      PROJECT: src/BorgStudio.Server.Web/BorgStudio.Server.Web.csproj
+      ASSETS: src/BorgStudio.Server.Web/obj/project.assets.json
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish
+        run: dotnet publish "$PROJECT" -c Release -r "$RID" --self-contained -p:Version="$VERSION" -o publish
+
+      # BorgStudio Server's license and the licenses of everything it ships (NuGet packages, .NET runtimes).
+      - name: Package contents
+        run: |
+          mkdir -p staging/borgstudio-server
+          cp -R publish/. staging/borgstudio-server/
+          cp LICENSE staging/borgstudio-server/LICENSE.txt
+          node .github/scripts/third-party-notices.mjs "$ASSETS" "$RID" staging/borgstudio-server/THIRD-PARTY-NOTICES.txt
+          printf '%s\n' "$VERSION" > staging/borgstudio-server/VERSION
+          cp deploy/borgstudio-server.example.json staging/borgstudio-server/
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Copy-Item deploy/windows/install.ps1, deploy/windows/uninstall.ps1 staging/borgstudio-server/
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path staging/borgstudio-server -DestinationPath "dist/BorgStudio.Server-$env:VERSION-$env:RID.zip"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cp deploy/linux/install.sh deploy/linux/uninstall.sh staging/borgstudio-server/
+          chmod +x staging/borgstudio-server/BorgStudio.Server staging/borgstudio-server/*.sh
+          mkdir -p dist
+          tar -czf "dist/BorgStudio.Server-$VERSION-$RID.tar.gz" -C staging borgstudio-server
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package-${{ matrix.rid }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+      # The container image brings its own .NET runtime, so it gets a framework-dependent build.
+      - name: Publish for the container image
+        if: matrix.docker
+        run: |
+          dotnet publish "$PROJECT" -c Release -r "$RID" --self-contained false -p:Version="$VERSION" -o "docker/${{ matrix.docker }}"
+          cp LICENSE "docker/${{ matrix.docker }}/LICENSE.txt"
+          node .github/scripts/third-party-notices.mjs "$ASSETS" "$RID" "docker/${{ matrix.docker }}/THIRD-PARTY-NOTICES.txt"
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.docker
+        with:
+          name: docker-${{ matrix.docker }}
+          path: docker/${{ matrix.docker }}
+          if-no-files-found: error
+          retention-days: 7

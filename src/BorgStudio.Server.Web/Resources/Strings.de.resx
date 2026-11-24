@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="NavOverview" xml:space="preserve">
+    <value>Übersicht</value>
+  </data>
+  <data name="NavAccount" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="ToggleNavigation" xml:space="preserve">
+    <value>Navigation ein- oder ausblenden</value>
+  </data>
+  <data name="ThemeMenuLabel" xml:space="preserve">
+    <value>Farbschema</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>Systemeinstellung</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>Hell</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>Dunkel</value>
+  </data>
+  <data name="UserMenuLabel" xml:space="preserve">
+    <value>Benutzermenü</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
+  <data name="OverviewIntro" xml:space="preserve">
+    <value>Hier erscheinen die Rechner und ihre Sicherungen, sobald sie an diesen Server melden.</value>
+  </data>
+  <data name="ServerStatusTitle" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="StatusVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="StatusDevelopmentBuild" xml:space="preserve">
+    <value>Entwicklungsversion</value>
+  </data>
+  <data name="StatusDevelopmentBuildWithCommit" xml:space="preserve">
+    <value>Entwicklungsversion ({0})</value>
+  </data>
+  <data name="StatusOperatingSystem" xml:space="preserve">
+    <value>Betriebssystem</value>
+  </data>
+  <data name="StatusRuntime" xml:space="preserve">
+    <value>Laufzeit</value>
+  </data>
+  <data name="StatusRunningSince" xml:space="preserve">
+    <value>Läuft seit</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Bei der Verarbeitung der Anfrage ist ein Fehler aufgetreten.</value>
+  </data>
+  <data name="ErrorRequestId" xml:space="preserve">
+    <value>Anfrage-ID</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Seite nicht gefunden</value>
+  </data>
+  <data name="NotFoundMessage" xml:space="preserve">
+    <value>Die angeforderte Seite gibt es nicht.</value>
+  </data>
+  <data name="BackToOverview" xml:space="preserve">
+    <value>Zurück zur Übersicht</value>
+  </data>
+  <data name="AccessDeniedTitle" xml:space="preserve">
+    <value>Kein Zugriff</value>
+  </data>
+  <data name="AccessDeniedMessage" xml:space="preserve">
+    <value>Dein Konto darf diese Seite nicht öffnen.</value>
+  </data>
+  <data name="ValidationRequired" xml:space="preserve">
+    <value>Bitte ausfüllen.</value>
+  </data>
+  <data name="ValidationEmail" xml:space="preserve">
+    <value>Das ist keine gültige E-Mail-Adresse.</value>
+  </data>
+  <data name="ValidationServerNameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens 64 Zeichen lang sein.</value>
+  </data>
+  <data name="UserNameLabel" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="EmailOptionalLabel" xml:space="preserve">
+    <value>E-Mail (optional)</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
+  <data name="CurrentPasswordLabel" xml:space="preserve">
+    <value>Aktuelles Passwort</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>Neues Passwort</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Passwort wiederholen</value>
+  </data>
+  <data name="PasswordRules" xml:space="preserve">
+    <value>Mindestens 8 Zeichen mit Groß- und Kleinbuchstaben, einer Ziffer und einem Sonderzeichen.</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="SkipForNow" xml:space="preserve">
+    <value>Jetzt nicht</value>
+  </data>
+  <data name="StateOn" xml:space="preserve">
+    <value>An</value>
+  </data>
+  <data name="StateOff" xml:space="preserve">
+    <value>Aus</value>
+  </data>
+  <data name="SetupTitle" xml:space="preserve">
+    <value>BorgStudio Server einrichten</value>
+  </data>
+  <data name="SetupIntro" xml:space="preserve">
+    <value>Dieser Server hat noch keinen Administrator. Gib dem Server einen Namen und lege den ersten Administrator an.</value>
+  </data>
+  <data name="SetupCodeLabel" xml:space="preserve">
+    <value>Einrichtungscode</value>
+  </data>
+  <data name="SetupCodeHint" xml:space="preserve">
+    <value>Steht im Log des Servers und in data/setup-code.txt neben dem Programm.</value>
+  </data>
+  <data name="ServerNameLabel" xml:space="preserve">
+    <value>Servername</value>
+  </data>
+  <data name="ServerNameHint" xml:space="preserve">
+    <value>Erscheint in der Titelleiste, z. B. „Sicherungen zu Hause“.</value>
+  </data>
+  <data name="SetupAdministrator" xml:space="preserve">
+    <value>Erster Administrator</value>
+  </data>
+  <data name="SetupSubmit" xml:space="preserve">
+    <value>Administrator anlegen</value>
+  </data>
+  <data name="SignInTitle" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="SignInSubmit" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="RememberMe" xml:space="preserve">
+    <value>Angemeldet bleiben (14 Tage)</value>
+  </data>
+  <data name="UseRecoveryCodeLink" xml:space="preserve">
+    <value>Passwort oder Authenticator verloren? Mit Wiederherstellungscode anmelden</value>
+  </data>
+  <data name="SignedOutIdle" xml:space="preserve">
+    <value>Du wurdest nach 60 Minuten ohne Aktivität abgemeldet.</value>
+  </data>
+  <data name="BackToSignIn" xml:space="preserve">
+    <value>Zurück zur Anmeldung</value>
+  </data>
+  <data name="TwoFactorSignInTitle" xml:space="preserve">
+    <value>Zwei-Faktor-Anmeldung</value>
+  </data>
+  <data name="TwoFactorSignInIntro" xml:space="preserve">
+    <value>Gib den aktuellen Code aus deiner Authenticator-App ein.</value>
+  </data>
+  <data name="AuthenticatorCodeLabel" xml:space="preserve">
+    <value>Code aus der Authenticator-App</value>
+  </data>
+  <data name="RecoverTitle" xml:space="preserve">
+    <value>Mit Wiederherstellungscode anmelden</value>
+  </data>
+  <data name="RecoverIntro" xml:space="preserve">
+    <value>Ein Wiederherstellungscode ersetzt Passwort und Authenticator. Danach setzt du ein neues Passwort und bekommst neue Wiederherstellungscodes.</value>
+  </data>
+  <data name="RecoveryCodeLabel" xml:space="preserve">
+    <value>Wiederherstellungscode</value>
+  </data>
+  <data name="CompleteTitle" xml:space="preserve">
+    <value>Anmeldung abschließen</value>
+  </data>
+  <data name="NewPasswordTitle" xml:space="preserve">
+    <value>Neues Passwort festlegen</value>
+  </data>
+  <data name="NewPasswordIntro" xml:space="preserve">
+    <value>Lege ein neues Passwort fest, bevor es weitergeht.</value>
+  </data>
+  <data name="VerifyAuthenticatorTitle" xml:space="preserve">
+    <value>Authenticator prüfen</value>
+  </data>
+  <data name="VerifyAuthenticatorIntro" xml:space="preserve">
+    <value>Die Zwei-Faktor-Anmeldung ist eingeschaltet. Gib einen aktuellen Code aus deiner Authenticator-App ein, um sie weiter zu nutzen, oder richte eine neue ein, falls sie verloren ist.</value>
+  </data>
+  <data name="VerifyAuthenticatorSubmit" xml:space="preserve">
+    <value>Authenticator funktioniert</value>
+  </data>
+  <data name="AuthenticatorLost" xml:space="preserve">
+    <value>Authenticator verloren – neu einrichten</value>
+  </data>
+  <data name="NewAuthenticatorTitle" xml:space="preserve">
+    <value>Neuen Authenticator einrichten</value>
+  </data>
+  <data name="NewAuthenticatorIntro" xml:space="preserve">
+    <value>Der alte Authenticator funktioniert nicht mehr. Füge den neuen Schlüssel in deiner Authenticator-App hinzu.</value>
+  </data>
+  <data name="OfferTwoFactorTitle" xml:space="preserve">
+    <value>Zwei-Faktor-Anmeldung einschalten?</value>
+  </data>
+  <data name="OfferTwoFactorIntro" xml:space="preserve">
+    <value>Mit einer Authenticator-App reicht ein gestohlenes Passwort allein nicht zum Anmelden. Du kannst das auch später auf deiner Kontoseite einrichten.</value>
+  </data>
+  <data name="AuthenticatorStep1" xml:space="preserve">
+    <value>1. Scanne den QR-Code mit einer Authenticator-App (z. B. Aegis, 2FAS, Microsoft oder Google Authenticator) oder tippe den Schlüssel ab.</value>
+  </data>
+  <data name="AuthenticatorStep2" xml:space="preserve">
+    <value>2. Gib den Code ein, den die App anzeigt.</value>
+  </data>
+  <data name="AuthenticatorQrAlt" xml:space="preserve">
+    <value>QR-Code für die Authenticator-App</value>
+  </data>
+  <data name="AuthenticatorKeyLabel" xml:space="preserve">
+    <value>Schlüssel</value>
+  </data>
+  <data name="EnableTwoFactorSubmit" xml:space="preserve">
+    <value>Einschalten</value>
+  </data>
+  <data name="RecoveryCodesTitle" xml:space="preserve">
+    <value>Wiederherstellungscodes</value>
+  </data>
+  <data name="RecoveryCodesIntro" xml:space="preserve">
+    <value>Mit Wiederherstellungscodes kommst du in dein Konto, wenn Passwort oder Authenticator verloren sind. Sie werden nur einmal angezeigt.</value>
+  </data>
+  <data name="RecoveryCodesReveal" xml:space="preserve">
+    <value>Meine Wiederherstellungscodes anzeigen</value>
+  </data>
+  <data name="RecoveryCodesShownOnce" xml:space="preserve">
+    <value>Diese Codes werden nur dieses eine Mal angezeigt. Bewahre sie jetzt sicher auf.</value>
+  </data>
+  <data name="RecoveryCodesExplanation" xml:space="preserve">
+    <value>Jeder Code gilt einmal und ersetzt Passwort und Authenticator. Danach setzt du ein neues Passwort und bekommst neue Codes; die alten werden ungültig.</value>
+  </data>
+  <data name="RecoveryCodesDownload" xml:space="preserve">
+    <value>Als Textdatei herunterladen</value>
+  </data>
+  <data name="RecoveryCodesSaved" xml:space="preserve">
+    <value>Sicher aufbewahrt – weiter</value>
+  </data>
+  <data name="RecoveryCodesLeft" xml:space="preserve">
+    <value>Noch {0} unbenutzte Wiederherstellungscodes. Neue Codes ersetzen alle alten.</value>
+  </data>
+  <data name="RecoveryCodesRegenerate" xml:space="preserve">
+    <value>Neue Wiederherstellungscodes erzeugen</value>
+  </data>
+  <data name="ProfileTitle" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="RoleLabel" xml:space="preserve">
+    <value>Rolle</value>
+  </data>
+  <data name="RoleAdministrator" xml:space="preserve">
+    <value>Administrator</value>
+  </data>
+  <data name="RoleUser" xml:space="preserve">
+    <value>Benutzer (nur lesen)</value>
+  </data>
+  <data name="ChangePasswordTitle" xml:space="preserve">
+    <value>Passwort ändern</value>
+  </data>
+  <data name="ChangePasswordSubmit" xml:space="preserve">
+    <value>Passwort ändern</value>
+  </data>
+  <data name="PasswordChanged" xml:space="preserve">
+    <value>Dein Passwort wurde geändert. Andere Sitzungen sind abgemeldet.</value>
+  </data>
+  <data name="TwoFactorTitle" xml:space="preserve">
+    <value>Zwei-Faktor-Anmeldung</value>
+  </data>
+  <data name="TwoFactorExplanation" xml:space="preserve">
+    <value>Beim Anmelden wird dann zusätzlich ein Code aus einer Authenticator-App abgefragt.</value>
+  </data>
+  <data name="SetUpTwoFactor" xml:space="preserve">
+    <value>Einrichten</value>
+  </data>
+  <data name="DisableTwoFactorSubmit" xml:space="preserve">
+    <value>Ausschalten</value>
+  </data>
+  <data name="TwoFactorTurnedOn" xml:space="preserve">
+    <value>Die Zwei-Faktor-Anmeldung ist eingeschaltet. Bewahre deine neuen Wiederherstellungscodes auf.</value>
+  </data>
+  <data name="TwoFactorTurnedOff" xml:space="preserve">
+    <value>Die Zwei-Faktor-Anmeldung ist ausgeschaltet.</value>
+  </data>
+  <data name="ErrorInvalidSignIn" xml:space="preserve">
+    <value>Benutzername oder Passwort ist falsch.</value>
+  </data>
+  <data name="ErrorLockedOut" xml:space="preserve">
+    <value>Zu viele Fehlversuche. Das Konto ist für 15 Minuten gesperrt.</value>
+  </data>
+  <data name="ErrorInvalidSetupCode" xml:space="preserve">
+    <value>Der Einrichtungscode ist falsch.</value>
+  </data>
+  <data name="ErrorSetupAlreadyDone" xml:space="preserve">
+    <value>Dieser Server ist bereits eingerichtet.</value>
+  </data>
+  <data name="ErrorPasswordsDoNotMatch" xml:space="preserve">
+    <value>Die Passwörter stimmen nicht überein.</value>
+  </data>
+  <data name="ErrorWrongPassword" xml:space="preserve">
+    <value>Das Passwort ist falsch.</value>
+  </data>
+  <data name="ErrorInvalidAuthenticatorCode" xml:space="preserve">
+    <value>Der Code ist falsch oder abgelaufen.</value>
+  </data>
+  <data name="ErrorInvalidRecoveryCode" xml:space="preserve">
+    <value>Benutzername oder Wiederherstellungscode ist falsch.</value>
+  </data>
+  <data name="IdentityDefaultError" xml:space="preserve">
+    <value>Etwas ist schiefgelaufen.</value>
+  </data>
+  <data name="IdentityConcurrencyFailure" xml:space="preserve">
+    <value>Das Konto wurde gleichzeitig geändert. Bitte versuche es erneut.</value>
+  </data>
+  <data name="IdentityInvalidUserName" xml:space="preserve">
+    <value>Der Benutzername „{0}“ ist nicht erlaubt. Erlaubt sind Buchstaben, Ziffern und - . _ @ +.</value>
+  </data>
+  <data name="IdentityDuplicateUserName" xml:space="preserve">
+    <value>Der Benutzername „{0}“ ist bereits vergeben.</value>
+  </data>
+  <data name="IdentityInvalidEmail" xml:space="preserve">
+    <value>„{0}“ ist keine gültige E-Mail-Adresse.</value>
+  </data>
+  <data name="IdentityPasswordTooShort" xml:space="preserve">
+    <value>Das Passwort braucht mindestens {0} Zeichen.</value>
+  </data>
+  <data name="IdentityPasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Das Passwort braucht ein Sonderzeichen.</value>
+  </data>
+  <data name="IdentityPasswordRequiresDigit" xml:space="preserve">
+    <value>Das Passwort braucht eine Ziffer.</value>
+  </data>
+  <data name="IdentityPasswordRequiresLower" xml:space="preserve">
+    <value>Das Passwort braucht einen Kleinbuchstaben.</value>
+  </data>
+  <data name="IdentityPasswordRequiresUpper" xml:space="preserve">
+    <value>Das Passwort braucht einen Großbuchstaben.</value>
+  </data>
+  <data name="NavUsers" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="NavSettings" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="UserCreate" xml:space="preserve">
+    <value>Benutzer anlegen</value>
+  </data>
+  <data name="UserCreateSubmit" xml:space="preserve">
+    <value>Anlegen</value>
+  </data>
+  <data name="UserEdit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="UserSaved" xml:space="preserve">
+    <value>Der Benutzer wurde gespeichert.</value>
+  </data>
+  <data name="UserState" xml:space="preserve">
+    <value>Zustand</value>
+  </data>
+  <data name="UserYou" xml:space="preserve">
+    <value>du</value>
+  </data>
+  <data name="UserActions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="UserNewInvitation" xml:space="preserve">
+    <value>Neuer Einladungslink</value>
+  </data>
+  <data name="UserNewInvitationHint" xml:space="preserve">
+    <value>Erzeugt einen neuen Link für {0}. Ein früherer Link wird ungültig.</value>
+  </data>
+  <data name="UserNewInvitationSubmit" xml:space="preserve">
+    <value>Link erzeugen</value>
+  </data>
+  <data name="UserRevokeInvitation" xml:space="preserve">
+    <value>Einladung widerrufen</value>
+  </data>
+  <data name="UserRevokeInvitationConfirm" xml:space="preserve">
+    <value>Der Einladungslink von {0} wird ungültig.</value>
+  </data>
+  <data name="UserResetPassword" xml:space="preserve">
+    <value>Passwort zurücksetzen</value>
+  </data>
+  <data name="UserResetPasswordConfirm" xml:space="preserve">
+    <value>{0} bekommt ein Startpasswort und muss beim nächsten Anmelden ein neues festlegen. Laufende Sitzungen enden.</value>
+  </data>
+  <data name="UserDisableTwoFactor" xml:space="preserve">
+    <value>Zwei-Faktor-Anmeldung ausschalten</value>
+  </data>
+  <data name="UserDisableTwoFactorConfirm" xml:space="preserve">
+    <value>Für einen verlorenen Authenticator: {0} meldet sich nur mit dem Passwort an und bekommt die Zwei-Faktor-Anmeldung erneut angeboten.</value>
+  </data>
+  <data name="UserTwoFactorDisabled" xml:space="preserve">
+    <value>Die Zwei-Faktor-Anmeldung wurde ausgeschaltet.</value>
+  </data>
+  <data name="UserUnlock" xml:space="preserve">
+    <value>Sperre aufheben</value>
+  </data>
+  <data name="UserUnlocked" xml:space="preserve">
+    <value>{0} kann sich wieder anmelden.</value>
+  </data>
+  <data name="UserSignOut" xml:space="preserve">
+    <value>Überall abmelden</value>
+  </data>
+  <data name="UserSignOutConfirm" xml:space="preserve">
+    <value>Alle Sitzungen von {0} enden innerhalb einer Minute.</value>
+  </data>
+  <data name="UserSignedOut" xml:space="preserve">
+    <value>{0} wird überall abgemeldet.</value>
+  </data>
+  <data name="UserDisable" xml:space="preserve">
+    <value>Konto deaktivieren</value>
+  </data>
+  <data name="UserDisableConfirm" xml:space="preserve">
+    <value>{0} kann sich nicht mehr anmelden, laufende Sitzungen enden. Du kannst das Konto später wieder aktivieren.</value>
+  </data>
+  <data name="UserEnable" xml:space="preserve">
+    <value>Konto aktivieren</value>
+  </data>
+  <data name="UserDelete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="UserDeleteConfirm" xml:space="preserve">
+    <value>{0} endgültig löschen? Das lässt sich nicht rückgängig machen.</value>
+  </data>
+  <data name="UserDeleted" xml:space="preserve">
+    <value>{0} wurde gelöscht.</value>
+  </data>
+  <data name="UserStateDisabled" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="UserStateLocked" xml:space="preserve">
+    <value>Gesperrt bis {0}</value>
+  </data>
+  <data name="UserStateNoAccess" xml:space="preserve">
+    <value>Noch kein Passwort</value>
+  </data>
+  <data name="UserStateInvitationExpired" xml:space="preserve">
+    <value>Einladung abgelaufen</value>
+  </data>
+  <data name="UserStateInvited" xml:space="preserve">
+    <value>Eingeladen bis {0}</value>
+  </data>
+  <data name="UserStateTemporaryPassword" xml:space="preserve">
+    <value>Startpasswort</value>
+  </data>
+  <data name="UserStateTwoFactor" xml:space="preserve">
+    <value>2FA</value>
+  </data>
+  <data name="UserAccessLabel" xml:space="preserve">
+    <value>Erste Anmeldung</value>
+  </data>
+  <data name="UserAccessTemporaryPassword" xml:space="preserve">
+    <value>Startpasswort</value>
+  </data>
+  <data name="UserAccessInvitation" xml:space="preserve">
+    <value>Einladungslink</value>
+  </data>
+  <data name="UserAccessTemporaryPasswordHint" xml:space="preserve">
+    <value>Der Server erzeugt ein Passwort, das du weitergibst. Es muss beim ersten Anmelden geändert werden.</value>
+  </data>
+  <data name="UserAccessInvitationHint" xml:space="preserve">
+    <value>Der Server erzeugt einen einmaligen Link, den du weitergibst. Darüber legt der Benutzer sein Passwort selbst fest.</value>
+  </data>
+  <data name="InvitationValidLabel" xml:space="preserve">
+    <value>Link gültig für</value>
+  </data>
+  <data name="InvitationValidOneDay" xml:space="preserve">
+    <value>1 Tag</value>
+  </data>
+  <data name="InvitationValidDays" xml:space="preserve">
+    <value>{0} Tage</value>
+  </data>
+  <data name="UserAccessTitle" xml:space="preserve">
+    <value>Zugang weitergeben</value>
+  </data>
+  <data name="UserAccessShownOnce" xml:space="preserve">
+    <value>Wird nur dieses eine Mal angezeigt. Kopiere es jetzt und gib es sicher weiter.</value>
+  </data>
+  <data name="UserAccessPasswordIntro" xml:space="preserve">
+    <value>Startpasswort für {0}:</value>
+  </data>
+  <data name="UserAccessLinkIntro" xml:space="preserve">
+    <value>Einladungslink für {0}, gültig bis {1}:</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Kopiert.</value>
+  </data>
+  <data name="CopyFailed" xml:space="preserve">
+    <value>Kopieren ging nicht; bitte den Text markieren und kopieren.</value>
+  </data>
+  <data name="Done" xml:space="preserve">
+    <value>Fertig</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="InvitationTitle" xml:space="preserve">
+    <value>Einladung annehmen</value>
+  </data>
+  <data name="InvitationIntro" xml:space="preserve">
+    <value>Du wurdest als {0} eingeladen. Lege dein Passwort fest (Link gültig bis {1}).</value>
+  </data>
+  <data name="InvitationSubmit" xml:space="preserve">
+    <value>Passwort festlegen</value>
+  </data>
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Die Einstellungen wurden gespeichert.</value>
+  </data>
+  <data name="SettingsServerTitle" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="PublicUrlLabel" xml:space="preserve">
+    <value>Öffentliche Adresse (optional)</value>
+  </data>
+  <data name="PublicUrlHint" xml:space="preserve">
+    <value>So erreichen Benutzer diesen Server, z. B. hinter einem Reverse Proxy. Wird für Einladungslinks verwendet; leer wird die Adresse aus deinem Browser genommen.</value>
+  </data>
+  <data name="ChangeEmailTitle" xml:space="preserve">
+    <value>E-Mail-Adresse</value>
+  </data>
+  <data name="ChangeEmailHint" xml:space="preserve">
+    <value>Optional; wird später für Benachrichtigungen genutzt.</value>
+  </data>
+  <data name="EmailChanged" xml:space="preserve">
+    <value>Deine E-Mail-Adresse wurde gespeichert.</value>
+  </data>
+  <data name="ErrorLastAdministrator" xml:space="preserve">
+    <value>Der Server braucht mindestens einen aktiven Administrator.</value>
+  </data>
+  <data name="ErrorNotOnYourOwnAccount" xml:space="preserve">
+    <value>Das geht nicht mit deinem eigenen Konto.</value>
+  </data>
+  <data name="ErrorInvalidPublicUrl" xml:space="preserve">
+    <value>Die öffentliche Adresse muss eine vollständige http- oder https-Adresse sein, z. B. https://backup.example.org/.</value>
+  </data>
+  <data name="ErrorInvitationInvalid" xml:space="preserve">
+    <value>Dieser Einladungslink ist ungültig, schon benutzt oder abgelaufen. Bitte einen Administrator um einen neuen.</value>
+  </data>
+  <data name="ErrorAccountDisabled" xml:space="preserve">
+    <value>Dieses Konto ist deaktiviert. Wende dich an einen Administrator.</value>
+  </data>
+  <data name="TlsTitle" xml:space="preserve">
+    <value>HTTPS-Zertifikat</value>
+  </data>
+  <data name="TlsHttpsOff" xml:space="preserve">
+    <value>HTTPS ist in dieser Installation aus (z. B. hinter einem Reverse Proxy, der HTTPS übernimmt). Ein hier hochgeladenes Zertifikat wird verwendet, sobald HTTPS eingeschaltet ist.</value>
+  </data>
+  <data name="TlsSubject" xml:space="preserve">
+    <value>Ausgestellt für</value>
+  </data>
+  <data name="TlsIssuer" xml:space="preserve">
+    <value>Ausgestellt von</value>
+  </data>
+  <data name="TlsValidUntil" xml:space="preserve">
+    <value>Gültig bis</value>
+  </data>
+  <data name="TlsNames" xml:space="preserve">
+    <value>Namen</value>
+  </data>
+  <data name="TlsSource" xml:space="preserve">
+    <value>Herkunft</value>
+  </data>
+  <data name="TlsThumbprint" xml:space="preserve">
+    <value>Fingerabdruck</value>
+  </data>
+  <data name="TlsSourceUploaded" xml:space="preserve">
+    <value>Hier hochgeladen</value>
+  </data>
+  <data name="TlsSourceConfigured" xml:space="preserve">
+    <value>Aus borgstudio-server.json</value>
+  </data>
+  <data name="TlsSourceSelfSigned" xml:space="preserve">
+    <value>Vom Server selbst signiert (Browser warnen davor)</value>
+  </data>
+  <data name="TlsHint" xml:space="preserve">
+    <value>Ein hochgeladenes Zertifikat gilt sofort für neue Verbindungen und hat Vorrang vor dem konfigurierten. Ports und Zertifikatsdatei stehen in borgstudio-server.json neben dem Programm.</value>
+  </data>
+  <data name="TlsFormatPfx" xml:space="preserve">
+    <value>PKCS#12-Datei (.pfx, .p12)</value>
+  </data>
+  <data name="TlsFormatPem" xml:space="preserve">
+    <value>PEM-Dateien (Zertifikat und Schlüssel)</value>
+  </data>
+  <data name="TlsPfxFile" xml:space="preserve">
+    <value>Zertifikatsdatei</value>
+  </data>
+  <data name="TlsPfxPassword" xml:space="preserve">
+    <value>Passwort der Datei</value>
+  </data>
+  <data name="TlsCertificateFile" xml:space="preserve">
+    <value>Zertifikat (mit Kette)</value>
+  </data>
+  <data name="TlsKeyFile" xml:space="preserve">
+    <value>Privater Schlüssel (unverschlüsselt)</value>
+  </data>
+  <data name="TlsUpload" xml:space="preserve">
+    <value>Zertifikat hochladen</value>
+  </data>
+  <data name="TlsRemoveUploaded" xml:space="preserve">
+    <value>Hochgeladenes Zertifikat entfernen</value>
+  </data>
+  <data name="TlsUploaded" xml:space="preserve">
+    <value>Das Zertifikat ist jetzt in Gebrauch.</value>
+  </data>
+  <data name="TlsRemoved" xml:space="preserve">
+    <value>Das hochgeladene Zertifikat wurde entfernt.</value>
+  </data>
+  <data name="ErrorCertificateUnreadable" xml:space="preserve">
+    <value>Die Datei ließ sich nicht als Zertifikat lesen, oder das Passwort ist falsch.</value>
+  </data>
+  <data name="ErrorCertificateNoPrivateKey" xml:space="preserve">
+    <value>Das Zertifikat hat keinen privaten Schlüssel.</value>
+  </data>
+  <data name="ErrorCertificateExpired" xml:space="preserve">
+    <value>Das Zertifikat ist abgelaufen.</value>
+  </data>
+  <data name="ErrorCertificateTooLarge" xml:space="preserve">
+    <value>Die Datei ist zu groß (höchstens 1 MB).</value>
+  </data>
+</root>

@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+@using BorgStudio.Server.Application.Settings
+@inject IDispatcher Dispatcher
+
+@* Plain layout for sign-in, setup and account steps. These pages render on the server without an
+   interactive connection, because they set cookies. *@
+<MudThemeProvider Theme="BorgStudioTheme.Theme" IsDarkMode="Theme.IsDark" ObserveSystemDarkModeChange="false" />
+
+<main class="account-shell">
+    <MudPaper Outlined="true" Class="account-card">
+        <div class="account-brand">
+            <img src="favicon.svg" alt="" class="account-logo" />
+            <MudText Typo="Typo.h6">@serverName</MudText>
+        </div>
+        <CascadingValue Name="@AppPageTitle.ServerNameCascade" Value="serverName">
+            @Body
+        </CascadingValue>
+    </MudPaper>
+</main>
+
+@code {
+    [CascadingParameter]
+    public ThemeContext Theme { get; set; } = new(ThemeMode.System, null);
+
+    private string serverName = BorgStudio.Server.Domain.Settings.ServerSettings.DefaultServerName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        serverName = (await Dispatcher.QueryAsync(new GetServerSettingsQuery())).ServerName;
+    }
+}

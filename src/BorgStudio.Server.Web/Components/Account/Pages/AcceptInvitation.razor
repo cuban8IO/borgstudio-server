@@ -1,0 +1,95 @@
+@page "/account/invitation"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using BorgStudio.Server.Application.Users
+@inject IDispatcher Dispatcher
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.InvitationTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.InvitationTitle</MudText>
+
+@if (invitation is null)
+{
+    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@Strings.ErrorInvitationInvalid</MudAlert>
+    <MudText Typo="Typo.body2">
+        <MudLink Href="account/login">@Strings.BackToSignIn</MudLink>
+    </MudText>
+}
+else
+{
+    <MudText Typo="Typo.body2" Class="mb-4">
+        @string.Format(Strings.InvitationIntro, invitation.UserName, invitation.ExpiresAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
+    </MudText>
+
+    <FormErrors Errors="errors" />
+
+    <EditForm Model="Input" method="post" OnValidSubmit="AcceptAsync" FormName="accept-invitation">
+        <DataAnnotationsValidator />
+
+        <FormField Label="@Strings.UserNameLabel" For="user-name">
+            <input id="user-name" class="form-input" value="@invitation.UserName" readonly autocomplete="username" />
+        </FormField>
+
+        <FormField Label="@Strings.PasswordLabel" For="password" Hint="@Strings.PasswordRules">
+            <InputText id="password" type="password" @bind-Value="Input.Password" class="form-input" autocomplete="new-password" autofocus />
+            <ValidationMessage For="() => Input.Password" class="form-error" />
+        </FormField>
+
+        <FormField Label="@Strings.ConfirmPasswordLabel" For="confirm-password">
+            <InputText id="confirm-password" type="password" @bind-Value="Input.ConfirmPassword" class="form-input" autocomplete="new-password" />
+            <ValidationMessage For="() => Input.ConfirmPassword" class="form-error" />
+        </FormField>
+
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+            @Strings.InvitationSubmit
+        </MudButton>
+    </EditForm>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? Token { get; set; }
+
+    [SupplyParameterFromForm]
+    private PasswordModel Input { get; set; } = default!;
+
+    private InvitationInfo? invitation;
+    private IReadOnlyList<string>? errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        if (!string.IsNullOrWhiteSpace(Token))
+        {
+            invitation = await Dispatcher.QueryAsync(new GetInvitationQuery(Token));
+        }
+    }
+
+    private async Task AcceptAsync()
+    {
+        var result = await Dispatcher.SendAsync(new AcceptInvitationCommand(Token ?? string.Empty, Input.Password, Input.ConfirmPassword));
+        if (!result.Succeeded)
+        {
+            errors = result.Errors;
+            return;
+        }
+
+        var user = await SignInManager.UserManager.FindByIdAsync(result.Value!)
+            ?? throw new InvalidOperationException("The invited user was not found.");
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        Navigation.NavigateTo(SignInFlow.CompletePath);
+    }
+
+    private sealed class PasswordModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        [Compare(nameof(Password), ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ErrorPasswordsDoNotMatch))]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

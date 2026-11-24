@@ -1,0 +1,108 @@
+@inherits LayoutComponentBase
+@using BorgStudio.Server.Application.Accounts
+@using BorgStudio.Server.Application.Settings
+@using System.Security.Claims
+@inject IJSRuntime JS
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<MudThemeProvider @ref="themeProvider"
+                  Theme="BorgStudioTheme.Theme"
+                  IsDarkMode="isDarkMode"
+                  ObserveSystemDarkModeChange="false" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="app-bar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       aria-label="@Strings.ToggleNavigation"
+                       OnClick="ToggleDrawer" />
+        <img src="favicon.svg" alt="" class="app-logo" />
+        <MudText Typo="Typo.h6" Class="ml-2 app-title">@serverName</MudText>
+        <MudSpacer />
+        <ThemeMenu Mode="themeMode" ModeChanged="SetThemeModeAsync" />
+        <AuthorizeView>
+            <UserMenu UserName="@context.User.Identity?.Name" />
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Class="app-drawer">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+            <CascadingValue Name="@AppPageTitle.ServerNameCascade" Value="serverName">
+                @Body
+            </CascadingValue>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    [CascadingParameter]
+    public ThemeContext InitialTheme { get; set; } = new(ThemeMode.System, null);
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private MudThemeProvider themeProvider = default!;
+    private ThemeMode themeMode;
+    private bool? systemPrefersDark;
+    private bool isDarkMode = true;
+    private bool drawerOpen = true;
+    private string serverName = BorgStudio.Server.Domain.Settings.ServerSettings.DefaultServerName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        themeMode = InitialTheme.Mode;
+        systemPrefersDark = InitialTheme.SystemPrefersDark;
+        ApplyThemeMode();
+        serverName = (await Dispatcher.QueryAsync(new GetServerSettingsQuery())).ServerName;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !RendererInfo.IsInteractive)
+        {
+            return;
+        }
+
+        systemPrefersDark = await themeProvider.GetSystemDarkModeAsync();
+        await themeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChangedAsync);
+        ApplyThemeMode();
+        StateHasChanged();
+    }
+
+    private Task OnSystemDarkModeChangedAsync(bool prefersDark)
+    {
+        systemPrefersDark = prefersDark;
+        ApplyThemeMode();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetThemeModeAsync(ThemeMode mode)
+    {
+        themeMode = mode;
+        ApplyThemeMode();
+        await JS.InvokeVoidAsync(
+            "borgStudio.setThemePreference",
+            ThemePreference.CookieName,
+            ThemePreference.ToCookieValue(mode));
+
+        // Remembered per user as well, so it follows them to other browsers.
+        if (AuthenticationState is not null
+            && (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) is { } userId)
+        {
+            await Dispatcher.SendAsync(new SetThemeModeCommand(userId, mode));
+        }
+    }
+
+    private void ApplyThemeMode() => isDarkMode = ThemePreference.IsDark(themeMode, systemPrefersDark);
+
+    private void ToggleDrawer() => drawerOpen = !drawerOpen;
+}

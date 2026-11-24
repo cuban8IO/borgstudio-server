@@ -1,0 +1,114 @@
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Users
+@using BorgStudio.Server.Domain.Settings
+@inject IDispatcher Dispatcher
+
+@* Creates a user (with a temporary password or an invitation link) or edits one. *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        @* No "required" error: it would show before typing; the save button stays off while the name is empty. *@
+        <MudTextField @bind-Value="userName" Label="@Strings.UserNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Immediate="true" AutoFocus="true" />
+        <MudTextField @bind-Value="email" Label="@Strings.EmailOptionalLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      InputType="InputType.Email" />
+        <MudSelect T="string" @bind-Value="role" Label="@Strings.RoleLabel" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelectItem T="string" Value="@Roles.User">@Strings.RoleUser</MudSelectItem>
+            <MudSelectItem T="string" Value="@Roles.Administrator">@Strings.RoleAdministrator</MudSelectItem>
+        </MudSelect>
+
+        @if (User is null)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4">@Strings.UserAccessLabel</MudText>
+            <MudRadioGroup T="NewUserAccess" @bind-Value="access">
+                <MudRadio T="NewUserAccess" Value="NewUserAccess.TemporaryPassword" Color="Color.Primary">@Strings.UserAccessTemporaryPassword</MudRadio>
+                <MudRadio T="NewUserAccess" Value="NewUserAccess.Invitation" Color="Color.Primary">@Strings.UserAccessInvitation</MudRadio>
+            </MudRadioGroup>
+            @if (access == NewUserAccess.Invitation)
+            {
+                <InvitationValidity @bind-Days="invitationDays" />
+            }
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">
+                @(access == NewUserAccess.Invitation ? Strings.UserAccessInvitationHint : Strings.UserAccessTemporaryPasswordHint)
+            </MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="busy || string.IsNullOrWhiteSpace(userName)">
+            @(User is null ? Strings.UserCreateSubmit : Strings.Save)
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string CurrentBaseUrl { get; set; } = string.Empty;
+
+    /// <summary>The user to edit; <c>null</c> creates a new one.</summary>
+    [Parameter]
+    public AccountInfo? User { get; set; }
+
+    private string userName = string.Empty;
+    private string? email;
+    private string role = Roles.User;
+    private NewUserAccess access = NewUserAccess.TemporaryPassword;
+    private int invitationDays = 7;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    protected override void OnInitialized()
+    {
+        if (User is not null)
+        {
+            userName = User.UserName;
+            email = User.Email;
+            role = User.IsAdministrator ? Roles.Administrator : Roles.User;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            if (User is null)
+            {
+                var created = await Dispatcher.SendAsync(new CreateUserCommand(
+                    ActingUserId, userName, email, role, access, invitationDays, CurrentBaseUrl));
+                if (created.Succeeded)
+                {
+                    MudDialog.Close(DialogResult.Ok(created.Value!));
+                    return;
+                }
+
+                errors = created.Errors;
+            }
+            else
+            {
+                var updated = await Dispatcher.SendAsync(new UpdateUserCommand(ActingUserId, User.Id, userName, email, role));
+                if (updated.Succeeded)
+                {
+                    MudDialog.Close(DialogResult.Ok(true));
+                    return;
+                }
+
+                errors = updated.Errors;
+            }
+        }
+        catch (RequestValidationException)
+        {
+            errors = [Strings.ValidationEmail];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

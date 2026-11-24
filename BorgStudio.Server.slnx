@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+    <File Path="NuGet.config" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/BorgStudio.Server.Domain/BorgStudio.Server.Domain.csproj" />
+    <Project Path="src/BorgStudio.Server.Application/BorgStudio.Server.Application.csproj" />
+    <Project Path="src/BorgStudio.Server.Infrastructure/BorgStudio.Server.Infrastructure.csproj" />
+    <Project Path="src/BorgStudio.Server.Web/BorgStudio.Server.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BorgStudio.Server.Tests/BorgStudio.Server.Tests.csproj" />
+  </Folder>
+</Solution>

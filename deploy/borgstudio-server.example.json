@@ -1,0 +1,30 @@
+{
+  // Settings of this BorgStudio Server. The install scripts copy this file to borgstudio-server.json
+  // next to the program once; updates never overwrite it. Restart the service after changes.
+  // Environment variables override it, e.g. BorgStudio__Http__Enabled=true.
+  "BorgStudio": {
+    // HTTPS on all addresses. Without a certificate here (or one uploaded under Settings),
+    // the server creates a self-signed one in data/tls.
+    "Https": {
+      "Enabled": true,
+      "Port": 8443,
+      // A .pfx/.p12 file and its password, or a PEM certificate plus its unencrypted key in CertificateKeyPath.
+      "CertificatePath": "",
+      "CertificatePassword": "",
+      "CertificateKeyPath": ""
+    },
+
+    // Plain HTTP, e.g. for a reverse proxy that handles HTTPS.
+    "Http": {
+      "Enabled": false,
+      "Port": 8080
+    },
+
+    // Trust X-Forwarded-For/-Proto/-Host headers. Only when the server is reachable through its
+    // reverse proxy alone.
+    "ForwardedHeaders": false,
+
+    // Where the database and keys are kept; empty means the "data" folder next to the program.
+    "DataDirectory": ""
+  }
+}

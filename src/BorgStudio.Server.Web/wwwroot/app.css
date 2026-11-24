@@ -1,0 +1,193 @@
+.app-logo {
+    width: 28px;
+    height: 28px;
+    margin-left: 4px;
+}
+
+.app-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-bar {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.app-drawer {
+    border-right: 1px solid var(--mud-palette-lines-default);
+}
+
+.status-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 24px;
+    margin: 0;
+}
+
+.status-list dt {
+    color: var(--mud-palette-text-secondary);
+}
+
+.status-list dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* User menu: the sign-out entry is a form post that looks like a menu item. */
+.user-menu-form {
+    margin: 0;
+}
+
+.user-menu-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: start;
+}
+
+/* Sign-in, setup and account steps */
+.account-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 16px;
+    background: var(--mud-palette-background);
+}
+
+.account-card {
+    width: 100%;
+    max-width: 460px;
+    padding: 32px;
+}
+
+.account-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.account-logo {
+    width: 36px;
+    height: 36px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.form-field label {
+    font-size: 0.875rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.form-input {
+    font: inherit;
+    color: var(--mud-palette-text-primary);
+    background: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: var(--mud-default-borderradius);
+    padding: 10px 12px;
+    outline: none;
+}
+
+.form-input:focus {
+    border-color: var(--mud-palette-primary);
+    box-shadow: 0 0 0 1px var(--mud-palette-primary);
+}
+
+.form-input.invalid {
+    border-color: var(--mud-palette-error);
+}
+
+.form-hint {
+    font-size: 0.75rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.form-error {
+    font-size: 0.75rem;
+    color: var(--mud-palette-error);
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.form-check input {
+    accent-color: var(--mud-palette-primary);
+    width: 16px;
+    height: 16px;
+}
+
+.authenticator-setup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+}
+
+.authenticator-qr {
+    width: 180px;
+    height: 180px;
+    image-rendering: pixelated;
+    border-radius: 4px;
+    background: #fff;
+    padding: 8px;
+}
+
+.authenticator-key,
+.recovery-codes code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+}
+
+.recovery-codes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 24px;
+    padding: 12px 12px 12px 36px;
+    margin: 0;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+}
+
+/* Temporary password or invitation link, shown once */
+.access-secret {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.95rem;
+    padding: 12px;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+    background: var(--mud-palette-background);
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+/* File pickers on the settings page */
+.file-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+    font-size: 0.875rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.file-field input[type="file"] {
+    color: var(--mud-palette-text-primary);
+}

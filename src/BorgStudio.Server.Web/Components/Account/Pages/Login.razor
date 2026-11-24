@@ -1,0 +1,111 @@
+@page "/account/login"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.SignInTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.SignInTitle</MudText>
+
+@if (Status == "idle")
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">@Strings.SignedOutIdle</MudAlert>
+}
+else if (Status == "locked")
+{
+    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@Strings.ErrorLockedOut</MudAlert>
+}
+
+<FormErrors Errors="errors" />
+
+<EditForm Model="Input" method="post" OnValidSubmit="SubmitAsync" FormName="login">
+    <DataAnnotationsValidator />
+
+    <FormField Label="@Strings.UserNameLabel" For="user-name">
+        <InputText id="user-name" @bind-Value="Input.UserName" class="form-input" autocomplete="username" autofocus />
+        <ValidationMessage For="() => Input.UserName" class="form-error" />
+    </FormField>
+
+    <FormField Label="@Strings.PasswordLabel" For="password">
+        <InputText id="password" type="password" @bind-Value="Input.Password" class="form-input" autocomplete="current-password" />
+        <ValidationMessage For="() => Input.Password" class="form-error" />
+    </FormField>
+
+    <label class="form-check">
+        <InputCheckbox @bind-Value="Input.RememberMe" />
+        <span>@Strings.RememberMe</span>
+    </label>
+
+    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+        @Strings.SignInSubmit
+    </MudButton>
+</EditForm>
+
+<MudText Typo="Typo.body2" Class="mt-6">
+    <MudLink Href="account/recover">@Strings.UseRecoveryCodeLink</MudLink>
+</MudText>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Status { get; set; }
+
+    [SupplyParameterFromForm]
+    private LoginModel Input { get; set; } = default!;
+
+    private IReadOnlyList<string>? errors;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+        if (HttpMethods.IsGet(HttpContext.Request.Method) && SignInManager.IsSignedIn(HttpContext.User))
+        {
+            Navigation.NavigateTo(AccountEndpoints.LocalUrl(ReturnUrl, "/"));
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        var userName = Input.UserName.Trim();
+        var result = await SignInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+        if (result.Succeeded)
+        {
+            var user = await SignInManager.UserManager.FindByNameAsync(userName);
+            SignInFlow.Continue(HttpContext, Navigation, user!, ReturnUrl);
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            Navigation.NavigateTo(
+                $"account/login-2fa?rememberMe={Input.RememberMe}&returnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}");
+        }
+        else if (result.IsLockedOut)
+        {
+            errors = [Strings.ErrorLockedOut];
+        }
+        else if (result.IsNotAllowed)
+        {
+            errors = [Strings.ErrorAccountDisabled];
+        }
+        else
+        {
+            errors = [Strings.ErrorInvalidSignIn];
+        }
+    }
+
+    private sealed class LoginModel
+    {
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessageResourceType = typeof(Strings), ErrorMessageResourceName = nameof(Strings.ValidationRequired))]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+}

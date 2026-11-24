@@ -1,0 +1,23 @@
+@* A labelled input for the static account pages, styled like MudBlazor's outlined fields. *@
+<div class="form-field">
+    <label for="@For">@Label</label>
+    @ChildContent
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="form-hint">@Hint</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string For { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

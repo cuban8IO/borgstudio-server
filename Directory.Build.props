@@ -1,0 +1,16 @@
+<Project>
+  <!-- Shared settings for every project in the solution. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <!-- Symbols inside the assemblies: no loose .pdb files, but stack traces keep line numbers. -->
+    <DebugType>embedded</DebugType>
+    <!-- Local builds only. Release builds get their version from the release workflow (git tags). -->
+    <Version>0.0.0-dev</Version>
+    <Product>BorgStudio Server</Product>
+    <Authors>Niklas Fischbach</Authors>
+    <Copyright>Copyright (c) 2026 Niklas Fischbach</Copyright>
+  </PropertyGroup>
+</Project>

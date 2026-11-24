@@ -1,0 +1,45 @@
+@* Shows recovery codes the one time they exist in readable form. *@
+<MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@Strings.RecoveryCodesShownOnce</MudAlert>
+<MudText Typo="Typo.body2" Class="mb-3">@Strings.RecoveryCodesExplanation</MudText>
+
+<ol class="recovery-codes" data-testid="recovery-codes">
+    @foreach (var recoveryCode in Codes)
+    {
+        <li><code>@recoveryCode</code></li>
+    }
+</ol>
+
+<div class="d-flex flex-wrap gap-2 mt-3">
+    <MudButton Href="@DownloadUri"
+               Variant="Variant.Outlined"
+               StartIcon="@Icons.Material.Filled.Download"
+               UserAttributes="@(new Dictionary<string, object> { ["download"] = FileName })">
+        @Strings.RecoveryCodesDownload
+    </MudButton>
+    @if (!string.IsNullOrEmpty(ContinueUrl))
+    {
+        <MudButton Href="@ContinueUrl" Variant="Variant.Filled" Color="Color.Primary">@Strings.RecoveryCodesSaved</MudButton>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Codes { get; set; } = [];
+
+    [Parameter]
+    public string? UserName { get; set; }
+
+    [Parameter]
+    public string? ContinueUrl { get; set; }
+
+    private string FileName => $"borgstudio-server-recovery-codes-{UserName}.txt";
+
+    private string DownloadUri
+    {
+        get
+        {
+            var text = $"BorgStudio Server – {UserName}{Environment.NewLine}{string.Join(Environment.NewLine, Codes)}{Environment.NewLine}";
+            return "data:text/plain;charset=utf-8," + Uri.EscapeDataString(text);
+        }
+    }
+}

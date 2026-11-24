@@ -1,0 +1,74 @@
+@page "/settings"
+@attribute [Authorize(Policy = Policies.Administrator)]
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Settings
+@using BorgStudio.Server.Domain.Settings
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.NavSettings" />
+
+<MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.NavSettings</MudText>
+
+@if (Status == "saved")
+{
+    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-4">@Strings.SettingsSaved</MudAlert>
+}
+
+<MudGrid>
+    <MudItem xs="12" md="8" lg="6">
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SettingsServerTitle</MudText>
+            <FormErrors Errors="errors" />
+            <MudTextField @bind-Value="serverName" Label="@Strings.ServerNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Placeholder="@ServerSettings.DefaultServerName" MaxLength="ServerSettings.MaxServerNameLength"
+                          HelperText="@Strings.ServerNameHint" />
+            <MudTextField @bind-Value="publicUrl" Label="@Strings.PublicUrlLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Placeholder="https://backup.example.org/" HelperText="@Strings.PublicUrlHint" Class="mt-2" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveAsync" Disabled="busy">
+                @Strings.Save
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8" lg="6">
+        <TlsCertificateCard ActingUserId="@userId" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? Status { get; set; }
+
+    private string? serverName;
+    private string? publicUrl;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+    private string userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var settings = await Dispatcher.QueryAsync(new GetServerSettingsQuery());
+        serverName = settings.ServerName;
+        publicUrl = settings.PublicUrl;
+    }
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        var result = await Dispatcher.SendAsync(new UpdateServerSettingsCommand(userId, serverName, publicUrl));
+        busy = false;
+        if (!result.Succeeded)
+        {
+            errors = result.Errors;
+            return;
+        }
+
+        // Reload, so the new name reaches the title bar.
+        Navigation.NavigateTo("settings?status=saved", forceLoad: true);
+    }
+}

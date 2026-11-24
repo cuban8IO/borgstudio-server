@@ -1,0 +1,55 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@using BorgStudio.Server.Web.Authentication
+
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="icon" type="image/svg+xml" href="@Assets["favicon.svg"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="PageRenderMode" />
+</head>
+
+<body data-idle-minutes="@idleMinutes">
+    <Routes @rendermode="PageRenderMode" Theme="theme" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+    <script src="@Assets["js/app.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private ThemeContext theme = new(ThemeMode.System, null);
+    private string? idleMinutes;
+
+    // Pages marked [ExcludeFromInteractiveRouting] (sign-in, setup, errors) render statically.
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var cookies = HttpContext.Request.Cookies;
+        theme = new ThemeContext(
+            ThemePreference.Parse(cookies[ThemePreference.CookieName]),
+            ThemePreference.ParseSystemDark(cookies[ThemePreference.SystemDarkCookieName]));
+
+        // Sessions without "stay signed in" end after a while without activity; the script watches for it.
+        var authentication = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        if (authentication.Succeeded && authentication.Properties?.IsPersistent != true)
+        {
+            idleMinutes = ((int)SessionLifetime.Idle.TotalMinutes).ToString(CultureInfo.InvariantCulture);
+        }
+    }
+}

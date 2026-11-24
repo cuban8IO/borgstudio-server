@@ -1,0 +1,165 @@
+name: release
+
+# Every push to main is a release (except pushes that only change the README or CI files, see
+# paths-ignore), and nothing else creates one:
+# tests -> next version (.github/scripts/next-release.sh) -> packages -> container image
+# -> tag vX.Y.Z + GitHub release.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - ".github/workflows/**"
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      notes: ${{ steps.next.outputs.notes }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history and tags for the version calculation
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test BorgStudio.Server.slnx --configuration Release
+
+      - name: Next version
+        id: next
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(bash .github/scripts/next-release.sh notes.md)
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "::error::Tag v$version already exists"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo "notes<<EOF_NOTES"
+            cat notes.md
+            echo "EOF_NOTES"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing **v$version**" >> "$GITHUB_STEP_SUMMARY"
+
+  package:
+    needs: prepare
+    uses: ./.github/workflows/package.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+
+  docker:
+    needs: [prepare, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: docker-*
+          path: context
+
+      - name: Build context
+        run: |
+          mv context/docker-amd64 context/amd64
+          mv context/docker-arm64 context/arm64
+          cp deploy/docker/Dockerfile context/
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: context
+          platforms: linux/amd64,linux/arm64
+          build-args: VERSION=${{ env.VERSION }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.IMAGE }}:latest
+
+  release:
+    needs: [prepare, package, docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      NOTES: ${{ needs.prepare.outputs.notes }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+
+      # Stable download links: …/releases/latest/download/lxc-install.sh and proxmox-create-ct.sh
+      - name: Installer scripts
+        run: cp deploy/lxc/lxc-install.sh deploy/proxmox/proxmox-create-ct.sh dist/
+
+      # lxc-install.sh checks every download against this list before installing it.
+      - name: Checksums
+        run: cd dist && sha256sum -- * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Create GitHub release
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          {
+            printf '%s\n\n' "$NOTES"
+            cat << EOF
+          ### Installation
+
+          | Where | How |
+          |---|---|
+          | Linux (x64, arm64) | Unpack \`…-linux-x64.tar.gz\` / \`…-linux-arm64.tar.gz\`, then \`sudo ./borgstudio-server/install.sh\` (systemd service) |
+          | Windows (x64) | Unpack \`…-win-x64.zip\`, then \`.\\borgstudio-server\\install.ps1\` in an elevated PowerShell (Windows service) |
+          | LXC / VM (Debian, Ubuntu) | \`curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/latest/download/lxc-install.sh \| bash\` |
+          | Proxmox VE host | \`bash -c "\$(curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/latest/download/proxmox-create-ct.sh)"\` |
+          | Docker | \`docker run -d -p 8080:8080 -v borgstudio-data:/app/data $image:$VERSION\` |
+
+          The archives contain the .NET runtime; nothing else is needed. The server listens on HTTPS port 8443
+          (self-signed certificate until you upload your own), the container on HTTP port 8080 for a reverse proxy.
+          On the first start the server prints a setup code for the first administrator. Running the install
+          script of a newer release updates the server and keeps its data. \`SHA256SUMS\` lists the checksums.
+          EOF
+          } > notes.md
+          gh release create "v$VERSION" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "BorgStudio Server $VERSION" \
+            --notes-file notes.md
