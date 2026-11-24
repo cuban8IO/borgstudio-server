@@ -3,12 +3,13 @@ name: release
 # Every push to main is a release (except pushes that only change the README or CI files, see
 # paths-ignore), and nothing else creates one:
 # tests -> next version (.github/scripts/next-release.sh) -> packages -> container image
-# -> tag vX.Y.Z + GitHub release.
+# -> tag vX.Y.Z + GitHub release -> CHANGELOG.md committed to main.
 on:
   push:
     branches: [main]
     paths-ignore:
       - "README.md"
+      - "CHANGELOG.md"
       - ".gitignore"
       - ".github/workflows/**"
 
@@ -59,11 +60,23 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Releasing **v$version**" >> "$GITHUB_STEP_SUMMARY"
 
+      # The packages embed this CHANGELOG.md; the release job commits it to main afterwards.
+      - name: Changelog
+        run: bash .github/scripts/update-changelog.sh "${{ steps.next.outputs.version }}" notes.md
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: changelog
+          path: CHANGELOG.md
+          if-no-files-found: error
+          retention-days: 7
+
   package:
     needs: prepare
     uses: ./.github/workflows/package.yml
     with:
       version: ${{ needs.prepare.outputs.version }}
+      changelog-artifact: changelog
 
   docker:
     needs: [prepare, package]
@@ -121,6 +134,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the changelog commit may have to be rebased onto a newer main
 
       - uses: actions/download-artifact@v8
         with:
@@ -163,3 +178,23 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "BorgStudio Server $VERSION" \
             --notes-file notes.md
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: changelog
+          path: .
+
+      # Pushes made with the workflow token start no workflows, and CHANGELOG.md is in paths-ignore anyway.
+      - name: Commit the changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "CHANGELOG.md is unchanged."
+            exit 0
+          fi
+          git commit -m "Update the changelog for $VERSION"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

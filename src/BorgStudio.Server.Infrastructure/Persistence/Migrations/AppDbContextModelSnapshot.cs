@@ -22,6 +22,9 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("CheckForUpdates")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("PublicUrl")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -39,6 +42,7 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = 1,
+                            CheckForUpdates = true,
                             ServerName = "BorgStudio Server"
                         });
                 });
@@ -82,6 +86,10 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("ChangelogSeenVersion")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()

@@ -666,4 +666,88 @@
   <data name="PasswordRuleMatch" xml:space="preserve">
     <value>Both passwords match</value>
   </data>
+  <data name="NavChangelog" xml:space="preserve">
+    <value>Changelog</value>
+  </data>
+  <data name="ChangelogRunning" xml:space="preserve">
+    <value>This server runs version {0}.</value>
+  </data>
+  <data name="ChangelogInstalled" xml:space="preserve">
+    <value>installed</value>
+  </data>
+  <data name="ChangelogSectionFeatures" xml:space="preserve">
+    <value>New features</value>
+  </data>
+  <data name="ChangelogSectionFixes" xml:space="preserve">
+    <value>Fixes</value>
+  </data>
+  <data name="ChangelogEmpty" xml:space="preserve">
+    <value>No changes recorded yet.</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Version {0} is available</value>
+  </data>
+  <data name="UpdateReleaseOnGitHub" xml:space="preserve">
+    <value>Release on GitHub</value>
+  </data>
+  <data name="UpdateHowLxc" xml:space="preserve">
+    <value>In the container's console, run:</value>
+  </data>
+  <data name="UpdateHowLxcHost" xml:space="preserve">
+    <value>Or on the Proxmox host: pct exec &lt;container ID&gt; -- update</value>
+  </data>
+  <data name="UpdateHowLinux" xml:space="preserve">
+    <value>Download the Linux archive of the new release, unpack it and run:</value>
+  </data>
+  <data name="UpdateHowWindows" xml:space="preserve">
+    <value>Download the Windows archive of the new release, unpack it and run in a PowerShell as administrator:</value>
+  </data>
+  <data name="UpdateHowDocker" xml:space="preserve">
+    <value>Pull the new image and recreate the container:</value>
+  </data>
+  <data name="UpdateHowOther" xml:space="preserve">
+    <value>The files are in the release on GitHub.</value>
+  </data>
+  <data name="UpdateNoticeAvailable" xml:space="preserve">
+    <value>BorgStudio Server {0} is available.</value>
+  </data>
+  <data name="UpdateNoticeUpdated" xml:space="preserve">
+    <value>BorgStudio Server was updated to {0}.</value>
+  </data>
+  <data name="UpdateNoticeWhatsNew" xml:space="preserve">
+    <value>See what's new</value>
+  </data>
+  <data name="UpdateNoticeHowTo" xml:space="preserve">
+    <value>What's new and how to update</value>
+  </data>
+  <data name="UpdatesTitle" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="UpdatesCheckDaily" xml:space="preserve">
+    <value>Look for new versions daily</value>
+  </data>
+  <data name="UpdatesHint" xml:space="preserve">
+    <value>Asks api.github.com for the list of releases; nothing about this server is sent. Saved with the button above.</value>
+  </data>
+  <data name="UpdatesCheckNow" xml:space="preserve">
+    <value>Check now</value>
+  </data>
+  <data name="UpdatesNotChecked" xml:space="preserve">
+    <value>Not checked yet; the first check runs a minute after the start.</value>
+  </data>
+  <data name="UpdatesUpToDate" xml:space="preserve">
+    <value>Up to date (checked {0}).</value>
+  </data>
+  <data name="UpdatesAvailable" xml:space="preserve">
+    <value>Version {0} is available (checked {1}).</value>
+  </data>
+  <data name="UpdatesFailed" xml:space="preserve">
+    <value>GitHub could not be reached (last try {0}).</value>
+  </data>
+  <data name="UpdatesDevelopment" xml:space="preserve">
+    <value>Development builds are not checked for updates.</value>
+  </data>
+  <data name="UpdatesOff" xml:space="preserve">
+    <value>Checking for updates is off.</value>
+  </data>
 </root>

@@ -3,12 +3,14 @@ using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Abstractions.Setup;
 using BorgStudio.Server.Application.Abstractions.Tls;
+using BorgStudio.Server.Application.Abstractions.Updates;
 using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Infrastructure.Identity;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Infrastructure.Platform;
 using BorgStudio.Server.Infrastructure.Setup;
 using BorgStudio.Server.Infrastructure.Tls;
+using BorgStudio.Server.Infrastructure.Updates;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +40,11 @@ public static class DependencyInjection
         services.Configure<ServerEndpointOptions>(configuration.GetSection(ServerEndpointOptions.SectionName));
         services.AddSingleton<TlsCertificateStore>();
         services.AddSingleton<ITlsCertificateService>(provider => provider.GetRequiredService<TlsCertificateStore>());
+
+        services.AddHttpClient<IReleaseFeed, GitHubReleaseFeed>(GitHubReleaseFeed.Configure);
+        services.AddSingleton<IChangelogSource, EmbeddedChangelog>();
+        services.AddSingleton<IInstallationInfo, InstallationInfo>();
+        services.AddHostedService<UpdateCheckWorker>();
 
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IInvitationStore, InvitationStore>();
