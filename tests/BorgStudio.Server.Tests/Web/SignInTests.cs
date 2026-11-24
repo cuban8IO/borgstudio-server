@@ -154,7 +154,7 @@ public sealed class SignInTests
     internal static async Task<string> AdminIdAsync(TestServer server)
     {
         await using var scope = server.Services.CreateAsyncScope();
-        var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<Infrastructure.Identity.ApplicationUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<global::BorgStudio.Server.Infrastructure.Identity.ApplicationUser>>();
         return (await users.FindByNameAsync(TestServer.AdminName))!.Id;
     }
 

@@ -573,4 +573,79 @@
   <data name="ErrorAccountDisabled" xml:space="preserve">
     <value>This account is disabled. Ask an administrator.</value>
   </data>
+  <data name="TlsTitle" xml:space="preserve">
+    <value>HTTPS certificate</value>
+  </data>
+  <data name="TlsSubject" xml:space="preserve">
+    <value>Issued to</value>
+  </data>
+  <data name="TlsIssuer" xml:space="preserve">
+    <value>Issued by</value>
+  </data>
+  <data name="TlsValidUntil" xml:space="preserve">
+    <value>Valid until</value>
+  </data>
+  <data name="TlsNames" xml:space="preserve">
+    <value>Names</value>
+  </data>
+  <data name="TlsSource" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="TlsThumbprint" xml:space="preserve">
+    <value>Thumbprint</value>
+  </data>
+  <data name="TlsSourceUploaded" xml:space="preserve">
+    <value>Uploaded here</value>
+  </data>
+  <data name="TlsSourceConfigured" xml:space="preserve">
+    <value>From borgstudio-server.json</value>
+  </data>
+  <data name="TlsSourceSelfSigned" xml:space="preserve">
+    <value>Self-signed by the server (browsers warn about it)</value>
+  </data>
+  <data name="TlsHint" xml:space="preserve">
+    <value>An uploaded certificate applies to new connections at once and takes precedence over the configured one. Ports and the certificate file are set in borgstudio-server.json next to the program.</value>
+  </data>
+  <data name="TlsFormatPfx" xml:space="preserve">
+    <value>PKCS#12 file (.pfx, .p12)</value>
+  </data>
+  <data name="TlsFormatPem" xml:space="preserve">
+    <value>PEM files (certificate and key)</value>
+  </data>
+  <data name="TlsPfxFile" xml:space="preserve">
+    <value>Certificate file</value>
+  </data>
+  <data name="TlsPfxPassword" xml:space="preserve">
+    <value>Password of the file</value>
+  </data>
+  <data name="TlsCertificateFile" xml:space="preserve">
+    <value>Certificate (with chain)</value>
+  </data>
+  <data name="TlsKeyFile" xml:space="preserve">
+    <value>Private key (unencrypted)</value>
+  </data>
+  <data name="TlsUpload" xml:space="preserve">
+    <value>Upload certificate</value>
+  </data>
+  <data name="TlsRemoveUploaded" xml:space="preserve">
+    <value>Remove uploaded certificate</value>
+  </data>
+  <data name="TlsUploaded" xml:space="preserve">
+    <value>The certificate is in use now.</value>
+  </data>
+  <data name="TlsRemoved" xml:space="preserve">
+    <value>The uploaded certificate was removed.</value>
+  </data>
+  <data name="ErrorCertificateUnreadable" xml:space="preserve">
+    <value>The file could not be read as a certificate, or the password is wrong.</value>
+  </data>
+  <data name="ErrorCertificateNoPrivateKey" xml:space="preserve">
+    <value>The certificate has no private key.</value>
+  </data>
+  <data name="ErrorCertificateExpired" xml:space="preserve">
+    <value>The certificate has expired.</value>
+  </data>
+  <data name="ErrorCertificateTooLarge" xml:space="preserve">
+    <value>The file is too large (at most 1 MB).</value>
+  </data>
 </root>

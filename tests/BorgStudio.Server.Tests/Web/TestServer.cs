@@ -61,6 +61,9 @@ public sealed class TestServer : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting(ServerPaths.ConfigurationKey, DataDirectory);
+        // The test host has no network listeners; no need for a certificate.
+        builder.UseSetting("BorgStudio:Https:Enabled", "false");
+        builder.UseSetting("BorgStudio:Http:Enabled", "true");
         builder.UseEnvironment("Production");
         builder.ConfigureTestServices(services =>
         {

@@ -26,6 +26,12 @@ internal sealed class AccountTexts : IAccountTexts
     public string InvalidPublicUrl => Strings.ErrorInvalidPublicUrl;
 
     public string InvitationInvalid => Strings.ErrorInvitationInvalid;
+
+    public string CertificateUnreadable => Strings.ErrorCertificateUnreadable;
+
+    public string CertificateNoPrivateKey => Strings.ErrorCertificateNoPrivateKey;
+
+    public string CertificateExpired => Strings.ErrorCertificateExpired;
 }
 
 /// <summary>ASP.NET Core Identity's messages in the user's language (English and German).</summary>

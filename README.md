@@ -3,7 +3,7 @@
 Self-hosted server for [BorgStudio](https://github.com/cuban8IO/borgstudio), the all-in-one app to manage BorgBackup
 repositories.
 
-> **Status:** early planning. There is no usable release yet.
+> **Status:** the base (sign-in, users, settings, packages) is in place; the backup features follow.
 
 ## Goals
 
@@ -11,6 +11,28 @@ repositories.
   one shared dashboard and notifications for all of them.
 - **Managed backup targets**: the server creates borg repositories and restricted SSH keys per machine, so BorgStudio
   can use it as a backup target – like a hosted service, but run by yourself.
+
+## Installation
+
+Each [release](https://github.com/cuban8IO/borgstudio-server/releases) has self-contained packages for Linux (x64,
+arm64) and Windows (x64) with the .NET runtime included, and a container image.
+
+| Where | How |
+| --- | --- |
+| Linux | Unpack `BorgStudio.Server-<version>-linux-x64.tar.gz` (or `-linux-arm64`), then `sudo ./borgstudio-server/install.sh`. Installs to `/opt/borgstudio-server` as the systemd service `borgstudio-server`, running as the user `borgstudio`. |
+| Windows | Unpack `BorgStudio.Server-<version>-win-x64.zip`, then run `.\borgstudio-server\install.ps1` in an elevated PowerShell. Installs to `C:\Program Files\BorgStudio Server` as the Windows service `BorgStudioServer`. |
+| LXC or VM (Debian 12/13, Ubuntu 22.04/24.04) | `curl -fsSL https://github.com/cuban8IO/borgstudio-server/releases/latest/download/lxc-install.sh \| bash` (as root) |
+| Proxmox VE host | `bash -c "$(curl -fsSL https://github.com/cuban8IO/borgstudio-server/releases/latest/download/proxmox-create-ct.sh)"` creates a Debian container and installs the server in it. |
+| Docker | `docker run -d -p 8080:8080 -v borgstudio-data:/app/data ghcr.io/cuban8io/borgstudio-server` – see [`deploy/docker/compose.yaml`](deploy/docker/compose.yaml). |
+
+Running the installer of a newer release updates the server; its data and configuration stay. `uninstall.sh` /
+`uninstall.ps1` remove it (`--purge` / `-Purge` also deletes the data).
+
+**HTTPS:** installed servers listen on HTTPS port 8443 with a self-signed certificate until you upload your own under
+*Settings* or name one in `borgstudio-server.json`. The container listens on HTTP port 8080 for a reverse proxy.
+Ports, certificate files and proxy handling are set in `borgstudio-server.json` next to the program (see
+[`deploy/borgstudio-server.example.json`](deploy/borgstudio-server.example.json)) or with environment variables
+such as `BorgStudio__Http__Enabled=true`.
 
 ## First start and sign-in
 
@@ -27,7 +49,9 @@ repositories.
   invitation links work behind a reverse proxy. Administrators can reset passwords, turn off two-factor
   authentication, lift lockouts, sign users out everywhere, disable and delete accounts; the last active
   administrator is protected.
-- **Locked out?** Run `BorgStudio.Server reset-admin [user name]` on the server, as the account the server runs under.
+- **Locked out?** Run `BorgStudio.Server reset-admin [user name]` on the server, as the account the server runs under
+  (Linux: `runuser -u borgstudio -- /opt/borgstudio-server/BorgStudio.Server reset-admin`, Windows: elevated, Docker:
+  `docker exec <container> /app/BorgStudio.Server reset-admin`).
   It prints a temporary password, turns two-factor authentication off, lifts the lockout and enables the account.
 
 ## Development

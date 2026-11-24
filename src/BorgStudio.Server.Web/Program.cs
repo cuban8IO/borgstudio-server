@@ -4,6 +4,7 @@ using BorgStudio.Server.Infrastructure;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Web.Authentication;
 using BorgStudio.Server.Web.Components;
+using BorgStudio.Server.Web.Hosting;
 using BorgStudio.Server.Web.Localization;
 
 using Microsoft.AspNetCore.Identity;
@@ -13,7 +14,9 @@ using MudBlazor.Services;
 // "BorgStudio.Server reset-admin [user name]" runs a console command instead of the server.
 var isResetAdmin = args.Length > 0 && args[0] == ResetAdminConsole.CommandName;
 
-var builder = WebApplication.CreateBuilder(isResetAdmin ? [] : args);
+var webArgs = isResetAdmin ? [] : args;
+var builder = WebApplication.CreateBuilder(webArgs);
+builder.ConfigureServerHosting(webArgs);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -37,6 +40,9 @@ if (isResetAdmin)
 }
 
 await DatabaseInitializer.InitializeAsync(app.Services);
+app.PrepareHttpsCertificate();
+
+app.UseForwardedHeadersIfConfigured();
 
 if (!app.Environment.IsDevelopment())
 {

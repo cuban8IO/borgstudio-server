@@ -22,4 +22,10 @@ public interface IAccountTexts
     string InvalidPublicUrl { get; }
 
     string InvitationInvalid { get; }
+
+    string CertificateUnreadable { get; }
+
+    string CertificateNoPrivateKey { get; }
+
+    string CertificateExpired { get; }
 }

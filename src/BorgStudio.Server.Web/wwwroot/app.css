@@ -177,3 +177,17 @@
     overflow-wrap: anywhere;
     user-select: all;
 }
+
+/* File pickers on the settings page */
+.file-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+    font-size: 0.875rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.file-field input[type="file"] {
+    color: var(--mud-palette-text-primary);
+}
