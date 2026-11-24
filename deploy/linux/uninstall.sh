@@ -18,7 +18,13 @@ else
   BOLD='' RESET='' GREEN='' PINK='' RED='' GRAY='' INTERACTIVE=0
 fi
 LOG=$(mktemp -t borgstudio-uninstall-XXXXXX.log)
-trap 'status=$?; [[ $status -eq 0 ]] && rm -f "$LOG"; exit $status' EXIT
+# The log stays only when something went wrong.
+cleanup() {
+  local status=$?
+  if [[ $status -eq 0 ]]; then rm -f "$LOG"; fi
+  exit "$status"
+}
+trap cleanup EXIT
 
 banner() {
   printf '%s%s' "$GREEN" "$BOLD"

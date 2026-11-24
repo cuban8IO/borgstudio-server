@@ -26,7 +26,14 @@ else
 fi
 LOG=$(mktemp -t borgstudio-lxc-XXXXXX.log)
 WORK=$(mktemp -d)
-trap 'status=$?; rm -rf "$WORK"; [[ $status -eq 0 ]] && rm -f "$LOG"; exit $status' EXIT
+# The log stays only when something went wrong.
+cleanup() {
+  local status=$?
+  rm -rf "$WORK"
+  if [[ $status -eq 0 ]]; then rm -f "$LOG"; fi
+  exit "$status"
+}
+trap cleanup EXIT
 
 banner() {
   printf '%s%s' "$GREEN" "$BOLD"

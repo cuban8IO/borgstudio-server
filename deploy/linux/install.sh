@@ -21,7 +21,13 @@ else
   BOLD='' RESET='' GREEN='' PINK='' ORANGE='' RED='' GRAY='' INTERACTIVE=0
 fi
 LOG=$(mktemp -t borgstudio-install-XXXXXX.log)
-trap 'status=$?; [[ $status -eq 0 ]] && rm -f "$LOG"; exit $status' EXIT
+# The log stays only when something went wrong.
+cleanup() {
+  local status=$?
+  if [[ $status -eq 0 ]]; then rm -f "$LOG"; fi
+  exit "$status"
+}
+trap cleanup EXIT
 
 banner() {
   [[ -n "${BORGSTUDIO_NO_BANNER:-}" ]] && return 0
