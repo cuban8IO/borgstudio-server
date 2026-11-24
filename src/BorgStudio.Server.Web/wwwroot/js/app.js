@@ -46,6 +46,32 @@
     rememberSystemTheme();
     dark.addEventListener("change", rememberSystemTheme);
 
+    // Password rule checklists (Components/Shared/PasswordChecklist.razor) on pages without an
+    // interactive connection: tick each rule while the user types. Same rules as the server's.
+    const passwordRules = {
+        length: (password, min) => password.length >= min,
+        upper: (password) => /\p{Lu}/u.test(password),
+        lower: (password) => /\p{Ll}/u.test(password),
+        digit: (password) => /\p{Nd}/u.test(password),
+        symbol: (password) => /[^\p{L}\p{Nd}]/u.test(password),
+    };
+    const updatePasswordChecklists = () => {
+        for (const list of document.querySelectorAll("ul.password-rules[data-password-for]")) {
+            const password = document.getElementById(list.dataset.passwordFor)?.value ?? "";
+            const confirmation = document.getElementById(list.dataset.confirmFor ?? "")?.value ?? "";
+            const min = Number(list.dataset.minLength) || 8;
+            for (const item of list.querySelectorAll("li[data-rule]")) {
+                const rule = item.dataset.rule;
+                const met = rule === "match"
+                    ? password.length > 0 && password === confirmation
+                    : passwordRules[rule]?.(password, min) ?? false;
+                item.classList.toggle("met", met);
+            }
+        }
+    };
+    document.addEventListener("input", updatePasswordChecklists);
+    updatePasswordChecklists();
+
     // Sessions without "stay signed in" end after a while without activity. Interactive pages do not
     // send requests on their own, so activity is reported now and then to keep the sign-in alive.
     const idleMinutes = Number(document.body.dataset.idleMinutes);

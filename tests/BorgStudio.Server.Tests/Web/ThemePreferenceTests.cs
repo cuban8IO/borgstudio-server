@@ -9,8 +9,8 @@ public sealed class ThemePreferenceTests
     [InlineData("light", ThemeMode.Light)]
     [InlineData("DARK", ThemeMode.Dark)]
     [InlineData(" system ", ThemeMode.System)]
-    [InlineData("purple", ThemeMode.System)]
-    [InlineData(null, ThemeMode.System)]
+    [InlineData("purple", ThemeMode.Dark)]
+    [InlineData(null, ThemeMode.Dark)]
     public void Parse(string? cookieValue, ThemeMode expected)
     {
         Assert.Equal(expected, ThemePreference.Parse(cookieValue));

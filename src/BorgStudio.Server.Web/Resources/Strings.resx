@@ -117,9 +117,6 @@
   <data name="ConfirmPasswordLabel" xml:space="preserve">
     <value>Repeat password</value>
   </data>
-  <data name="PasswordRules" xml:space="preserve">
-    <value>At least 8 characters with upper and lower case letters, a digit and a special character.</value>
-  </data>
   <data name="Continue" xml:space="preserve">
     <value>Continue</value>
   </data>
@@ -127,7 +124,7 @@
     <value>Cancel</value>
   </data>
   <data name="SkipForNow" xml:space="preserve">
-    <value>Not now</value>
+    <value>Continue without 2FA</value>
   </data>
   <data name="StateOn" xml:space="preserve">
     <value>On</value>
@@ -247,7 +244,7 @@
     <value>Recovery codes</value>
   </data>
   <data name="RecoveryCodesIntro" xml:space="preserve">
-    <value>Recovery codes let you sign in when your password or authenticator is lost. They are shown only once.</value>
+    <value>Recovery codes get you into your account when you forget your password or lose your authenticator, so you need them even without two-factor authentication. They are shown only once.</value>
   </data>
   <data name="RecoveryCodesReveal" xml:space="preserve">
     <value>Show my recovery codes</value>
@@ -650,5 +647,23 @@
   </data>
   <data name="ErrorCertificateTooLarge" xml:space="preserve">
     <value>The file is too large (at most 1 MB).</value>
+  </data>
+  <data name="PasswordRuleLength" xml:space="preserve">
+    <value>At least {0} characters</value>
+  </data>
+  <data name="PasswordRuleUpper" xml:space="preserve">
+    <value>An upper case letter</value>
+  </data>
+  <data name="PasswordRuleLower" xml:space="preserve">
+    <value>A lower case letter</value>
+  </data>
+  <data name="PasswordRuleDigit" xml:space="preserve">
+    <value>A digit</value>
+  </data>
+  <data name="PasswordRuleSymbol" xml:space="preserve">
+    <value>A special character (e.g. ! ? # -)</value>
+  </data>
+  <data name="PasswordRuleMatch" xml:space="preserve">
+    <value>Both passwords match</value>
   </data>
 </root>

@@ -62,7 +62,9 @@ public sealed class SetupTests
 
         Assert.Equal("/account/complete", page.Path);
         Assert.Contains("Turn on two-factor authentication?", page.Text);
+        Assert.Contains("Continue without 2FA", page.Text);
         Assert.Contains("Backups at home", page.Text);
+        Assert.Contains("--mud-palette-background: rgba(20,20,20,1)", page.Html);
         Assert.False(File.Exists(Path.Combine(server.DataDirectory, "setup-code.txt")));
 
         // Everything else stays closed until the steps are done.
@@ -70,6 +72,7 @@ public sealed class SetupTests
 
         page = await browser.SubmitAsync(page, "skip-two-factor");
         Assert.Contains("Show my recovery codes", page.Text);
+        Assert.Contains("you need them even without two-factor authentication", page.Text);
 
         page = await browser.SubmitAsync(page, "reveal-codes");
         var codes = page.RecoveryCodes();

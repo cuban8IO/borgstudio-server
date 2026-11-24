@@ -59,9 +59,10 @@
             <MudTextField @bind-Value="currentPassword" Label="@Strings.CurrentPasswordLabel" InputType="InputType.Password"
                           Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="current-password" />
             <MudTextField @bind-Value="newPassword" Label="@Strings.NewPasswordLabel" InputType="InputType.Password"
-                          Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@Strings.PasswordRules" autocomplete="new-password" />
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" autocomplete="new-password" />
             <MudTextField @bind-Value="confirmPassword" Label="@Strings.ConfirmPasswordLabel" InputType="InputType.Password"
-                          Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="new-password" />
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" autocomplete="new-password" />
+            <PasswordChecklist Password="@newPassword" Confirmation="@confirmPassword" ShowMatch="true" />
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="ChangePasswordAsync"
                        Disabled="busy || string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword)">
                 @Strings.ChangePasswordSubmit
