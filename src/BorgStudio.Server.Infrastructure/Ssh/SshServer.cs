@@ -166,6 +166,12 @@ internal sealed class SshServer(
             logger.LogInformation("Created the SSH host key {Key}.", key);
         }
 
+        // sshd ignores a private key others can read, and ssh-keygen leaves the mode to the umask.
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(key, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
         var publicKey = SshPublicKey.Parse(await File.ReadAllTextAsync(key + ".pub", cancellationToken))
             ?? throw new InvalidOperationException($"{key}.pub is not a valid public key.");
         return new SshHostKey(publicKey.Algorithm, publicKey.Fingerprint, $"{publicKey.Algorithm} {publicKey.Blob}");
