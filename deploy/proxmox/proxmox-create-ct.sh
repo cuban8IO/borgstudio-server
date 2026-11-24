@@ -109,5 +109,5 @@ pct exec "$CT_ID" -- bash -c "apt-get update -qq && DEBIAN_FRONTEND=noninteracti
 pct exec "$CT_ID" -- bash -c "curl -fsSL '$INSTALLER_URL' | bash"
 
 echo
-echo "Done. Container $CT_ID runs BorgStudio Server; update later with:"
-echo "  pct exec $CT_ID -- bash -c \"curl -fsSL '$INSTALLER_URL' | bash\""
+echo "Done. Container $CT_ID runs BorgStudio Server. Update it later in its console with \"update\","
+echo "or from this host with:  pct exec $CT_ID -- update"

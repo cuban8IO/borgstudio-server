@@ -25,7 +25,9 @@ arm64) and Windows (x64) with the .NET runtime included, and a container image.
 | Proxmox VE host | `bash -c "$(curl -fsSL https://github.com/cuban8IO/borgstudio-server/releases/latest/download/proxmox-create-ct.sh)"` creates a Debian container and installs the server in it. |
 | Docker | `docker run -d -p 8080:8080 -v borgstudio-data:/app/data ghcr.io/cuban8io/borgstudio-server` – see [`deploy/docker/compose.yaml`](deploy/docker/compose.yaml). |
 
-Running the installer of a newer release updates the server; its data and configuration stay. `uninstall.sh` /
+Running the installer of a newer release updates the server; its data and configuration stay. In an LXC
+container or VM set up with `lxc-install.sh`, the command `update` does that: it installs the latest release and
+does nothing when the server is up to date (from the Proxmox host: `pct exec <id> -- update`). `uninstall.sh` /
 `uninstall.ps1` remove it (`--purge` / `-Purge` also deletes the data).
 
 **HTTPS:** installed servers listen on HTTPS port 8443 with a self-signed certificate until you upload your own under
