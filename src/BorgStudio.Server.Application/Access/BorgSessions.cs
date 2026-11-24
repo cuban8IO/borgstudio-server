@@ -1,7 +1,10 @@
 using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Abstractions.Statistics;
+using BorgStudio.Server.Application.Abstractions.Storage;
 using BorgStudio.Server.Application.Storage;
 using BorgStudio.Server.Domain.Access;
+using BorgStudio.Server.Domain.Statistics;
 using BorgStudio.Server.Domain.Storage;
 
 using Microsoft.Extensions.Logging;
@@ -15,15 +18,17 @@ namespace BorgStudio.Server.Application.Access;
 public sealed record OpenBorgSessionCommand(Guid KeyId, int ProcessId) : ICommand<BorgSessionPlan>;
 
 /// <param name="Refusal">Why the connection is refused (shown to the borg client); <c>null</c> if it may go ahead.</param>
-/// <param name="RepositoryPath">The repository's folder.</param>
+/// <param name="RepositoryPath">The repository's folder on this server, or on <paramref name="Remote"/> relative to its home.</param>
 /// <param name="StorageQuotaBytes">Limit for the repository, from its own quota and its owner's; <c>null</c> = none.</param>
+/// <param name="Remote">The external datastore borg runs on; <c>null</c> for a folder on this server.</param>
 public sealed record BorgSessionPlan(
     string? Refusal,
     Guid SessionId = default,
     Guid RepositoryId = default,
     string RepositoryPath = "",
     bool AppendOnly = false,
-    long? StorageQuotaBytes = null)
+    long? StorageQuotaBytes = null,
+    RemoteTarget? Remote = null)
 {
     public static BorgSessionPlan Refuse(string reason) => new(reason);
 }
@@ -82,10 +87,11 @@ internal sealed class OpenBorgSessionCommandHandler(
         var quota = await QuotaAsync(repository, cancellationToken);
 
         await RemoveDeadSessionsAsync(access, processes, repository.Id, cancellationToken);
-        var session = RepositorySession.Start(repository.Id, key.Id, command.ProcessId, storage.Now);
+        var by = device?.Name ?? key.Name;
+        var session = RepositorySession.Start(repository.Id, key.Id, command.ProcessId, storage.Now, user.Id, by, repository.UsedBytes);
         access.Add(session);
         key.MarkUsed(storage.Now);
-        repository.RecordAccess(user.Id, device?.Name ?? key.Name, storage.Now);
+        repository.RecordAccess(user.Id, by, storage.Now);
         await access.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
@@ -95,9 +101,10 @@ internal sealed class OpenBorgSessionCommandHandler(
             null,
             session.Id,
             repository.Id,
-            Path.Combine(datastore.Path, repository.RelativePath.Replace('/', Path.DirectorySeparatorChar)),
+            datastore.IsExternal ? repository.RelativePath : StorageContext.LocationOf(datastore, repository.RelativePath),
             level == RepositoryAccess.AppendOnly,
-            quota);
+            quota,
+            datastore.IsExternal ? RemoteTarget.Of(datastore) : null);
     }
 
     /// <summary>
@@ -135,10 +142,14 @@ internal sealed class OpenBorgSessionCommandHandler(
     }
 }
 
-/// <summary>The borg connection ended: the session goes away and the repository is measured again.</summary>
-public sealed record CloseBorgSessionCommand(Guid SessionId) : ICommand;
+/// <summary>
+/// The borg connection ended: the session goes away, the repository is measured again, and the
+/// connection is recorded for the statistics (traffic, duration, growth, borg's exit code).
+/// </summary>
+public sealed record CloseBorgSessionCommand(Guid SessionId, long BytesReceived = 0, long BytesSent = 0, int? ExitCode = null) : ICommand;
 
-internal sealed class CloseBorgSessionCommandHandler(StorageContext storage, IAccessStore access) : ICommandHandler<CloseBorgSessionCommand>
+internal sealed class CloseBorgSessionCommandHandler(StorageContext storage, IAccessStore access, IStatisticsStore statistics)
+    : ICommandHandler<CloseBorgSessionCommand>
 {
     public async Task HandleAsync(CloseBorgSessionCommand command, CancellationToken cancellationToken)
     {
@@ -150,10 +161,27 @@ internal sealed class CloseBorgSessionCommandHandler(StorageContext storage, IAc
 
         access.Remove(session);
         var repository = await storage.Store.FindRepositoryAsync(session.RepositoryId, cancellationToken);
+        var usedAfter = session.UsedBefore;
         if (repository is { IsDeleted: false })
         {
             var datastore = (await storage.Store.FindDatastoreAsync(repository.DatastoreId, cancellationToken))!;
-            repository.RecordUsage(StorageMaintenance.MeasureSafely(storage, datastore, repository), storage.Now);
+            usedAfter = await StorageMaintenance.MeasureSafelyAsync(storage, datastore, repository, cancellationToken);
+            repository.RecordUsage(usedAfter, storage.Now);
+        }
+
+        if (repository is not null)
+        {
+            statistics.Add(ConnectionRecord.Create(
+                session.RepositoryId,
+                session.UserId,
+                session.By,
+                session.StartedAt,
+                storage.Now,
+                command.BytesReceived,
+                command.BytesSent,
+                command.ExitCode,
+                session.UsedBefore,
+                usedAfter));
         }
 
         await access.SaveChangesAsync(cancellationToken);

@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using BorgStudio.Server.Application.Abstractions;
 using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Setup;
+using BorgStudio.Server.Application.Abstractions.Storage;
 using BorgStudio.Server.Application.Abstractions.Updates;
 using BorgStudio.Server.Infrastructure;
 
@@ -42,6 +43,9 @@ public sealed class TestServer : WebApplicationFactory<Program>
 
     /// <summary>The SSH service as the pages and the interface see it (no real sshd runs in tests).</summary>
     public FakeSshService Ssh { get; } = new();
+
+    /// <summary>External datastores (Storage Box, SSH servers) without a network.</summary>
+    public FakeRemoteStorage Remote { get; } = new();
 
     public string SetupCode => Services.GetRequiredService<ISetupCodeStore>().Current
         ?? throw new InvalidOperationException("Setup is already done.");
@@ -84,9 +88,10 @@ public sealed class TestServer : WebApplicationFactory<Program>
             services.AddSingleton<IServerEnvironment>(new TestEnvironment(this));
             services.AddSingleton<IReleaseFeed>(Releases);
             services.AddSingleton<ISshService>(Ssh);
+            services.AddSingleton<IRemoteStorage>(Remote);
 
             // Tests run the storage work (measuring, trash, moves) themselves, at the moment they choose.
-            foreach (var worker in services.Where(d => d.ImplementationType?.Name == "StorageWorker").ToList())
+            foreach (var worker in services.Where(d => d.ImplementationType?.Name is "StorageWorker" or "SystemMetricsWorker").ToList())
             {
                 services.Remove(worker);
             }

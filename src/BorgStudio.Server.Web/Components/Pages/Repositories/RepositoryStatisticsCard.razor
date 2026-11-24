@@ -1,0 +1,154 @@
+@using System.Globalization
+@using BorgStudio.Server.Application.Statistics
+@using BorgStudio.Server.Domain.Statistics
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+
+@* Statistics of one repository, like the app's statistics tab: storage over time with forecast,
+   what each connection brought, the last 30 days, the activity calendar, and what the app reported. *@
+@if (statistics is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" lg="8">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.StatsStorageOverTime</MudText>
+                <LineChart Series="StorageSeries" Limit="@(statistics.Limit is { } limit ? (double)limit : null)" LimitLabel="@Strings.StatsQuota"
+                           FormatY="v => ByteSize.Format((long)v)" Label="@Strings.StatsStorageOverTime" EmptyText="@Strings.StatsNoHistory" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">
+                    @(statistics.FullAt is { } full
+                        ? string.Format(Strings.StatsFullAt, Formats.Month(full))
+                        : statistics.Limit is null ? Strings.StatsNoForecastNoQuota
+                        : statistics.History.Count < 3 ? Strings.StatsForecastNeedsDays : Strings.StatsNoForecast)
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.StatsLast30Days</MudText>
+                @{ var summary = statistics.Last30Days; }
+                <div class="kpi-grid">
+                    <div><div class="kpi-label">@Strings.StatsConnections</div><div class="kpi-value">@summary.Connections</div></div>
+                    <div><div class="kpi-label">@Strings.StatsSuccessRate</div><div class="kpi-value">@Formats.Percent(summary.SuccessRate)</div></div>
+                    <div><div class="kpi-label">@Strings.StatsReceived</div><div class="kpi-value">@ByteSize.Format(summary.BytesReceived)</div></div>
+                    <div><div class="kpi-label">@Strings.StatsSent</div><div class="kpi-value">@ByteSize.Format(summary.BytesSent)</div></div>
+                    <div><div class="kpi-label">@Strings.StatsGrowth</div><div class="kpi-value">@ByteSize.Format(summary.Growth)</div></div>
+                    <div><div class="kpi-label">@Strings.StatsAverageDuration</div><div class="kpi-value">@(summary.AverageDuration is { } d ? Formats.Duration(d) : "–")</div></div>
+                </div>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
+                    @string.Format(Strings.StatsLastConnection, Formats.When(summary.LastConnection))
+                </MudText>
+                <MudText Typo="Typo.subtitle2" Class="mt-4">@Strings.StatsActivity</MudText>
+                <ActivityCalendar Days="statistics.Calendar" Tooltip="CalendarTooltip" Label="@Strings.StatsActivity" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.StatsPerConnection</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@Strings.StatsPerConnectionHint</MudText>
+                <ColumnChart Columns="ConnectionColumns" FormatY="v => ByteSize.Format((long)v)" Label="@Strings.StatsPerConnection"
+                             EmptyText="@Strings.StatsNoConnections" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.StatsFromApp</MudText>
+                @if (statistics.Reported is not { } reported)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@Strings.StatsNoReports</MudText>
+                }
+                else
+                {
+                    <div class="kpi-grid mb-4">
+                        <div><div class="kpi-label">@Strings.StatsArchives</div><div class="kpi-value">@(reported.Archives?.ToString(CultureInfo.CurrentCulture) ?? "–")</div></div>
+                        <div><div class="kpi-label">@Strings.StatsOriginal</div><div class="kpi-value">@(reported.TotalOriginalBytes is { } o ? ByteSize.Format(o) : "–")</div></div>
+                        <div><div class="kpi-label">@Strings.StatsStored</div><div class="kpi-value">@(reported.UniqueCompressedBytes is { } u ? ByteSize.Format(u) : "–")</div></div>
+                        <div><div class="kpi-label">@Strings.StatsSavings</div><div class="kpi-value">@Formats.Percent(reported.SavingsPercent)</div></div>
+                        <div><div class="kpi-label">@Strings.StatsDeduplication</div><div class="kpi-value">@Formats.Ratio(reported.DeduplicationRatio)</div></div>
+                        <div><div class="kpi-label">@Strings.StatsCompression</div><div class="kpi-value">@Formats.Ratio(reported.CompressionRatio)</div></div>
+                        <div><div class="kpi-label">@Strings.StatsBackupSuccess</div><div class="kpi-value">@Formats.Percent(reported.SuccessRate30)</div></div>
+                        <div><div class="kpi-label">@Strings.StatsAverageDuration</div><div class="kpi-value">@(reported.AverageDuration30 is { } a ? Formats.Duration(a) : "–")</div></div>
+                    </div>
+                    <MudText Typo="Typo.subtitle2">@Strings.StatsNewPerBackup</MudText>
+                    <ColumnChart Columns="BackupColumns(reported)" FormatY="v => ByteSize.Format((long)v)" Label="@Strings.StatsNewPerBackup"
+                                 EmptyText="@Strings.StatsNoReports" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
+                        @string.Format(Strings.StatsReportedAt, Formats.When(reported.At))
+                        @if (reported.LastCheck is { } check)
+                        {
+                            <span> · @string.Format(Strings.StatsLastCheck, Formats.When(check.StartedAt), OutcomeText(check.Outcome))</span>
+                        }
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public Guid RepositoryId { get; set; }
+
+    private RepositoryStatistics? statistics;
+
+    protected override async Task OnParametersSetAsync() =>
+        statistics = await Dispatcher.QueryAsync(new GetRepositoryStatisticsQuery(ActingUserId, RepositoryId));
+
+    private IReadOnlyList<ChartSeries> StorageSeries
+    {
+        get
+        {
+            var points = statistics!.History.Select(p => (p.Day.ToDateTime(TimeOnly.MinValue), (double)p.UsedBytes)).ToList();
+            var series = new List<ChartSeries> { new(Strings.UsageLabel, points, ChartColors.Primary, Area: true) };
+            if (statistics.FullAt is { } full && statistics.Limit is { } limit && points.Count > 0)
+            {
+                series.Add(new ChartSeries(Strings.StatsForecast, [points[^1], (full.ToDateTime(TimeOnly.MinValue), (double)limit)], ChartColors.Warning, Dashed: true));
+            }
+
+            return series;
+        }
+    }
+
+    private IReadOnlyList<ChartColumn> ConnectionColumns => [.. statistics!.Connections.Select(c => new ChartColumn(
+        Formats.When(c.StartedAt),
+        Math.Max(c.Growth, 0),
+        c.Health,
+        string.Format(Strings.StatsConnectionTooltip, Formats.When(c.StartedAt), c.UserName, c.By, ByteSize.Format(c.Growth),
+            ByteSize.Format(c.BytesReceived), ByteSize.Format(c.BytesSent), Formats.Duration(c.Duration))))];
+
+    private static IReadOnlyList<ChartColumn> BackupColumns(ReportedStatistics reported) => [.. reported.Backups.Select(b => new ChartColumn(
+        Formats.When(b.StartedAt),
+        b.DeduplicatedBytes ?? 0,
+        StatisticsHealth(b.Outcome),
+        string.Format(Strings.StatsBackupTooltip, Formats.When(b.StartedAt), OutcomeText(b.Outcome),
+            b.DeduplicatedBytes is { } d ? ByteSize.Format(d) : "–", b.OriginalBytes is { } o ? ByteSize.Format(o) : "–", Formats.Duration(b.DurationSeconds))))];
+
+    private static Health StatisticsHealth(AppReportOutcome outcome) => outcome switch
+    {
+        AppReportOutcome.Succeeded => Health.Ok,
+        AppReportOutcome.Warnings => Health.Warning,
+        AppReportOutcome.Failed => Health.Failed,
+        _ => Health.Unknown,
+    };
+
+    internal static string OutcomeText(AppReportOutcome outcome) => outcome switch
+    {
+        AppReportOutcome.Succeeded => Strings.OutcomeSucceeded,
+        AppReportOutcome.Warnings => Strings.OutcomeWarnings,
+        AppReportOutcome.Failed => Strings.OutcomeFailed,
+        AppReportOutcome.Cancelled => Strings.OutcomeCancelled,
+        _ => Strings.OutcomeSkipped,
+    };
+
+    private static string CalendarTooltip(DayActivity day) =>
+        string.Format(Strings.StatsCalendarTooltip, Formats.Day(day.Day), day.Count);
+}

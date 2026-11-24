@@ -23,6 +23,8 @@ internal sealed class ApiTokenAuthenticationHandler(
 
     public const string DeviceClaim = "bss:device";
 
+    public const string DeviceNameClaim = "bss:device-name";
+
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var header = Request.Headers.Authorization.ToString();
@@ -43,6 +45,7 @@ internal sealed class ApiTokenAuthenticationHandler(
             new Claim(ClaimTypes.NameIdentifier, identity.UserId),
             new Claim(ClaimTypes.Name, identity.UserName),
             new Claim(DeviceClaim, identity.DeviceId.ToString()),
+            new Claim(DeviceNameClaim, identity.DeviceName),
         };
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName));
         return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));

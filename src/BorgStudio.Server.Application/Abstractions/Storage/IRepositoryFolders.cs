@@ -21,6 +21,9 @@ public interface IRepositoryFolders
     /// <summary>Size and free space of the disk the folder is on; <c>null</c> if it cannot be read.</summary>
     StorageSpace? GetSpace(string datastorePath);
 
+    /// <summary>Size and free space of the disk with the server's own data (database, keys).</summary>
+    StorageSpace? DataSpace();
+
     bool Exists(string datastorePath, string relativePath);
 
     /// <summary>Creates an empty repository folder (the client initializes the repository in it).</summary>
@@ -40,10 +43,24 @@ public interface IRepositoryFolders
     /// </summary>
     Task MoveToDatastoreAsync(
         string fromDatastorePath,
+        string fromRelativePath,
         string toDatastorePath,
-        string relativePath,
+        string toRelativePath,
         IProgress<long> progress,
         CancellationToken cancellationToken);
+
+    string FullPath(string datastorePath, string relativePath);
+
+    /// <summary>
+    /// A new empty folder to copy into: inside the datastore's ".incoming" (so moving it into place is
+    /// a rename), or in the server's data folder when no datastore is given.
+    /// </summary>
+    string NewStagingFolder(string? datastorePath);
+
+    /// <summary>Moves a complete staging folder into its place in the datastore.</summary>
+    void Adopt(string stagingFolder, string datastorePath, string relativePath);
+
+    void DeleteStaging(string stagingFolder);
 }
 
 public enum DatastoreProblem

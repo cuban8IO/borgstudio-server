@@ -3,6 +3,7 @@
 @using System.Security.Claims
 @using BorgStudio.Server.Application.Abstractions.Storage
 @using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Domain.Storage
 @using BorgStudio.Server.Web.Components.Pages.Repositories
 @using BorgStudio.Server.Web.Localization
 @inject IDispatcher Dispatcher
@@ -13,6 +14,12 @@
 
 <div class="d-flex flex-wrap align-center gap-3 mb-4">
     <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.NavDatastores</MudText>
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Cloud" OnClick="() => AddExternalAsync(DatastoreKind.HetznerStorageBox)">
+        @Strings.DatastoreAddHetzner
+    </MudButton>
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Lan" OnClick="() => AddExternalAsync(DatastoreKind.Ssh)">
+        @Strings.DatastoreAddSsh
+    </MudButton>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="() => EditAsync(null)">
         @Strings.DatastoreCreate
     </MudButton>
@@ -36,7 +43,12 @@ else
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="@Strings.DatastoreNameLabel">
-                @context.Name
+                <MudLink Href="@($"datastores/{context.Id}")">@context.Name</MudLink>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">@KindText(context.Kind)</MudChip>
+                @if (context.Error is not null)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" Class="ml-2" title="@context.Error">@Strings.DatastoreOffline</MudChip>
+                }
                 @if (context.IsReadOnly)
                 {
                     <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Class="ml-2">@Strings.DatastoreReadOnly</MudChip>
@@ -52,6 +64,10 @@ else
                 {
                     <UsageBar Used="space.TotalBytes - space.FreeBytes" Quota="space.TotalBytes" Style="min-width: 10rem" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.DatastoreFree, ByteSize.Format(space.FreeBytes))</MudText>
+                    @if (context.SpaceMeasuredAt is { } measured)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@string.Format(Strings.UsageMeasuredAt, BorgStudio.Server.Web.Localization.Formats.When(measured))</MudText>
+                    }
                 }
                 else
                 {
@@ -94,6 +110,29 @@ else
     }
 
     private async Task LoadAsync() => datastores = await Dispatcher.QueryAsync(new GetDatastoresQuery(actingUserId));
+
+    internal static string KindText(DatastoreKind kind) => kind switch
+    {
+        DatastoreKind.HetznerStorageBox => Strings.DatastoreKindHetzner,
+        DatastoreKind.Ssh => Strings.DatastoreKindSsh,
+        _ => Strings.DatastoreKindFolder,
+    };
+
+    private async Task AddExternalAsync(DatastoreKind kind)
+    {
+        var parameters = new DialogParameters<ExternalDatastoreDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.Kind, kind },
+        };
+        var title = kind == DatastoreKind.HetznerStorageBox ? Strings.DatastoreAddHetzner : Strings.DatastoreAddSsh;
+        var dialog = await DialogService.ShowAsync<ExternalDatastoreDialog>(title, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
 
     internal static string ProblemText(DatastoreProblem problem) => problem switch
     {

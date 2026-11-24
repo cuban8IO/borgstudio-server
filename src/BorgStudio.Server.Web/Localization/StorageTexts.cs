@@ -60,4 +60,18 @@ internal sealed class StorageTexts : IStorageTexts
     public string TokenExpiryInPast => Strings.ErrorTokenExpiryInPast;
 
     public string SshAddressInvalid => Strings.ErrorSshAddressInvalid;
+
+    public string ExternalUserInvalid => Strings.ErrorExternalUserInvalid;
+
+    public string ExternalHostInvalid => Strings.ErrorExternalHostInvalid;
+
+    public string ExternalBorgInvalid => Strings.ErrorExternalBorgInvalid;
+
+    public string ExternalHostKeyNotPublished => Strings.ErrorExternalHostKeyNotPublished;
+
+    public string ExternalAlreadyAdded => Strings.ErrorExternalAlreadyAdded;
+
+    public string ExternalUnreachable => Strings.ErrorExternalUnreachable;
+
+    public string ExternalCheckFailed => Strings.ErrorExternalCheckFailed;
 }

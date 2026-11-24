@@ -76,6 +76,8 @@ internal sealed class RepositoryFolders(ServerPaths paths) : IRepositoryFolders
         }
     }
 
+    public StorageSpace? DataSpace() => GetSpace(paths.DataDirectory);
+
     public bool Exists(string datastorePath, string relativePath) => Directory.Exists(Full(datastorePath, relativePath));
 
     public void Create(string datastorePath, string relativePath)
@@ -136,15 +138,54 @@ internal sealed class RepositoryFolders(ServerPaths paths) : IRepositoryFolders
         return new DirectoryInfo(full).EnumerateFiles("*", options).Sum(f => f.Length);
     }
 
+    public string FullPath(string datastorePath, string relativePath) => Full(datastorePath, relativePath);
+
+    public string NewStagingFolder(string? datastorePath)
+    {
+        var folder = datastorePath is null
+            ? Path.Combine(paths.DataDirectory, "staging", Guid.NewGuid().ToString("N"))
+            : Path.Combine(datastorePath, IncomingFolder, Guid.NewGuid().ToString("N"));
+        CreatePrivate(folder);
+        return folder;
+    }
+
+    public void Adopt(string stagingFolder, string datastorePath, string relativePath)
+    {
+        var target = Full(datastorePath, relativePath);
+        if (Directory.Exists(target))
+        {
+            throw new IOException($"The folder {target} already exists.");
+        }
+
+        CreatePrivate(Path.GetDirectoryName(target)!);
+        Directory.Move(stagingFolder, target);
+        RemoveEmptyParent(datastorePath, stagingFolder);
+    }
+
+    public void DeleteStaging(string stagingFolder)
+    {
+        if (Directory.Exists(stagingFolder))
+        {
+            Directory.Delete(stagingFolder, recursive: true);
+        }
+
+        var parent = Path.GetDirectoryName(stagingFolder);
+        if (parent is not null && Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any())
+        {
+            Directory.Delete(parent);
+        }
+    }
+
     public async Task MoveToDatastoreAsync(
         string fromDatastorePath,
+        string fromRelativePath,
         string toDatastorePath,
-        string relativePath,
+        string toRelativePath,
         IProgress<long> progress,
         CancellationToken cancellationToken)
     {
-        var source = Full(fromDatastorePath, relativePath);
-        var target = Full(toDatastorePath, relativePath);
+        var source = Full(fromDatastorePath, fromRelativePath);
+        var target = Full(toDatastorePath, toRelativePath);
         if (Directory.Exists(target))
         {
             throw new IOException($"The folder {target} already exists.");

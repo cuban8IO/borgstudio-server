@@ -71,6 +71,11 @@ such as `BorgStudio__Http__Enabled=true`.
   in `data/repositories`. A repository is the folder `<datastore>/<owner>/<name>`. Administrators add datastores,
   set them read-only for maintenance and move repositories between them. In Docker, mount a volume for every
   additional datastore.
+- **External datastores:** a Hetzner Storage Box (user name and the password once; the server installs its own key
+  and trusts only Hetzner's published host keys) or any SSH server with borg, e.g. a NAS or rsync.net (confirm its
+  host key). Clients still connect to this server, which passes borg through, so access rights, quotas and
+  statistics work the same. There a repository is a folder named by its id in the account's home – best use a
+  (sub-)account of its own. Moves to and from them use rsync.
 - **Quotas** can be set per repository (enforced by borg) and per user (the space of all their repositories,
   measured every 15 minutes).
 - **Deleted** repositories stay in the trash for 7 days and can be restored until then; the repositories of a deleted
@@ -93,8 +98,21 @@ such as `BorgStudio__Http__Enabled=true`.
   shown there, e.g. `borg init --encryption=repokey-blake2 ssh://borgstudio@backup.example.org:2222/./3f2a…`.
 - **Interface:** JSON at `/api/v1` with `Authorization: Bearer <token>` – `GET server`, `GET datastores`,
   `GET|POST repositories`, `GET repositories/{id}` (usage, quota, last access, who else uses it),
-  `PUT repositories/{id}/ssh-key`; pairing at `POST pairing` and `POST pairing/complete`. It can only do what backing
+  `PUT repositories/{id}/ssh-key`, `POST repositories/{id}/reports` (a run of the app: backup, check, prune or
+  compact with borg's figures); pairing at `POST pairing` and `POST pairing/complete`. It can only do what backing
   up needs: deleting, sharing and quotas stay in the web interface.
+
+## Statistics
+
+- **Overview:** stored data, savings, success of the last 30 days, which repository, user quota or datastore fills up
+  first, and one line per repository with its state; administrators also see the load of the system.
+- **Per repository:** storage over time with a forecast of when the quota is full, growth and traffic per connection,
+  the last 30 days, an activity calendar – and, from the BorgStudio app's reports, archives, savings, deduplication,
+  compression and results (the server cannot read the encrypted repositories itself).
+- **Datastores and system** (administrators): use of every datastore over time with a forecast, traffic per day,
+  and CPU, memory, disk I/O and network of the container or computer (Linux), kept for 24 hours per minute, 30 days
+  per hour and a year per day. Storage history: one point per day for two years; connections and reports: one year
+  and two years.
 
 ## Development
 

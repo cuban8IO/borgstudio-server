@@ -1338,4 +1338,370 @@
   <data name="ErrorSshAddressInvalid" xml:space="preserve">
     <value>Gib einen Rechnernamen oder eine Adresse ein, optional mit :Port.</value>
   </data>
+  <data name="NavSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="DatastoreAddHetzner" xml:space="preserve">
+    <value>Storage Box hinzufügen</value>
+  </data>
+  <data name="DatastoreAddSsh" xml:space="preserve">
+    <value>SSH-Server hinzufügen</value>
+  </data>
+  <data name="DatastoreKindFolder" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+  <data name="DatastoreKindHetzner" xml:space="preserve">
+    <value>Hetzner Storage Box</value>
+  </data>
+  <data name="DatastoreKindSsh" xml:space="preserve">
+    <value>SSH-Server</value>
+  </data>
+  <data name="DatastoreOffline" xml:space="preserve">
+    <value>Nicht erreichbar</value>
+  </data>
+  <data name="DatastoreUnreachable" xml:space="preserve">
+    <value>Der Datenspeicher war bei der letzten Messung nicht erreichbar: {0}</value>
+  </data>
+  <data name="DatastoreNotFound" xml:space="preserve">
+    <value>Diesen Datenspeicher gibt es nicht.</value>
+  </data>
+  <data name="DatastoreCapacity" xml:space="preserve">
+    <value>Kapazität</value>
+  </data>
+  <data name="DatastoreDiskUsed" xml:space="preserve">
+    <value>Platte belegt</value>
+  </data>
+  <data name="DatastoreRepositoriesUsed" xml:space="preserve">
+    <value>Repositories</value>
+  </data>
+  <data name="DatastoreTraffic" xml:space="preserve">
+    <value>Datenverkehr je Tag (90 Tage)</value>
+  </data>
+  <data name="ExternalHetznerIntro" xml:space="preserve">
+    <value>Der Server legt die Repositories auf der Storage Box ab und reicht borg-Verbindungen durch; Rechte, Kontingente und Statistiken bleiben. Am besten ein eigenes Unterkonto nur für BorgStudio: Die Repositories sind Ordner mit ihrer ID direkt in dessen Home.</value>
+  </data>
+  <data name="ExternalSshIntro" xml:space="preserve">
+    <value>Jeder SSH-Server mit borg, z. B. ein NAS oder rsync.net. Der Server reicht borg-Verbindungen durch. Am besten ein eigenes Konto nur für BorgStudio: Die Repositories sind Ordner mit ihrer ID direkt in dessen Home.</value>
+  </data>
+  <data name="ExternalHost" xml:space="preserve">
+    <value>Host</value>
+  </data>
+  <data name="ExternalPort" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="ExternalUser" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="ExternalHetznerUserHint" xml:space="preserve">
+    <value>Das (Unter-)Konto, z. B. u123456-sub1; der Server ist u123456-sub1.your-storagebox.de, Port 23.</value>
+  </data>
+  <data name="ExternalSshUserHint" xml:space="preserve">
+    <value>Das Konto auf dem SSH-Server, das die Repositories aufnimmt.</value>
+  </data>
+  <data name="ExternalAddress" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="ExternalHostKeyPublished" xml:space="preserve">
+    <value>Sein Host-Schlüssel {0} ist einer der von Hetzner veröffentlichten; er wird vertraut.</value>
+  </data>
+  <data name="ExternalHostKeyConfirm" xml:space="preserve">
+    <value>Welcher Host-Schlüssel gehört dem Server?</value>
+  </data>
+  <data name="ExternalHostKeyHint" xml:space="preserve">
+    <value>Vergleiche ihn mit dem Server selbst (ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub). Danach wird jeder andere Schlüssel abgelehnt.</value>
+  </data>
+  <data name="ExternalBorg" xml:space="preserve">
+    <value>borg auf dem Server</value>
+  </data>
+  <data name="ExternalBorgHint" xml:space="preserve">
+    <value>Das borg-Programm dort, z. B. borg-1.4 auf einer Storage Box.</value>
+  </data>
+  <data name="ExternalPassword" xml:space="preserve">
+    <value>Passwort (einmalig)</value>
+  </data>
+  <data name="ExternalPasswordHint" xml:space="preserve">
+    <value>Wird einmal genutzt, um den eigenen Schlüssel des Servers zu hinterlegen, und nicht gespeichert. Leer lassen, wenn der Schlüssel unten schon hinterlegt ist.</value>
+  </data>
+  <data name="ExternalPublicKey" xml:space="preserve">
+    <value>Der Schlüssel des Servers dafür</value>
+  </data>
+  <data name="ExternalPublicKeyHint" xml:space="preserve">
+    <value>Ohne Passwort: diese Zeile zuerst in ~/.ssh/authorized_keys des Kontos eintragen.</value>
+  </data>
+  <data name="ExternalAdded" xml:space="preserve">
+    <value>{0} wurde hinzugefügt ({1}).</value>
+  </data>
+  <data name="ErrorExternalUserInvalid" xml:space="preserve">
+    <value>Das ist kein gültiger Benutzername (Storage Box: u123456 oder u123456-sub1).</value>
+  </data>
+  <data name="ErrorExternalHostInvalid" xml:space="preserve">
+    <value>Gib einen gültigen Rechnernamen oder eine Adresse und einen Port zwischen 1 und 65535 an.</value>
+  </data>
+  <data name="ErrorExternalBorgInvalid" xml:space="preserve">
+    <value>Wähle ein borg-Programm (nur Buchstaben, Ziffern und . _ / + -).</value>
+  </data>
+  <data name="ErrorExternalHostKeyNotPublished" xml:space="preserve">
+    <value>Der Host-Schlüssel ist keiner der von Hetzner veröffentlichten. Prüfe den Benutzernamen; falls Hetzner seine Schlüssel geändert hat, als SSH-Server hinzufügen.</value>
+  </data>
+  <data name="ErrorExternalAlreadyAdded" xml:space="preserve">
+    <value>{0} ist schon ein Datenspeicher.</value>
+  </data>
+  <data name="ErrorExternalUnreachable" xml:space="preserve">
+    <value>{0} war nicht erreichbar. {1}</value>
+  </data>
+  <data name="ErrorExternalCheckFailed" xml:space="preserve">
+    <value>Anmelden oder borg dort ausführen ist fehlgeschlagen: {0}</value>
+  </data>
+  <data name="DurationSeconds" xml:space="preserve">
+    <value>{0} s</value>
+  </data>
+  <data name="DurationMinutes" xml:space="preserve">
+    <value>{0} min {1:00} s</value>
+  </data>
+  <data name="DurationHours" xml:space="preserve">
+    <value>{0} h {1:00} min</value>
+  </data>
+  <data name="OutcomeSucceeded" xml:space="preserve">
+    <value>erfolgreich</value>
+  </data>
+  <data name="OutcomeWarnings" xml:space="preserve">
+    <value>mit Warnungen</value>
+  </data>
+  <data name="OutcomeFailed" xml:space="preserve">
+    <value>fehlgeschlagen</value>
+  </data>
+  <data name="OutcomeCancelled" xml:space="preserve">
+    <value>abgebrochen</value>
+  </data>
+  <data name="OutcomeSkipped" xml:space="preserve">
+    <value>übersprungen</value>
+  </data>
+  <data name="OverviewStored" xml:space="preserve">
+    <value>Gespeichert</value>
+  </data>
+  <data name="OverviewRepositoryCount" xml:space="preserve">
+    <value>in {0} Repositories</value>
+  </data>
+  <data name="OverviewSavingsDetail" xml:space="preserve">
+    <value>von {0} Originaldaten</value>
+  </data>
+  <data name="OverviewSavingsUnknown" xml:space="preserve">
+    <value>Meldet die BorgStudio-App</value>
+  </data>
+  <data name="OverviewSuccess" xml:space="preserve">
+    <value>Erfolg (30 Tage)</value>
+  </data>
+  <data name="OverviewRuns" xml:space="preserve">
+    <value>{0} Läufe</value>
+  </data>
+  <data name="OverviewFullSoonest" xml:space="preserve">
+    <value>Zuerst voll</value>
+  </data>
+  <data name="OverviewNotFilling" xml:space="preserve">
+    <value>Nichts läuft voll</value>
+  </data>
+  <data name="OverviewTraffic" xml:space="preserve">
+    <value>Letzte 30 Tage: {0} empfangen, {1} gesendet</value>
+  </data>
+  <data name="OverviewLastBackup" xml:space="preserve">
+    <value>Sicherung {0}, {1}</value>
+  </data>
+  <data name="OverviewLastConnection" xml:space="preserve">
+    <value>Letzte Verbindung {0}</value>
+  </data>
+  <data name="ReasonOk" xml:space="preserve">
+    <value>Alles in Ordnung</value>
+  </data>
+  <data name="ReasonNeverUsed" xml:space="preserve">
+    <value>Noch nicht benutzt</value>
+  </data>
+  <data name="ReasonQuotaFull" xml:space="preserve">
+    <value>Kontingent aufgebraucht</value>
+  </data>
+  <data name="ReasonQuotaAlmostFull" xml:space="preserve">
+    <value>Kontingent fast aufgebraucht</value>
+  </data>
+  <data name="ReasonBackupFailed" xml:space="preserve">
+    <value>Letzte Sicherung fehlgeschlagen</value>
+  </data>
+  <data name="ReasonBackupWarnings" xml:space="preserve">
+    <value>Letzte Sicherung mit Warnungen</value>
+  </data>
+  <data name="ReasonIdle" xml:space="preserve">
+    <value>Seit über 7 Tagen keine Sicherung</value>
+  </data>
+  <data name="ReasonConnectionFailed" xml:space="preserve">
+    <value>Die letzte Verbindung endete mit einem Fehler</value>
+  </data>
+  <data name="StatsTitle" xml:space="preserve">
+    <value>Statistik</value>
+  </data>
+  <data name="StatsStorageOverTime" xml:space="preserve">
+    <value>Speicher im Zeitverlauf</value>
+  </data>
+  <data name="StatsQuota" xml:space="preserve">
+    <value>Kontingent</value>
+  </data>
+  <data name="StatsForecast" xml:space="preserve">
+    <value>Prognose</value>
+  </data>
+  <data name="StatsFullAt" xml:space="preserve">
+    <value>Voll etwa im {0}</value>
+  </data>
+  <data name="StatsNoForecast" xml:space="preserve">
+    <value>Läuft beim jetzigen Tempo nicht voll.</value>
+  </data>
+  <data name="StatsNoForecastNoQuota" xml:space="preserve">
+    <value>Kein Kontingent, daher keine Prognose.</value>
+  </data>
+  <data name="StatsForecastNeedsDays" xml:space="preserve">
+    <value>Für eine Prognose braucht es Messwerte von mindestens drei Tagen.</value>
+  </data>
+  <data name="StatsNoHistory" xml:space="preserve">
+    <value>Noch kein Verlauf: Gemessen wird alle 15 Minuten.</value>
+  </data>
+  <data name="StatsLast30Days" xml:space="preserve">
+    <value>Letzte 30 Tage</value>
+  </data>
+  <data name="StatsConnections" xml:space="preserve">
+    <value>Verbindungen</value>
+  </data>
+  <data name="StatsSuccessRate" xml:space="preserve">
+    <value>Ohne Fehler</value>
+  </data>
+  <data name="StatsReceived" xml:space="preserve">
+    <value>Empfangen</value>
+  </data>
+  <data name="StatsSent" xml:space="preserve">
+    <value>Gesendet</value>
+  </data>
+  <data name="StatsGrowth" xml:space="preserve">
+    <value>Zuwachs</value>
+  </data>
+  <data name="StatsAverageDuration" xml:space="preserve">
+    <value>Mittlere Dauer</value>
+  </data>
+  <data name="StatsLastConnection" xml:space="preserve">
+    <value>Letzte Verbindung: {0}</value>
+  </data>
+  <data name="StatsActivity" xml:space="preserve">
+    <value>Aktivität (12 Wochen)</value>
+  </data>
+  <data name="StatsCalendarTooltip" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="StatsPerConnection" xml:space="preserve">
+    <value>Zuwachs je Verbindung</value>
+  </data>
+  <data name="StatsPerConnectionHint" xml:space="preserve">
+    <value>Die letzten 30 Verbindungen: um wie viel das Repository gewachsen ist, gefärbt nach borgs Ergebnis.</value>
+  </data>
+  <data name="StatsNoConnections" xml:space="preserve">
+    <value>Noch keine Verbindungen.</value>
+  </data>
+  <data name="StatsConnectionTooltip" xml:space="preserve">
+    <value>{0} · {1} ({2}) · Zuwachs {3} · empfangen {4}, gesendet {5} · {6}</value>
+  </data>
+  <data name="StatsFromApp" xml:space="preserve">
+    <value>Von der BorgStudio-App gemeldet</value>
+  </data>
+  <data name="StatsNoReports" xml:space="preserve">
+    <value>Der Server kann das verschlüsselte Repository nicht lesen. Archive, Einsparung und Ergebnisse erscheinen hier, sobald eine BorgStudio-App ihre Läufe meldet.</value>
+  </data>
+  <data name="StatsArchives" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="StatsOriginal" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="StatsStored" xml:space="preserve">
+    <value>Gespeichert</value>
+  </data>
+  <data name="StatsSavings" xml:space="preserve">
+    <value>Einsparung</value>
+  </data>
+  <data name="StatsDeduplication" xml:space="preserve">
+    <value>Deduplizierung</value>
+  </data>
+  <data name="StatsCompression" xml:space="preserve">
+    <value>Kompression</value>
+  </data>
+  <data name="StatsBackupSuccess" xml:space="preserve">
+    <value>Erfolgreiche Sicherungen (30 Tage)</value>
+  </data>
+  <data name="StatsNewPerBackup" xml:space="preserve">
+    <value>Neue Daten je Sicherung</value>
+  </data>
+  <data name="StatsBackupTooltip" xml:space="preserve">
+    <value>{0} · {1} · neu {2} von {3} · {4}</value>
+  </data>
+  <data name="StatsReportedAt" xml:space="preserve">
+    <value>Letzte Meldung: {0}</value>
+  </data>
+  <data name="StatsLastCheck" xml:space="preserve">
+    <value>letzte Prüfung {0}, {1}</value>
+  </data>
+  <data name="SystemIntro" xml:space="preserve">
+    <value>Die Auslastung des Containers bzw. Rechners, in dem der Server läuft: jede Minute gemessen, 24 Stunden minütlich, 30 Tage stündlich und ein Jahr täglich aufbewahrt.</value>
+  </data>
+  <data name="SystemUnsupported" xml:space="preserve">
+    <value>Die Auslastung lässt sich nur unter Linux messen.</value>
+  </data>
+  <data name="SystemNoData" xml:space="preserve">
+    <value>Noch keine Messwerte.</value>
+  </data>
+  <data name="SystemRangeDay" xml:space="preserve">
+    <value>24 Stunden</value>
+  </data>
+  <data name="SystemRangeMonth" xml:space="preserve">
+    <value>30 Tage</value>
+  </data>
+  <data name="SystemRangeYear" xml:space="preserve">
+    <value>1 Jahr</value>
+  </data>
+  <data name="SystemCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="SystemMemory" xml:space="preserve">
+    <value>Arbeitsspeicher</value>
+  </data>
+  <data name="SystemMemoryTotal" xml:space="preserve">
+    <value>Verfügbar</value>
+  </data>
+  <data name="SystemDisk" xml:space="preserve">
+    <value>Datenträger-I/O</value>
+  </data>
+  <data name="SystemDiskRead" xml:space="preserve">
+    <value>Lesen</value>
+  </data>
+  <data name="SystemDiskWrite" xml:space="preserve">
+    <value>Schreiben</value>
+  </data>
+  <data name="SystemDiskRate" xml:space="preserve">
+    <value>Datenträger {0}</value>
+  </data>
+  <data name="SystemNetwork" xml:space="preserve">
+    <value>Netzwerk</value>
+  </data>
+  <data name="SystemNetworkIn" xml:space="preserve">
+    <value>Eingehend</value>
+  </data>
+  <data name="SystemNetworkOut" xml:space="preserve">
+    <value>Ausgehend</value>
+  </data>
+  <data name="SystemAverage" xml:space="preserve">
+    <value>Mittel</value>
+  </data>
+  <data name="SystemPeak" xml:space="preserve">
+    <value>Spitze</value>
+  </data>
+  <data name="SystemStorage" xml:space="preserve">
+    <value>Speicherplatz</value>
+  </data>
+  <data name="SystemDataDisk" xml:space="preserve">
+    <value>Serverdaten</value>
+  </data>
+  <data name="SystemDatastore" xml:space="preserve">
+    <value>Datenspeicher {0}</value>
+  </data>
 </root>

@@ -166,6 +166,26 @@ else
   step "Installing OpenSSH server (for borg)" install_openssh
 fi
 
+install_rsync() {
+  if command -v apt-get > /dev/null; then
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends rsync
+  elif command -v dnf > /dev/null; then
+    dnf install -y -q rsync
+  elif command -v zypper > /dev/null; then
+    zypper --non-interactive install rsync
+  else
+    echo "No supported package manager; install rsync yourself." >&2
+    return 1
+  fi
+}
+
+# rsync moves repositories to and from external datastores (Storage Box, SSH servers).
+if command -v rsync > /dev/null; then
+  ok "rsync is present"
+else
+  step "Installing rsync (for external datastores)" install_rsync
+fi
+
 # sshd runs borg through the account's shell, so the account needs a real one. Its password stays
 # locked: sshd only lets in keys BorgStudio knows, and each key can run nothing but borg.
 if id -u "$SERVICE_USER" > /dev/null 2>&1; then
