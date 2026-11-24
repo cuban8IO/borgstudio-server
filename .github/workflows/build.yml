@@ -116,6 +116,8 @@ jobs:
 
       - name: Install
         run: |
+          # On real systems /opt belongs to root and only root writes to it; sshd insists on that.
+          sudo chown root:root /opt && sudo chmod 755 /opt
           tar -xzf dist/*.tar.gz
           sudo ./borgstudio-server/install.sh | tee install.log
           grep -q "Setup code" install.log

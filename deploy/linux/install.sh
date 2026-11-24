@@ -253,6 +253,16 @@ set_permissions() {
 }
 step "Setting up data folder and configuration" set_permissions
 
+# The same holds for every folder above it; that is the system's business, so only a warning.
+parent=$(dirname "$INSTALL_DIR")
+while [[ "$parent" != / ]]; do
+  read -r owner mode <<< "$(stat -c '%u %a' "$parent")"
+  if [[ "$owner" != 0 || $((8#$mode & 8#022)) -ne 0 ]]; then
+    warn "$parent should belong to root and be writable only by it (chown root:root, chmod go-w); otherwise borg cannot log in"
+  fi
+  parent=$(dirname "$parent")
+done
+
 write_service() {
   cat > "/etc/systemd/system/$SERVICE.service" << EOF
 [Unit]
