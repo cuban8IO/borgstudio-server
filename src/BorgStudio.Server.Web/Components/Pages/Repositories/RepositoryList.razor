@@ -1,0 +1,115 @@
+@page "/repositories"
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Storage
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.NavRepositories" />
+
+<div class="d-flex flex-wrap align-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.NavRepositories</MudText>
+    @if (view is not null)
+    {
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.DeleteOutline" Href="repositories/trash">
+            @(view.TrashCount > 0 ? string.Format(Strings.TrashWithCount, view.TrashCount) : Strings.Trash)
+        </MudButton>
+        @if (view.Allowance.MayCreate)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="CreateAsync"
+                       Disabled="view.Allowance.Exceeded || view.Datastores.Count == 0">
+                @Strings.RepositoryCreate
+            </MudButton>
+        }
+    }
+</div>
+
+@if (view is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    @if (!view.HostingSupported)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">@Strings.RepositoriesNeedLinux</MudAlert>
+    }
+
+    <MudText Typo="Typo.body1" Class="mud-text-secondary mb-4">@Strings.RepositoriesIntro</MudText>
+
+    @if (view.Allowance.QuotaBytes is not null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-4" Style="max-width: 32rem">
+            <MudText Typo="Typo.subtitle2" GutterBottom="true">@Strings.YourStorage</MudText>
+            <UsageBar Used="view.Allowance.UsedBytes" Quota="view.Allowance.QuotaBytes" />
+            @if (view.Allowance.Exceeded)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Error" Class="mt-2">@Strings.UserQuotaExceededHint</MudText>
+            }
+        </MudPaper>
+    }
+
+    @if (view.Repositories.Count == 0)
+    {
+        <MudText Typo="Typo.body2">@(view.Allowance.MayCreate ? Strings.RepositoriesEmpty : Strings.RepositoriesEmptyNoCreate)</MudText>
+    }
+    else
+    {
+        <MudTable Items="view.Repositories" Hover="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm" Dense="true"
+                  OnRowClick="@((TableRowClickEventArgs<RepositorySummary> e) => Navigation.NavigateTo($"repositories/{e.Item!.Id}"))"
+                  RowClass="cursor-pointer">
+            <HeaderContent>
+                <MudTh>@Strings.RepositoryNameLabel</MudTh>
+                <MudTh>@Strings.RepositoryYourAccess</MudTh>
+                <MudTh>@Strings.UsageLabel</MudTh>
+                <MudTh>@Strings.DatastoreLabel</MudTh>
+                <MudTh>@Strings.RepositorySharedWith</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="@Strings.RepositoryNameLabel">
+                    <MudLink Href="@($"repositories/{context.Id}")" Typo="Typo.body2">@context.FullName</MudLink>
+                    @if (context.IsMoving)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Class="ml-2">@Strings.RepositoryMoving</MudChip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="@Strings.RepositoryYourAccess">
+                    @{ var (text, color) = RepositoryLabels.Role(context); }
+                    <MudChip T="string" Size="Size.Small" Color="color" Variant="Variant.Outlined">@text</MudChip>
+                </MudTd>
+                <MudTd DataLabel="@Strings.UsageLabel"><UsageBar Used="context.UsedBytes" Quota="context.QuotaBytes" Style="min-width: 8rem" /></MudTd>
+                <MudTd DataLabel="@Strings.DatastoreLabel">@context.DatastoreName</MudTd>
+                <MudTd DataLabel="@Strings.RepositorySharedWith">@(context.ShareCount == 0 ? "–" : string.Format(Strings.RepositoryShareCount, context.ShareCount))</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private string actingUserId = string.Empty;
+    private RepositoryListView? view;
+
+    protected override async Task OnInitializedAsync()
+    {
+        actingUserId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        view = await Dispatcher.QueryAsync(new GetRepositoriesQuery(actingUserId));
+    }
+
+    private async Task CreateAsync()
+    {
+        var parameters = new DialogParameters<RepositoryDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.Datastores, view!.Datastores },
+        };
+        var dialog = await DialogService.ShowAsync<RepositoryDialog>(Strings.RepositoryCreate, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        if (await dialog.Result is { Canceled: false, Data: Guid id })
+        {
+            Navigation.NavigateTo($"repositories/{id}");
+        }
+    }
+}

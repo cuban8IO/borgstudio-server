@@ -1,0 +1,141 @@
+@page "/datastores"
+@attribute [Authorize(Policy = Policies.Administrator)]
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Abstractions.Storage
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Web.Components.Pages.Repositories
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<AppPageTitle Title="@Strings.NavDatastores" />
+
+<div class="d-flex flex-wrap align-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.NavDatastores</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="() => EditAsync(null)">
+        @Strings.DatastoreCreate
+    </MudButton>
+</div>
+
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-4">@Strings.DatastoresIntro</MudText>
+
+@if (datastores is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudTable Items="datastores" Hover="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm" Dense="true">
+        <HeaderContent>
+            <MudTh>@Strings.DatastoreNameLabel</MudTh>
+            <MudTh>@Strings.DatastorePathLabel</MudTh>
+            <MudTh>@Strings.DatastoreDisk</MudTh>
+            <MudTh>@Strings.NavRepositories</MudTh>
+            <MudTh Style="width: 1%"></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@Strings.DatastoreNameLabel">
+                @context.Name
+                @if (context.IsReadOnly)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Class="ml-2">@Strings.DatastoreReadOnly</MudChip>
+                }
+                @if (context.Problem is { } problem)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" Class="ml-2">@ProblemText(problem)</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Strings.DatastorePathLabel"><code class="text-break">@context.Path</code></MudTd>
+            <MudTd DataLabel="@Strings.DatastoreDisk">
+                @if (context.Space is { } space)
+                {
+                    <UsageBar Used="space.TotalBytes - space.FreeBytes" Quota="space.TotalBytes" Style="min-width: 10rem" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.DatastoreFree, ByteSize.Format(space.FreeBytes))</MudText>
+                }
+                else
+                {
+                    <span>–</span>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Strings.NavRepositories">
+                @string.Format(Strings.DatastoreRepositories, context.RepositoryCount, ByteSize.Format(context.UsedBytes))
+                @if (context.TrashCount > 0)
+                {
+                    <div class="mud-text-secondary">@string.Format(Strings.DatastoreInTrash, context.TrashCount)</div>
+                }
+            </MudTd>
+            <MudTd>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="@Strings.DatastoreActions" Dense="true"
+                         AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    @{ var datastore = context; }
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => EditAsync(datastore)">@Strings.DatastoreEdit</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => DeleteAsync(datastore)"
+                                 Disabled="datastore.RepositoryCount + datastore.TrashCount > 0 || datastores.Count == 1">
+                        @Strings.DatastoreDelete
+                    </MudMenuItem>
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private string actingUserId = string.Empty;
+    private IReadOnlyList<DatastoreInfo>? datastores;
+
+    protected override async Task OnInitializedAsync()
+    {
+        actingUserId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => datastores = await Dispatcher.QueryAsync(new GetDatastoresQuery(actingUserId));
+
+    internal static string ProblemText(DatastoreProblem problem) => problem switch
+    {
+        DatastoreProblem.Missing => Strings.ErrorDatastorePathMissing,
+        DatastoreProblem.NotWritable => Strings.ErrorDatastorePathNotWritable,
+        _ => Strings.ErrorDatastorePathContainsServerData,
+    };
+
+    private async Task EditAsync(DatastoreInfo? datastore)
+    {
+        var parameters = new DialogParameters<DatastoreDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.Datastore, datastore },
+        };
+        var title = datastore is null ? Strings.DatastoreCreate : Strings.DatastoreEdit;
+        var dialog = await DialogService.ShowAsync<DatastoreDialog>(title, parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        if (await dialog.Result is { Canceled: false })
+        {
+            Snackbar.Add(Strings.DatastoreSaved, Severity.Success);
+            await LoadAsync();
+        }
+    }
+
+    private async Task DeleteAsync(DatastoreInfo datastore)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            Strings.DatastoreDelete,
+            string.Format(Strings.DatastoreDeleteConfirm, datastore.Name),
+            yesText: Strings.DatastoreDelete,
+            cancelText: Strings.Cancel);
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await Dispatcher.SendAsync(new DeleteDatastoreCommand(actingUserId, datastore.Id));
+        foreach (var error in result.Errors)
+        {
+            Snackbar.Add(error, Severity.Error);
+        }
+
+        await LoadAsync();
+    }
+}

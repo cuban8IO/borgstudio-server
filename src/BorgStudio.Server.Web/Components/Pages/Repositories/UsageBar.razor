@@ -1,0 +1,33 @@
+@using BorgStudio.Server.Web.Localization
+
+@* Space used, against a quota if there is one: "1.2 GB of 10 GB" with a bar, or just "1.2 GB". *@
+<div class="usage-bar" style="@Style">
+    <MudText Typo="Typo.body2">
+        @if (Quota is { } quota)
+        {
+            @string.Format(Strings.UsageOfQuota, ByteSize.Format(Used), ByteSize.Format(quota))
+        }
+        else
+        {
+            @ByteSize.Format(Used)
+        }
+    </MudText>
+    @if (Quota is { } limit)
+    {
+        <MudProgressLinear Value="@Percent(limit)" Color="@(Used >= limit ? Color.Error : Percent(limit) >= 90 ? Color.Warning : Color.Primary)"
+                           Rounded="true" Size="Size.Small" aria-label="@Strings.UsageLabel" />
+    }
+</div>
+
+@code {
+    [Parameter]
+    public long Used { get; set; }
+
+    [Parameter]
+    public long? Quota { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    private double Percent(long quota) => quota <= 0 ? 100 : Math.Min(100, Used * 100.0 / quota);
+}

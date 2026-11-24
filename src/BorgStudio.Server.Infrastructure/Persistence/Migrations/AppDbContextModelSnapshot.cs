@@ -47,6 +47,130 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.BackupRepository", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DatastoreId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FormerOwnerName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MoveError")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("MoveTargetDatastoreId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("QuotaBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("UsageMeasuredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UsedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatastoreId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Repositories", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.Datastore", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsReadOnly")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("Path")
+                        .IsUnique();
+
+                    b.ToTable("Datastores", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.RepositoryShare", b =>
+                {
+                    b.Property<Guid>("RepositoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Access")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("RepositoryId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RepositoryShares", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.UserStoragePolicy", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("MayCreateRepositories")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("QuotaBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserStoragePolicies", (string)null);
+                });
+
             modelBuilder.Entity("BorgStudio.Server.Domain.Users.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -284,6 +408,44 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.BackupRepository", b =>
+                {
+                    b.HasOne("BorgStudio.Server.Domain.Storage.Datastore", null)
+                        .WithMany()
+                        .HasForeignKey("DatastoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BorgStudio.Server.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.RepositoryShare", b =>
+                {
+                    b.HasOne("BorgStudio.Server.Domain.Storage.BackupRepository", null)
+                        .WithMany("Shares")
+                        .HasForeignKey("RepositoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BorgStudio.Server.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.UserStoragePolicy", b =>
+                {
+                    b.HasOne("BorgStudio.Server.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BorgStudio.Server.Domain.Users.Invitation", b =>
                 {
                     b.HasOne("BorgStudio.Server.Infrastructure.Identity.ApplicationUser", null)
@@ -342,6 +504,11 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Storage.BackupRepository", b =>
+                {
+                    b.Navigation("Shares");
                 });
 #pragma warning restore 612, 618
         }

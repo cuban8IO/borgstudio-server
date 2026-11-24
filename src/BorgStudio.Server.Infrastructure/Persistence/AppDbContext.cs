@@ -1,4 +1,5 @@
 using BorgStudio.Server.Domain.Settings;
+using BorgStudio.Server.Domain.Storage;
 using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Infrastructure.Identity;
 
@@ -12,6 +13,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<ServerSettings> ServerSettings => Set<ServerSettings>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<Datastore> Datastores => Set<Datastore>();
+
+    public DbSet<BackupRepository> Repositories => Set<BackupRepository>();
+
+    public DbSet<UserStoragePolicy> StoragePolicies => Set<UserStoragePolicy>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -34,6 +41,47 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             // One open invitation per user; it goes away with the user.
             invitation.HasIndex(i => i.UserId).IsUnique();
             invitation.HasOne<ApplicationUser>().WithMany().HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Datastore>(datastore =>
+        {
+            datastore.ToTable("Datastores");
+            datastore.HasKey(d => d.Id);
+            datastore.Property(d => d.Name).HasMaxLength(Datastore.MaxNameLength).IsRequired();
+            datastore.HasIndex(d => d.Name).IsUnique();
+            datastore.Property(d => d.Path).HasMaxLength(1024).IsRequired();
+            datastore.HasIndex(d => d.Path).IsUnique();
+        });
+
+        builder.Entity<BackupRepository>(repository =>
+        {
+            repository.ToTable("Repositories");
+            repository.HasKey(r => r.Id);
+            repository.Property(r => r.Name).HasMaxLength(RepositoryNames.MaxLength).IsRequired();
+            repository.Property(r => r.FormerOwnerName).HasMaxLength(256);
+            repository.Property(r => r.RelativePath).HasMaxLength(512).IsRequired();
+            repository.Property(r => r.MoveError).HasMaxLength(1024);
+            repository.HasIndex(r => r.OwnerId);
+            // Owners are handled before a user is deleted (their repositories go to the trash).
+            repository.HasOne<ApplicationUser>().WithMany().HasForeignKey(r => r.OwnerId).OnDelete(DeleteBehavior.SetNull);
+            repository.HasOne<Datastore>().WithMany().HasForeignKey(r => r.DatastoreId).OnDelete(DeleteBehavior.Restrict);
+            repository.HasMany(r => r.Shares).WithOne().HasForeignKey(s => s.RepositoryId).OnDelete(DeleteBehavior.Cascade);
+            repository.Navigation(r => r.Shares).HasField("shares").UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<RepositoryShare>(share =>
+        {
+            share.ToTable("RepositoryShares");
+            share.HasKey(s => new { s.RepositoryId, s.UserId });
+            share.Property(s => s.Access).HasConversion<int>();
+            share.HasOne<ApplicationUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<UserStoragePolicy>(policy =>
+        {
+            policy.ToTable("UserStoragePolicies");
+            policy.HasKey(p => p.UserId);
+            policy.HasOne<ApplicationUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<ServerSettings>(settings =>

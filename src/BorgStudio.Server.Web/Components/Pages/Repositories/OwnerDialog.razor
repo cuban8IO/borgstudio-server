@@ -1,0 +1,62 @@
+@using BorgStudio.Server.Application.Users
+@inject IDispatcher Dispatcher
+
+@* Picks a user as (new) owner of a repository; administrators only. Returns the user name. *@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@Intro</MudText>
+        <MudAutocomplete T="string" @bind-Value="userName" Label="@Strings.RepositoryOwner" Variant="Variant.Outlined" Margin="Margin.Dense"
+                         SearchFunc="SearchAsync" CoerceText="true" CoerceValue="true" ResetValueOnEmptyText="true" AutoFocus="true"
+                         Immediate="true" MaxItems="20" />
+        @if (ShowName)
+        {
+            <MudTextField @bind-Value="name" Label="@Strings.RepositoryNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2"
+                          HelperText="@Strings.RestoreNameHint" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="string.IsNullOrWhiteSpace(userName)"
+                   OnClick="@(() => MudDialog.Close(DialogResult.Ok(ShowName ? (object)new OwnerChoice(userName!, name) : userName!)))">
+            @Strings.Confirm
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Intro { get; set; } = string.Empty;
+
+    /// <summary>Also asks for a (new) name and returns an <see cref="OwnerChoice"/> (restoring from the trash).</summary>
+    [Parameter]
+    public bool ShowName { get; set; }
+
+    [Parameter]
+    public string? Name { get; set; }
+
+    private IReadOnlyList<string> users = [];
+    private string? userName;
+    private string? name;
+
+    protected override async Task OnInitializedAsync()
+    {
+        name = Name;
+        users = (await Dispatcher.QueryAsync(new GetUsersQuery(ActingUserId)))
+            .Where(u => !u.Account.IsDisabled)
+            .Select(u => u.Account.UserName)
+            .ToList();
+    }
+
+    private Task<IEnumerable<string>> SearchAsync(string? text, CancellationToken cancellationToken) =>
+        Task.FromResult(string.IsNullOrWhiteSpace(text)
+            ? users
+            : users.Where(u => u.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+    public sealed record OwnerChoice(string UserName, string? Name);
+}

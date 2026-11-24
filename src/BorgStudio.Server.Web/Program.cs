@@ -2,6 +2,7 @@ using System.Reflection;
 
 using BorgStudio.Server.Application;
 using BorgStudio.Server.Application.Abstractions.Accounts;
+using BorgStudio.Server.Application.Abstractions.Storage;
 using BorgStudio.Server.Infrastructure;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Web.Authentication;
@@ -38,6 +39,7 @@ builder.Services.AddInfrastructure(builder.Configuration)
     .AddSignInManager()
     .AddErrorDescriber<LocalizedIdentityErrorDescriber>();
 builder.Services.AddSingleton<IAccountTexts, AccountTexts>();
+builder.Services.AddSingleton<IStorageTexts, StorageTexts>();
 builder.Services.AddSingleton<RecoveryCodeFlash>();
 builder.Services.AddWebAuthentication(ServerPaths.FromConfiguration(builder.Configuration));
 

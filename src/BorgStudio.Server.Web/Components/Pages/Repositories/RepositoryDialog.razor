@@ -1,0 +1,106 @@
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Domain.Storage
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+
+@* Creates a repository (name, datastore, quota) or renames one and changes its quota. *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        <MudTextField @bind-Value="name" Label="@Strings.RepositoryNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Immediate="true" AutoFocus="true" MaxLength="RepositoryNames.MaxLength" HelperText="@Strings.RepositoryNameHint" />
+        @if (Repository is null)
+        {
+            <MudSelect T="Guid?" @bind-Value="datastoreId" Label="@Strings.DatastoreLabel" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2">
+                <MudSelectItem T="Guid?" Value="null">@Strings.DatastoreAutomatic</MudSelectItem>
+                @foreach (var datastore in Datastores)
+                {
+                    <MudSelectItem T="Guid?" Value="datastore.Id">@DatastoreText(datastore)</MudSelectItem>
+                }
+            </MudSelect>
+        }
+        <MudNumericField T="decimal?" @bind-Value="quotaGigabytes" Label="@Strings.RepositoryQuotaLabel" Variant="Variant.Outlined"
+                         Margin="Margin.Dense" Min="0" Step="10" Adornment="Adornment.End" AdornmentText="GB" Class="mt-2"
+                         HelperText="@Strings.RepositoryQuotaHint" />
+        @if (Repository is not null && !string.Equals(name.Trim(), Repository.Name, StringComparison.Ordinal))
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">@Strings.RepositoryRenameWarning</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="busy || string.IsNullOrWhiteSpace(name)">
+            @(Repository is null ? Strings.RepositoryCreateSubmit : Strings.Save)
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    /// <summary>Where a new repository can go.</summary>
+    [Parameter]
+    public IReadOnlyList<DatastoreChoice> Datastores { get; set; } = [];
+
+    /// <summary>The repository to edit; <c>null</c> creates a new one.</summary>
+    [Parameter]
+    public RepositorySummary? Repository { get; set; }
+
+    private string name = string.Empty;
+    private Guid? datastoreId;
+    private decimal? quotaGigabytes;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    protected override void OnInitialized()
+    {
+        if (Repository is not null)
+        {
+            name = Repository.Name;
+            quotaGigabytes = ByteSize.ToGigabytes(Repository.QuotaBytes);
+        }
+    }
+
+    private static string DatastoreText(DatastoreChoice datastore) => datastore.FreeBytes is { } free
+        ? string.Format(Strings.DatastoreWithFree, datastore.Name, ByteSize.Format(free))
+        : datastore.Name;
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            var quota = ByteSize.FromGigabytes(quotaGigabytes);
+            if (Repository is null)
+            {
+                var created = await Dispatcher.SendAsync(new CreateRepositoryCommand(ActingUserId, name, datastoreId, quota));
+                if (created.Succeeded)
+                {
+                    MudDialog.Close(DialogResult.Ok(created.Value));
+                    return;
+                }
+
+                errors = created.Errors;
+            }
+            else
+            {
+                var updated = await Dispatcher.SendAsync(new UpdateRepositoryCommand(ActingUserId, Repository.Id, name, quota));
+                if (updated.Succeeded)
+                {
+                    MudDialog.Close(DialogResult.Ok(true));
+                    return;
+                }
+
+                errors = updated.Errors;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

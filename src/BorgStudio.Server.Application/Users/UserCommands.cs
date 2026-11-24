@@ -4,6 +4,7 @@ using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Messaging;
 using BorgStudio.Server.Application.Abstractions.Validation;
 using BorgStudio.Server.Application.Accounts;
+using BorgStudio.Server.Application.Storage;
 using BorgStudio.Server.Domain.Users;
 
 using Microsoft.Extensions.Logging;
@@ -106,7 +107,8 @@ public sealed record UpdateUserCommand(
     [property: OptionalEmail] string? Email,
     [property: Required] string Role) : ICommand<AccountResult>;
 
-internal sealed class UpdateUserCommandHandler(UserAdministration admin) : ICommandHandler<UpdateUserCommand, AccountResult>
+internal sealed class UpdateUserCommandHandler(UserAdministration admin, RepositoryOwners repositories)
+    : ICommandHandler<UpdateUserCommand, AccountResult>
 {
     public async Task<AccountResult> HandleAsync(UpdateUserCommand command, CancellationToken cancellationToken)
     {
@@ -136,6 +138,8 @@ internal sealed class UpdateUserCommandHandler(UserAdministration admin) : IComm
             {
                 return renamed;
             }
+
+            await repositories.FollowRenameAsync(command.UserId, userName, cancellationToken);
         }
 
         var email = string.IsNullOrWhiteSpace(command.Email) ? null : command.Email.Trim();
@@ -323,7 +327,8 @@ public sealed record DeleteUserCommand(
     [property: Required] string ActingUserId,
     [property: Required] string UserId) : ICommand<AccountResult>;
 
-internal sealed class DeleteUserCommandHandler(UserAdministration admin, ILogger<DeleteUserCommandHandler> logger)
+internal sealed class DeleteUserCommandHandler(
+    UserAdministration admin, RepositoryOwners repositories, ILogger<DeleteUserCommandHandler> logger)
     : ICommandHandler<DeleteUserCommand, AccountResult>
 {
     public async Task<AccountResult> HandleAsync(DeleteUserCommand command, CancellationToken cancellationToken)
@@ -338,6 +343,11 @@ internal sealed class DeleteUserCommandHandler(UserAdministration admin, ILogger
         if (!await admin.OtherAdministratorRemainsAsync(target, cancellationToken))
         {
             return AccountResult.Failed(admin.Texts.LastAdministrator);
+        }
+
+        if (await repositories.OrphanAsync(command.UserId, target.UserName, cancellationToken) is { } problem)
+        {
+            return AccountResult.Failed(problem);
         }
 
         await admin.RemoveInvitationAsync(command.UserId, cancellationToken);
