@@ -3,7 +3,8 @@
 Self-hosted server for [BorgStudio](https://github.com/cuban8IO/borgstudio), the all-in-one app to manage BorgBackup
 repositories.
 
-> **Status:** the base (sign-in, users, settings, packages) is in place; the backup features follow.
+> **Status:** sign-in, users, settings, packages and the management of repositories are in place; connecting the
+> BorgStudio app to them follows.
 
 ## Goals
 
@@ -59,6 +60,23 @@ such as `BorgStudio__Http__Enabled=true`.
   (Linux: `runuser -u borgstudio -- /opt/borgstudio-server/BorgStudio.Server reset-admin`, Windows: elevated, Docker:
   `docker exec <container> /app/BorgStudio.Server reset-admin`).
   It prints a temporary password, turns two-factor authentication off, lifts the lockout and enables the account.
+
+## Repositories and datastores
+
+- **Repositories** belong to one user and can be shared with others, with *Full* access or *Append only* (new
+  backups and restoring, nothing can be deleted). Every user may create repositories unless an administrator
+  forbids it; administrators manage all of them. The data is encrypted by the BorgStudio app, the server never sees
+  its contents.
+- **Datastores** are the folders repositories live in, e.g. a second disk or a mounted NAS share; a new server has one
+  in `data/repositories`. A repository is the folder `<datastore>/<owner>/<name>`. Administrators add datastores,
+  set them read-only for maintenance and move repositories between them. In Docker, mount a volume for every
+  additional datastore.
+- **Quotas** can be set per repository (enforced by borg) and per user (the space of all their repositories,
+  measured every 15 minutes).
+- **Deleted** repositories stay in the trash for 7 days and can be restored until then; the repositories of a deleted
+  user go there too, so an administrator can hand them on.
+- Backups into the repositories need a server on Linux (LXC, VM, Linux service or Docker); on Windows they can only be
+  managed.
 
 ## Development
 

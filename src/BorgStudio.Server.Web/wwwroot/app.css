@@ -218,3 +218,16 @@
     content: "\2714";
     color: var(--mud-palette-success);
 }
+
+/* Long paths and names wrap instead of widening the page. */
+.text-break {
+    overflow-wrap: anywhere;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.usage-bar .mud-progress-linear {
+    margin-top: 2px;
+}

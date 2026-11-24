@@ -750,4 +750,391 @@
   <data name="UpdatesOff" xml:space="preserve">
     <value>Checking for updates is off.</value>
   </data>
+  <data name="NavRepositories" xml:space="preserve">
+    <value>Repositories</value>
+  </data>
+  <data name="NavDatastores" xml:space="preserve">
+    <value>Datastores</value>
+  </data>
+  <data name="RepositoriesIntro" xml:space="preserve">
+    <value>Repositories hold the backups of the BorgStudio app. They belong to one user, who can share them with others. The data is encrypted by the app; this server never sees its contents.</value>
+  </data>
+  <data name="RepositoriesNeedLinux" xml:space="preserve">
+    <value>This server runs on Windows: repositories can be managed here, but backups into them need a server on Linux (LXC, VM, Linux service or Docker).</value>
+  </data>
+  <data name="RepositoriesEmpty" xml:space="preserve">
+    <value>There are no repositories yet. Create one, or ask someone to share theirs with you.</value>
+  </data>
+  <data name="RepositoriesEmptyNoCreate" xml:space="preserve">
+    <value>No repository has been shared with you yet.</value>
+  </data>
+  <data name="YourStorage" xml:space="preserve">
+    <value>Your storage</value>
+  </data>
+  <data name="UserQuotaExceededHint" xml:space="preserve">
+    <value>Your quota is used up: no new backups start until you free space (delete or prune archives) or an administrator raises it.</value>
+  </data>
+  <data name="RepositoryCreate" xml:space="preserve">
+    <value>New repository</value>
+  </data>
+  <data name="RepositoryCreateSubmit" xml:space="preserve">
+    <value>Create repository</value>
+  </data>
+  <data name="RepositoryNameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="RepositoryNameHint" xml:space="preserve">
+    <value>Letters, digits, '.', '-' and '_', e.g. "laptop". Shown as owner/name.</value>
+  </data>
+  <data name="RepositoryQuotaLabel" xml:space="preserve">
+    <value>Quota (optional)</value>
+  </data>
+  <data name="RepositoryQuotaHint" xml:space="preserve">
+    <value>Upper limit for this repository; empty = no limit. borg enforces it.</value>
+  </data>
+  <data name="RepositoryRenameWarning" xml:space="preserve">
+    <value>Clients that use the old name have to be connected again.</value>
+  </data>
+  <data name="RepositoryYourAccess" xml:space="preserve">
+    <value>Your access</value>
+  </data>
+  <data name="RepositorySharedWith" xml:space="preserve">
+    <value>Shared with</value>
+  </data>
+  <data name="RepositoryShareCount" xml:space="preserve">
+    <value>{0} users</value>
+  </data>
+  <data name="RepositoryRoleOwner" xml:space="preserve">
+    <value>Owner</value>
+  </data>
+  <data name="RepositoryRoleAdministration" xml:space="preserve">
+    <value>Administration</value>
+  </data>
+  <data name="RepositoryMoving" xml:space="preserve">
+    <value>Moving</value>
+  </data>
+  <data name="RepositoryNotFoundTitle" xml:space="preserve">
+    <value>Repository not found</value>
+  </data>
+  <data name="RepositoryNotFound" xml:space="preserve">
+    <value>It does not exist, is in the trash, or you have no access to it.</value>
+  </data>
+  <data name="RepositoryEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="RepositoryActions" xml:space="preserve">
+    <value>More actions</value>
+  </data>
+  <data name="RepositorySaved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="RepositoryDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="RepositoryOwner" xml:space="preserve">
+    <value>Owner</value>
+  </data>
+  <data name="RepositoryLocation" xml:space="preserve">
+    <value>Folder on the server</value>
+  </data>
+  <data name="RepositoryCreated" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="RepositoryNoQuota" xml:space="preserve">
+    <value>no quota</value>
+  </data>
+  <data name="OwnerStorage" xml:space="preserve">
+    <value>All repositories of {0}</value>
+  </data>
+  <data name="UsageLabel" xml:space="preserve">
+    <value>Used</value>
+  </data>
+  <data name="UsageOfQuota" xml:space="preserve">
+    <value>{0} of {1}</value>
+  </data>
+  <data name="UsageMeasuredAt" xml:space="preserve">
+    <value>Measured {0}</value>
+  </data>
+  <data name="UsageNotMeasured" xml:space="preserve">
+    <value>Not measured yet</value>
+  </data>
+  <data name="UsageMeasureNow" xml:space="preserve">
+    <value>Measure now</value>
+  </data>
+  <data name="RepositoryAccessTitle" xml:space="preserve">
+    <value>Access</value>
+  </data>
+  <data name="RepositoryAccessIntro" xml:space="preserve">
+    <value>"Full" allows everything, including deleting and pruning archives. "Append only" allows new backups and restoring, but nothing can be deleted, which protects against ransomware. Everyone with access needs the repository's passphrase from its owner.</value>
+  </data>
+  <data name="RepositoryShare" xml:space="preserve">
+    <value>Share</value>
+  </data>
+  <data name="RepositoryShareSubmit" xml:space="preserve">
+    <value>Share</value>
+  </data>
+  <data name="RepositoryShareHint" xml:space="preserve">
+    <value>The passphrase is not shared: pass it on yourself.</value>
+  </data>
+  <data name="RepositoryAccessOf" xml:space="preserve">
+    <value>Access of {0}</value>
+  </data>
+  <data name="RepositoryUnshare" xml:space="preserve">
+    <value>Remove access of {0}</value>
+  </data>
+  <data name="RepositoryUnshareConfirm" xml:space="preserve">
+    <value>{0} will no longer be able to use this repository.</value>
+  </data>
+  <data name="RepositoryLeave" xml:space="preserve">
+    <value>Leave</value>
+  </data>
+  <data name="RepositoryLeaveConfirm" xml:space="preserve">
+    <value>You will no longer be able to use this repository.</value>
+  </data>
+  <data name="AccessFull" xml:space="preserve">
+    <value>Full</value>
+  </data>
+  <data name="AccessFullHint" xml:space="preserve">
+    <value>Everything, including deleting and pruning archives.</value>
+  </data>
+  <data name="AccessAppendOnly" xml:space="preserve">
+    <value>Append only</value>
+  </data>
+  <data name="AccessAppendOnlyHint" xml:space="preserve">
+    <value>New backups, listing and restoring; nothing can be deleted.</value>
+  </data>
+  <data name="RepositoryChangeOwner" xml:space="preserve">
+    <value>Change owner</value>
+  </data>
+  <data name="RepositoryChangeOwnerIntro" xml:space="preserve">
+    <value>Who should own {0}? The folder on the server moves along, and clients have to be connected again.</value>
+  </data>
+  <data name="RepositoryMove" xml:space="preserve">
+    <value>Move to another datastore</value>
+  </data>
+  <data name="RepositoryMoveIntro" xml:space="preserve">
+    <value>{0} is on {1} and takes {2}.</value>
+  </data>
+  <data name="RepositoryMoveTarget" xml:space="preserve">
+    <value>Move to</value>
+  </data>
+  <data name="RepositoryMoveHint" xml:space="preserve">
+    <value>The server copies the repository in the background and deletes it at the old place afterwards. Meanwhile it cannot be used.</value>
+  </data>
+  <data name="RepositoryMoveNoTarget" xml:space="preserve">
+    <value>There is no other writable datastore. Add one under Datastores first.</value>
+  </data>
+  <data name="RepositoryMoveSubmit" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="RepositoryMovingTo" xml:space="preserve">
+    <value>Moving to {0}…</value>
+  </data>
+  <data name="RepositoryMoveFailed" xml:space="preserve">
+    <value>The last move failed: {0}</value>
+  </data>
+  <data name="RepositoryDeleteTitle" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="RepositoryDeleteIntro" xml:space="preserve">
+    <value>The repository goes to the trash: nobody can use it any more, and after 7 days it is deleted for good. Until then it can be restored.</value>
+  </data>
+  <data name="RepositoryDelete" xml:space="preserve">
+    <value>Delete repository</value>
+  </data>
+  <data name="RepositoryDeleteConfirm" xml:space="preserve">
+    <value>Move {0} to the trash? It will be deleted for good after 7 days.</value>
+  </data>
+  <data name="RepositoryDeleted" xml:space="preserve">
+    <value>{0} is in the trash.</value>
+  </data>
+  <data name="Trash" xml:space="preserve">
+    <value>Trash</value>
+  </data>
+  <data name="TrashWithCount" xml:space="preserve">
+    <value>Trash ({0})</value>
+  </data>
+  <data name="TrashIntro" xml:space="preserve">
+    <value>Deleted repositories stay here for 7 days and are then deleted for good. Repositories of deleted users land here too; an administrator can give them to someone else.</value>
+  </data>
+  <data name="TrashNothing" xml:space="preserve">
+    <value>The trash is empty.</value>
+  </data>
+  <data name="TrashDeletedAt" xml:space="preserve">
+    <value>Deleted</value>
+  </data>
+  <data name="TrashPurgeAt" xml:space="preserve">
+    <value>Deleted for good</value>
+  </data>
+  <data name="TrashOwnerDeleted" xml:space="preserve">
+    <value>Owner deleted</value>
+  </data>
+  <data name="TrashRestore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="TrashRestored" xml:space="preserve">
+    <value>{0} is back.</value>
+  </data>
+  <data name="TrashPurge" xml:space="preserve">
+    <value>Delete for good</value>
+  </data>
+  <data name="TrashPurgeConfirm" xml:space="preserve">
+    <value>Delete {0} and all backups in it for good? This cannot be undone.</value>
+  </data>
+  <data name="TrashPurged" xml:space="preserve">
+    <value>Deleted for good.</value>
+  </data>
+  <data name="TrashEmpty" xml:space="preserve">
+    <value>Empty trash</value>
+  </data>
+  <data name="TrashEmptyConfirm" xml:space="preserve">
+    <value>Delete all {0} repositories in the trash for good? This cannot be undone.</value>
+  </data>
+  <data name="RestoreIntro" xml:space="preserve">
+    <value>Who should own the repository? Under which name?</value>
+  </data>
+  <data name="RestoreIntroOwnerDeleted" xml:space="preserve">
+    <value>Its owner {0} was deleted: choose who gets it.</value>
+  </data>
+  <data name="RestoreNameHint" xml:space="preserve">
+    <value>Change it if the owner has a repository with this name by now.</value>
+  </data>
+  <data name="DatastoresIntro" xml:space="preserve">
+    <value>Datastores are folders that hold repositories, e.g. a second disk or a mounted NAS share. The folder must exist and the server must be allowed to write to it.</value>
+  </data>
+  <data name="DatastoreCreate" xml:space="preserve">
+    <value>Add datastore</value>
+  </data>
+  <data name="DatastoreCreateSubmit" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="DatastoreEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="DatastoreDelete" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="DatastoreDeleteConfirm" xml:space="preserve">
+    <value>Remove {0} from the list? The folder stays on disk.</value>
+  </data>
+  <data name="DatastoreActions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="DatastoreSaved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="DatastoreLabel" xml:space="preserve">
+    <value>Datastore</value>
+  </data>
+  <data name="DatastoreNameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DatastorePathLabel" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="DatastorePathHint" xml:space="preserve">
+    <value>Full path of an existing folder, e.g. /mnt/backup. In Docker, a mounted volume.</value>
+  </data>
+  <data name="DatastoreDisk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="DatastoreFree" xml:space="preserve">
+    <value>{0} free</value>
+  </data>
+  <data name="DatastoreRepositories" xml:space="preserve">
+    <value>{0} repositories, {1}</value>
+  </data>
+  <data name="DatastoreInTrash" xml:space="preserve">
+    <value>{0} in the trash</value>
+  </data>
+  <data name="DatastoreReadOnly" xml:space="preserve">
+    <value>Read-only</value>
+  </data>
+  <data name="DatastoreReadOnlyHint" xml:space="preserve">
+    <value>Takes no new repositories and no moves, e.g. while the disk is being replaced. Existing repositories keep working.</value>
+  </data>
+  <data name="DatastoreAutomatic" xml:space="preserve">
+    <value>Automatic (most free space)</value>
+  </data>
+  <data name="DatastoreWithFree" xml:space="preserve">
+    <value>{0} ({1} free)</value>
+  </data>
+  <data name="UserStorageLabel" xml:space="preserve">
+    <value>Storage</value>
+  </data>
+  <data name="UserMayCreateRepositories" xml:space="preserve">
+    <value>May create repositories</value>
+  </data>
+  <data name="UserMayNotCreate" xml:space="preserve">
+    <value>May not create repositories</value>
+  </data>
+  <data name="UserQuotaLabel" xml:space="preserve">
+    <value>Quota for all own repositories (optional)</value>
+  </data>
+  <data name="UserQuotaHint" xml:space="preserve">
+    <value>Measured: above it, no new backups start; deleting to free space still works. Empty = no limit.</value>
+  </data>
+  <data name="ErrorRepositoryNameInvalid" xml:space="preserve">
+    <value>Use 1–64 letters, digits, '.', '-' or '_', starting with a letter or digit.</value>
+  </data>
+  <data name="ErrorRepositoryNameTaken" xml:space="preserve">
+    <value>There is already a repository called {0}.</value>
+  </data>
+  <data name="ErrorMayNotCreateRepositories" xml:space="preserve">
+    <value>Your account may not create repositories.</value>
+  </data>
+  <data name="ErrorUserQuotaExceeded" xml:space="preserve">
+    <value>Your storage quota is used up.</value>
+  </data>
+  <data name="ErrorQuotaInvalid" xml:space="preserve">
+    <value>A quota must be larger than 0.</value>
+  </data>
+  <data name="ErrorDatastoreUnknown" xml:space="preserve">
+    <value>Choose a datastore.</value>
+  </data>
+  <data name="ErrorDatastoreReadOnly" xml:space="preserve">
+    <value>This datastore is read-only.</value>
+  </data>
+  <data name="ErrorDatastoreNameInvalid" xml:space="preserve">
+    <value>The name must have 1 to 64 characters.</value>
+  </data>
+  <data name="ErrorDatastoreNameTaken" xml:space="preserve">
+    <value>There is already a datastore called {0}.</value>
+  </data>
+  <data name="ErrorDatastorePathNotAbsolute" xml:space="preserve">
+    <value>Enter the full path of the folder, e.g. /mnt/backup.</value>
+  </data>
+  <data name="ErrorDatastorePathMissing" xml:space="preserve">
+    <value>The folder does not exist (is the disk mounted?).</value>
+  </data>
+  <data name="ErrorDatastorePathNotWritable" xml:space="preserve">
+    <value>The server may not write to this folder.</value>
+  </data>
+  <data name="ErrorDatastorePathContainsServerData" xml:space="preserve">
+    <value>The folder contains the server's own data folder.</value>
+  </data>
+  <data name="ErrorDatastorePathOverlaps" xml:space="preserve">
+    <value>The folder overlaps with the datastore {0}.</value>
+  </data>
+  <data name="ErrorDatastoreNotEmpty" xml:space="preserve">
+    <value>The datastore still holds repositories (also in the trash). Move or delete them first.</value>
+  </data>
+  <data name="ErrorDatastoreLast" xml:space="preserve">
+    <value>The last datastore cannot be removed.</value>
+  </data>
+  <data name="ErrorUserUnknown" xml:space="preserve">
+    <value>There is no user called {0}.</value>
+  </data>
+  <data name="ErrorShareWithOwner" xml:space="preserve">
+    <value>The owner always has full access.</value>
+  </data>
+  <data name="ErrorRepositoryMoving" xml:space="preserve">
+    <value>The repository is being moved; try again when it is done.</value>
+  </data>
+  <data name="ErrorRestoreNeedsOwner" xml:space="preserve">
+    <value>The owner was deleted: an administrator has to choose a new one.</value>
+  </data>
+  <data name="ErrorFolderProblem" xml:space="preserve">
+    <value>The folder {0} could not be changed.</value>
+  </data>
 </root>

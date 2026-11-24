@@ -1,0 +1,70 @@
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Domain.Storage
+@inject IDispatcher Dispatcher
+
+@* Shares a repository with another user. *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        <MudAutocomplete T="string" @bind-Value="userName" Label="@Strings.UserNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                         SearchFunc="SearchAsync" CoerceText="true" CoerceValue="true" ResetValueOnEmptyText="true" AutoFocus="true"
+                         Immediate="true" MaxItems="20" />
+        <MudRadioGroup T="RepositoryAccess" @bind-Value="access" Class="mt-3">
+            <MudRadio T="RepositoryAccess" Value="RepositoryAccess.Full" Color="Color.Primary">@Strings.AccessFull</MudRadio>
+            <MudRadio T="RepositoryAccess" Value="RepositoryAccess.AppendOnly" Color="Color.Primary">@Strings.AccessAppendOnly</MudRadio>
+        </MudRadioGroup>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">@RepositoryLabels.AccessHint(access)</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">@Strings.RepositoryShareHint</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="busy || string.IsNullOrWhiteSpace(userName)">
+            @Strings.RepositoryShareSubmit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public Guid RepositoryId { get; set; }
+
+    private IReadOnlyList<string> candidates = [];
+    private string? userName;
+    private RepositoryAccess access = RepositoryAccess.Full;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    protected override async Task OnInitializedAsync() =>
+        candidates = await Dispatcher.QueryAsync(new GetShareCandidatesQuery(ActingUserId, RepositoryId));
+
+    private Task<IEnumerable<string>> SearchAsync(string? text, CancellationToken cancellationToken) =>
+        Task.FromResult(string.IsNullOrWhiteSpace(text)
+            ? candidates
+            : candidates.Where(c => c.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new ShareRepositoryCommand(ActingUserId, RepositoryId, userName!, access));
+            if (result.Succeeded)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            errors = result.Errors;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

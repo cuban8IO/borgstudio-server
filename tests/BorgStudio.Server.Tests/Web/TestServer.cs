@@ -78,6 +78,13 @@ public sealed class TestServer : WebApplicationFactory<Program>
             services.AddSingleton<TimeProvider>(Clock);
             services.AddSingleton<IServerEnvironment>(new TestEnvironment(this));
             services.AddSingleton<IReleaseFeed>(Releases);
+
+            // Tests run the storage work (measuring, trash, moves) themselves, at the moment they choose.
+            foreach (var worker in services.Where(d => d.ImplementationType?.Name == "StorageWorker").ToList())
+            {
+                services.Remove(worker);
+            }
+
             // Check sessions on every request, so tests see sign-outs at once instead of after a minute.
             services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
         });

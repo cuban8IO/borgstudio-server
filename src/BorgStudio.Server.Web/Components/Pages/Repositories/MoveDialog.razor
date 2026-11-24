@@ -1,0 +1,78 @@
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+
+@* Moves a repository to another datastore (administrators). *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        <MudText Typo="Typo.body2" Class="mb-3">@string.Format(Strings.RepositoryMoveIntro, Repository.FullName, Repository.DatastoreName, ByteSize.Format(Repository.UsedBytes))</MudText>
+        @if (targets is null)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        else if (targets.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">@Strings.RepositoryMoveNoTarget</MudAlert>
+        }
+        else
+        {
+            <MudSelect T="Guid?" @bind-Value="target" Label="@Strings.RepositoryMoveTarget" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var datastore in targets)
+                {
+                    <MudSelectItem T="Guid?" Value="datastore.Id">
+                        @(datastore.Space is { } space ? string.Format(Strings.DatastoreWithFree, datastore.Name, ByteSize.Format(space.FreeBytes)) : datastore.Name)
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">@Strings.RepositoryMoveHint</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="MoveAsync" Disabled="busy || target is null">
+            @Strings.RepositoryMoveSubmit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public RepositorySummary Repository { get; set; } = default!;
+
+    private IReadOnlyList<DatastoreInfo>? targets;
+    private Guid? target;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    protected override async Task OnInitializedAsync() =>
+        targets = (await Dispatcher.QueryAsync(new GetDatastoresQuery(ActingUserId)))
+            .Where(d => d.Id != Repository.DatastoreId && !d.IsReadOnly && d.Problem is null)
+            .ToList();
+
+    private async Task MoveAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new MoveRepositoryCommand(ActingUserId, Repository.Id, target!.Value));
+            if (result.Succeeded)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            errors = result.Errors;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

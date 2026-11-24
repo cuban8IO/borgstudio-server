@@ -1,0 +1,397 @@
+@page "/repositories/{Id:guid}"
+@implements IDisposable
+@using System.Globalization
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Domain.Storage
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@(details?.Summary.FullName ?? Strings.NavRepositories)" />
+
+<MudBreadcrumbs Items="breadcrumbs" Class="px-0 pt-0" />
+
+@if (!loaded)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (details is null)
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.RepositoryNotFoundTitle</MudText>
+    <MudText Typo="Typo.body1">@Strings.RepositoryNotFound</MudText>
+}
+else
+{
+    var repository = details.Summary;
+    <div class="d-flex flex-wrap align-center gap-2 mb-4">
+        <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1 text-break">@repository.FullName</MudText>
+        @if (repository.CanManage)
+        {
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditAsync">@Strings.RepositoryEdit</MudButton>
+            @if (isAdministrator)
+            {
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="@Strings.RepositoryActions" Dense="true"
+                         AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <MudMenuItem Icon="@Icons.Material.Filled.PersonPin" OnClick="ChangeOwnerAsync" Disabled="repository.IsMoving">@Strings.RepositoryChangeOwner</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileMove" OnClick="MoveAsync" Disabled="repository.IsMoving">@Strings.RepositoryMove</MudMenuItem>
+                </MudMenu>
+            }
+        }
+    </div>
+
+    @if (!details.HostingSupported)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">@Strings.RepositoriesNeedLinux</MudAlert>
+    }
+
+    @if (repository.IsMoving)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">
+            <div>@string.Format(Strings.RepositoryMovingTo, details.MoveTarget)</div>
+            @if (details.MoveProgress is { TotalBytes: > 0 } progress)
+            {
+                <MudProgressLinear Value="@(progress.CopiedBytes * 100.0 / progress.TotalBytes)" Color="Color.Warning" Class="mt-2" />
+                <MudText Typo="Typo.caption">@string.Format(Strings.UsageOfQuota, ByteSize.Format(progress.CopiedBytes), ByteSize.Format(progress.TotalBytes))</MudText>
+            }
+        </MudAlert>
+    }
+    else if (details.MoveError is { } moveError)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@string.Format(Strings.RepositoryMoveFailed, moveError)</MudAlert>
+    }
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.RepositoryDetails</MudText>
+                <dl class="status-list">
+                    <dt>@Strings.RepositoryOwner</dt>
+                    <dd>@repository.OwnerName</dd>
+                    <dt>@Strings.RepositoryYourAccess</dt>
+                    <dd>@RepositoryLabels.Role(repository).Text</dd>
+                    <dt>@Strings.DatastoreLabel</dt>
+                    <dd>@repository.DatastoreName</dd>
+                    @if (details.Location is { } location)
+                    {
+                        <dt>@Strings.RepositoryLocation</dt>
+                        <dd><code class="text-break">@location</code></dd>
+                    }
+                    <dt>@Strings.RepositoryCreated</dt>
+                    <dd>@repository.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</dd>
+                </dl>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.UsageLabel</MudText>
+                <UsageBar Used="repository.UsedBytes" Quota="repository.QuotaBytes" />
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-1">
+                    @(repository.UsageMeasuredAt is { } measured
+                        ? string.Format(Strings.UsageMeasuredAt, measured.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
+                        : Strings.UsageNotMeasured)
+                    @if (repository.QuotaBytes is null)
+                    {
+                        <span> · @Strings.RepositoryNoQuota</span>
+                    }
+                </MudText>
+                @if (details.OwnerAllowance is { QuotaBytes: not null } owner)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-4">@string.Format(Strings.OwnerStorage, repository.OwnerName)</MudText>
+                    <UsageBar Used="owner.UsedBytes" Quota="owner.QuotaBytes" />
+                }
+                <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Refresh" Class="mt-2" OnClick="MeasureAsync"
+                           Disabled="measuring || repository.IsMoving">@Strings.UsageMeasureNow</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Outlined="true" Class="pa-4">
+                <div class="d-flex flex-wrap align-center gap-2 mb-2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2" Class="flex-grow-1">@Strings.RepositoryAccessTitle</MudText>
+                    @if (repository.CanManage)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="ShareAsync">
+                            @Strings.RepositoryShare
+                        </MudButton>
+                    }
+                </div>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@Strings.RepositoryAccessIntro</MudText>
+                <MudSimpleTable Dense="true" Outlined="false" Elevation="0">
+                    <tbody>
+                        <tr>
+                            <td>@repository.OwnerName</td>
+                            <td>@Strings.RepositoryRoleOwner</td>
+                            <td></td>
+                        </tr>
+                        @foreach (var share in details.Shares)
+                        {
+                            <tr>
+                                <td>@share.UserName</td>
+                                <td>
+                                    @if (repository.CanManage)
+                                    {
+                                        <MudSelect T="RepositoryAccess" Value="share.Access" ValueChanged="access => ChangeAccessAsync(share, access)"
+                                                   Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="max-width: 14rem"
+                                                   aria-label="@string.Format(Strings.RepositoryAccessOf, share.UserName)">
+                                            <MudSelectItem T="RepositoryAccess" Value="RepositoryAccess.Full">@Strings.AccessFull</MudSelectItem>
+                                            <MudSelectItem T="RepositoryAccess" Value="RepositoryAccess.AppendOnly">@Strings.AccessAppendOnly</MudSelectItem>
+                                        </MudSelect>
+                                    }
+                                    else
+                                    {
+                                        @RepositoryLabels.Access(share.Access)
+                                    }
+                                </td>
+                                <td class="text-right">
+                                    @if (repository.CanManage)
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" OnClick="() => RemoveShareAsync(share)"
+                                                       aria-label="@string.Format(Strings.RepositoryUnshare, share.UserName)" />
+                                    }
+                                    else if (share.UserId == actingUserId)
+                                    {
+                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="() => RemoveShareAsync(share)">@Strings.RepositoryLeave</MudButton>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+
+        @if (repository.CanManage)
+        {
+            <MudItem xs="12">
+                <MudPaper Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.RepositoryDeleteTitle</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">@Strings.RepositoryDeleteIntro</MudText>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteAsync"
+                               Disabled="repository.IsMoving">@Strings.RepositoryDelete</MudButton>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private readonly CancellationTokenSource disposed = new();
+    private string actingUserId = string.Empty;
+    private bool isAdministrator;
+    private RepositoryDetails? details;
+    private bool loaded;
+    private bool measuring;
+    private bool polling;
+
+    private List<BreadcrumbItem> breadcrumbs = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = (await AuthenticationState).User;
+        actingUserId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        isAdministrator = user.IsInRole(Roles.Administrator);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        details = await Dispatcher.QueryAsync(new GetRepositoryQuery(actingUserId, Id));
+        loaded = true;
+        breadcrumbs =
+        [
+            new BreadcrumbItem(Strings.NavRepositories, "repositories"),
+            new BreadcrumbItem(details?.Summary.FullName ?? "?", null, disabled: true),
+        ];
+        if (details?.Summary.IsMoving == true && !polling)
+        {
+            _ = PollWhileMovingAsync();
+        }
+    }
+
+    /// <summary>Refreshes the page every two seconds while the repository moves, so the progress shows.</summary>
+    private async Task PollWhileMovingAsync()
+    {
+        polling = true;
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+            while (await timer.WaitForNextTickAsync(disposed.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    details = await Dispatcher.QueryAsync(new GetRepositoryQuery(actingUserId, Id));
+                    StateHasChanged();
+                });
+                if (details?.Summary.IsMoving != true)
+                {
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was closed.
+        }
+        finally
+        {
+            polling = false;
+        }
+    }
+
+    private async Task EditAsync()
+    {
+        var parameters = new DialogParameters<RepositoryDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.Repository, details!.Summary },
+        };
+        var dialog = await DialogService.ShowAsync<RepositoryDialog>(Strings.RepositoryEdit, parameters, DialogDefaults);
+        if (await dialog.Result is { Canceled: false })
+        {
+            Snackbar.Add(Strings.RepositorySaved, Severity.Success);
+            await LoadAsync();
+        }
+    }
+
+    private async Task ShareAsync()
+    {
+        var parameters = new DialogParameters<ShareDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.RepositoryId, Id },
+        };
+        var dialog = await DialogService.ShowAsync<ShareDialog>(Strings.RepositoryShare, parameters, DialogDefaults);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task ChangeAccessAsync(ShareInfo share, RepositoryAccess access)
+    {
+        Report(await Dispatcher.SendAsync(new ShareRepositoryCommand(actingUserId, Id, share.UserName, access)), Strings.RepositorySaved);
+        await LoadAsync();
+    }
+
+    private async Task RemoveShareAsync(ShareInfo share)
+    {
+        var self = share.UserId == actingUserId;
+        var message = self ? Strings.RepositoryLeaveConfirm : string.Format(Strings.RepositoryUnshareConfirm, share.UserName);
+        if (!await ConfirmAsync(self ? Strings.RepositoryLeave : string.Format(Strings.RepositoryUnshare, share.UserName), message))
+        {
+            return;
+        }
+
+        await Dispatcher.SendAsync(new RemoveShareCommand(actingUserId, Id, share.UserId));
+        if (self && !details!.Summary.CanManage)
+        {
+            Navigation.NavigateTo("repositories");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task ChangeOwnerAsync()
+    {
+        var parameters = new DialogParameters<OwnerDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.Intro, string.Format(Strings.RepositoryChangeOwnerIntro, details!.Summary.FullName) },
+        };
+        var dialog = await DialogService.ShowAsync<OwnerDialog>(Strings.RepositoryChangeOwner, parameters, DialogDefaults);
+        if (await dialog.Result is not { Canceled: false, Data: string owner })
+        {
+            return;
+        }
+
+        if (Report(await Dispatcher.SendAsync(new SetRepositoryOwnerCommand(actingUserId, Id, owner)), Strings.RepositorySaved))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task MoveAsync()
+    {
+        var parameters = new DialogParameters<MoveDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.Repository, details!.Summary },
+        };
+        var dialog = await DialogService.ShowAsync<MoveDialog>(Strings.RepositoryMove, parameters, DialogDefaults);
+        if (await dialog.Result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task MeasureAsync()
+    {
+        measuring = true;
+        try
+        {
+            await Dispatcher.SendAsync(new MeasureRepositoryCommand(actingUserId, Id));
+            await LoadAsync();
+        }
+        finally
+        {
+            measuring = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            Strings.RepositoryDelete,
+            string.Format(Strings.RepositoryDeleteConfirm, details!.Summary.FullName),
+            yesText: Strings.RepositoryDelete,
+            cancelText: Strings.Cancel);
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        if (Report(await Dispatcher.SendAsync(new DeleteRepositoryCommand(actingUserId, Id)),
+            string.Format(Strings.RepositoryDeleted, details.Summary.FullName)))
+        {
+            Navigation.NavigateTo("repositories");
+        }
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message) =>
+        await DialogService.ShowMessageBoxAsync(title, message, yesText: Strings.Confirm, cancelText: Strings.Cancel) == true;
+
+    private bool Report(AccountResult result, string success)
+    {
+        foreach (var error in result.Errors)
+        {
+            Snackbar.Add(error, Severity.Error);
+        }
+
+        if (result.Succeeded)
+        {
+            Snackbar.Add(success, Severity.Success);
+        }
+
+        return result.Succeeded;
+    }
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+
+    private static readonly DialogOptions DialogDefaults = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+}
