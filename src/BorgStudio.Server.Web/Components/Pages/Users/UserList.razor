@@ -3,7 +3,9 @@
 @using System.Globalization
 @using System.Security.Claims
 @using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Storage
 @using BorgStudio.Server.Application.Users
+@using BorgStudio.Server.Web.Components.Pages.Repositories
 @inject IDispatcher Dispatcher
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -30,6 +32,7 @@ else
             <MudTh>@Strings.RoleLabel</MudTh>
             <MudTh>@Strings.EmailLabel</MudTh>
             <MudTh>@Strings.UserState</MudTh>
+            <MudTh>@Strings.UserStorageLabel</MudTh>
             <MudTh Style="width: 1%"></MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -49,6 +52,16 @@ else
                         <MudChip T="string" Size="Size.Small" Color="color" Variant="Variant.Outlined">@text</MudChip>
                     }
                 </div>
+            </MudTd>
+            <MudTd DataLabel="@Strings.UserStorageLabel">
+                @if (storage?.GetValueOrDefault(context.Account.Id) is { } allowance)
+                {
+                    <UsageBar Used="allowance.UsedBytes" Quota="allowance.QuotaBytes" Style="min-width: 8rem" />
+                    @if (!allowance.MayCreate)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Strings.UserMayNotCreate</MudText>
+                    }
+                }
             </MudTd>
             <MudTd>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="@Strings.UserActions" Dense="true"
@@ -101,6 +114,7 @@ else
 
     private string actingUserId = string.Empty;
     private IReadOnlyList<UserSummary>? users;
+    private IReadOnlyDictionary<string, StorageAllowance>? storage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,7 +122,11 @@ else
         await LoadAsync();
     }
 
-    private async Task LoadAsync() => users = await Dispatcher.QueryAsync(new GetUsersQuery(actingUserId));
+    private async Task LoadAsync()
+    {
+        users = await Dispatcher.QueryAsync(new GetUsersQuery(actingUserId));
+        storage = await Dispatcher.QueryAsync(new GetUserStorageQuery(actingUserId));
+    }
 
     private async Task CreateAsync()
     {
@@ -132,6 +150,7 @@ else
             { d => d.ActingUserId, actingUserId },
             { d => d.CurrentBaseUrl, Navigation.BaseUri },
             { d => d.User, user.Account },
+            { d => d.Storage, storage?.GetValueOrDefault(user.Account.Id) },
         };
         var dialog = await DialogService.ShowAsync<UserDialog>(Strings.UserEdit, parameters, DialogDefaults);
         if (await dialog.Result is not { Canceled: false })

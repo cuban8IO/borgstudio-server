@@ -1,0 +1,78 @@
+@using BorgStudio.Server.Application.Storage
+@inject IDispatcher Dispatcher
+
+@* Adds a datastore (name + existing folder) or renames one and switches it read-only. *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        <MudTextField @bind-Value="name" Label="@Strings.DatastoreNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Immediate="true" AutoFocus="true" MaxLength="BorgStudio.Server.Domain.Storage.Datastore.MaxNameLength" />
+        @if (Datastore is null)
+        {
+            <MudTextField @bind-Value="path" Label="@Strings.DatastorePathLabel" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2"
+                          Immediate="true" Placeholder="/mnt/backup" HelperText="@Strings.DatastorePathHint" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mt-2"><code class="text-break">@Datastore.Path</code></MudText>
+            <MudSwitch T="bool" @bind-Value="readOnly" Color="Color.Warning" Class="mt-3" Label="@Strings.DatastoreReadOnly" />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@Strings.DatastoreReadOnlyHint</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync"
+                   Disabled="busy || string.IsNullOrWhiteSpace(name) || (Datastore is null && string.IsNullOrWhiteSpace(path))">
+            @(Datastore is null ? Strings.DatastoreCreateSubmit : Strings.Save)
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    /// <summary>The datastore to edit; <c>null</c> adds a new one.</summary>
+    [Parameter]
+    public DatastoreInfo? Datastore { get; set; }
+
+    private string name = string.Empty;
+    private string path = string.Empty;
+    private bool readOnly;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    protected override void OnInitialized()
+    {
+        if (Datastore is not null)
+        {
+            name = Datastore.Name;
+            readOnly = Datastore.IsReadOnly;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = Datastore is null
+                ? await Dispatcher.SendAsync(new CreateDatastoreCommand(ActingUserId, name, path))
+                : await Dispatcher.SendAsync(new UpdateDatastoreCommand(ActingUserId, Datastore.Id, name, readOnly));
+            if (result.Succeeded)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            errors = result.Errors;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

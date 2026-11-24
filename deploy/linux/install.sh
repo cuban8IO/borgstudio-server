@@ -11,6 +11,11 @@ INSTALL_DIR=/opt/borgstudio-server
 SERVICE=borgstudio-server
 SERVICE_USER=borgstudio
 CONFIG=borgstudio-server.json
+# borg serves the repositories. The official build of the borg project is downloaded at install
+# time (it is not part of the archive) and checked against these checksums.
+BORG_VERSION=1.4.5
+BORG_X64="borg-linux-glibc231-x86_64.tgz b6cba6b5eee19d51fbf4d89c6090dd40647b856755fffe2e26417365536f2c58 2.31"
+BORG_ARM64="borg-linux-glibc235-arm64-gh.tgz 579d977d4eafd5761aee51e4a5bd3c52a5533a4391393d465324f675d14d3bd9 2.35"
 SOURCE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # --- Console output (same look in all BorgStudio Server scripts) -------------------------------
@@ -137,11 +142,41 @@ else
   step "Installing ICU (libicu)" install_icu
 fi
 
+install_openssh() {
+  if command -v apt-get > /dev/null; then
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends openssh-server
+    # There was no SSH service before: keep the system's own one off, only BorgStudio's runs.
+    systemctl disable --now ssh.service ssh.socket 2> /dev/null || true
+  elif command -v dnf > /dev/null; then
+    dnf install -y -q openssh-server
+  elif command -v zypper > /dev/null; then
+    zypper --non-interactive install openssh
+  else
+    echo "No supported package manager; install OpenSSH's server (sshd) yourself." >&2
+    return 1
+  fi
+}
+
+# The server runs its own sshd for borg, on its own port and under its own account; a system SSH
+# service on port 22 stays as it is.
+if [[ -x /usr/sbin/sshd ]]; then
+  ok "OpenSSH server is present"
+else
+  step "Installing OpenSSH server (for borg)" install_openssh
+fi
+
+# sshd runs borg through the account's shell, so the account needs a real one. Its password stays
+# locked: sshd only lets in keys BorgStudio knows, and each key can run nothing but borg.
 if id -u "$SERVICE_USER" > /dev/null 2>&1; then
-  ok "System user $SERVICE_USER is present"
+  if [[ "$(getent passwd "$SERVICE_USER" | cut -d: -f7)" != /bin/sh ]]; then
+    step "Letting system user $SERVICE_USER run borg" usermod --shell /bin/sh "$SERVICE_USER"
+  else
+    ok "System user $SERVICE_USER is present"
+  fi
 else
   step "Creating system user $SERVICE_USER" \
-    useradd --system --home-dir "$INSTALL_DIR" --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
+    useradd --system --home-dir "$INSTALL_DIR" --no-create-home --shell /bin/sh "$SERVICE_USER"
 fi
 
 if systemctl is-active --quiet "$SERVICE"; then
@@ -150,13 +185,61 @@ fi
 
 copy_program() {
   mkdir -p "$INSTALL_DIR"
-  find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name "$CONFIG" -exec rm -rf {} +
-  (cd "$SOURCE_DIR" && tar --exclude=./data --exclude="./$CONFIG" -cf - .) | (cd "$INSTALL_DIR" && tar -xf -)
+  # borg stays when it already has the right version; it is downloaded otherwise.
+  find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name "$CONFIG" ! -name borg -exec rm -rf {} +
+  (cd "$SOURCE_DIR" && tar --exclude=./data --exclude="./$CONFIG" --exclude=./borg -cf - .) | (cd "$INSTALL_DIR" && tar -xf -)
 }
 step "Copying the program to $INSTALL_DIR" copy_program
 
+download() {
+  if command -v curl > /dev/null; then
+    curl -fsSL --retry 3 -o "$2" "$1"
+  elif command -v wget > /dev/null; then
+    wget -q -O "$2" "$1"
+  else
+    echo "Neither curl nor wget is installed." >&2
+    return 1
+  fi
+}
+
+install_borg() {
+  local build file sum need glibc tmp
+  case "$(uname -m)" in
+    x86_64 | amd64) build=$BORG_X64 ;;
+    aarch64 | arm64) build=$BORG_ARM64 ;;
+    *)
+      echo "There is no borg $BORG_VERSION build for $(uname -m)." >&2
+      return 1
+      ;;
+  esac
+  read -r file sum need <<< "$build"
+  glibc=$(ldd --version 2> /dev/null | head -n 1 | grep -oE '[0-9]+\.[0-9]+$' || true)
+  if [[ -z "$glibc" || "$(printf '%s\n%s\n' "$need" "$glibc" | sort -V | head -n 1)" != "$need" ]]; then
+    echo "borg $BORG_VERSION needs glibc $need or newer (found: ${glibc:-unknown})." >&2
+    return 1
+  fi
+  tmp=$(mktemp -d)
+  download "https://github.com/borgbackup/borg/releases/download/$BORG_VERSION/$file" "$tmp/$file"
+  echo "$sum  $tmp/$file" | sha256sum -c --quiet -
+  tar -xzf "$tmp/$file" -C "$tmp"
+  rm -rf "$INSTALL_DIR/borg"
+  mv "$tmp/borg-dir" "$INSTALL_DIR/borg"
+  rm -rf "$tmp"
+  printf '%s\n' "$BORG_VERSION" > "$INSTALL_DIR/borg/VERSION"
+  "$INSTALL_DIR/borg/borg.exe" --version
+}
+if [[ "$(cat "$INSTALL_DIR/borg/VERSION" 2> /dev/null || true)" == "$BORG_VERSION" ]]; then
+  ok "borg $BORG_VERSION is present"
+else
+  step "Downloading borg $BORG_VERSION from the borg project" install_borg
+fi
+
 set_permissions() {
+  # The program belongs to root and only root may change it, the folder itself included (tar takes
+  # its owner from the archive): sshd runs it for borg logins and refuses it otherwise.
+  chown root:root "$INSTALL_DIR"
   find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name "$CONFIG" -exec chown -R root:root {} +
+  find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name "$CONFIG" -exec chmod -R go-w {} +
   chmod 755 "$INSTALL_DIR" "$INSTALL_DIR/BorgStudio.Server" "$INSTALL_DIR/install.sh" "$INSTALL_DIR/uninstall.sh"
   mkdir -p "$INSTALL_DIR/data"
   chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/data"
@@ -169,6 +252,16 @@ set_permissions() {
   chmod 640 "$INSTALL_DIR/$CONFIG"
 }
 step "Setting up data folder and configuration" set_permissions
+
+# The same holds for every folder above it; that is the system's business, so only a warning.
+parent=$(dirname "$INSTALL_DIR")
+while [[ "$parent" != / ]]; do
+  read -r owner mode <<< "$(stat -c '%u %a' "$parent")"
+  if [[ "$owner" != 0 || $((8#$mode & 8#022)) -ne 0 ]]; then
+    warn "$parent should belong to root and be writable only by it (chown root:root, chmod go-w); otherwise borg cannot log in"
+  fi
+  parent=$(dirname "$parent")
+done
 
 write_service() {
   cat > "/etc/systemd/system/$SERVICE.service" << EOF
@@ -189,9 +282,9 @@ RestartSec=5
 Environment=DOTNET_NOLOGO=1
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
+# Read-only /usr, /boot and /etc; datastores can be anywhere else (e.g. /mnt, /srv).
+ProtectSystem=full
 ProtectHome=true
-ReadWritePaths=$INSTALL_DIR/data
 
 [Install]
 WantedBy=multi-user.target
@@ -213,6 +306,7 @@ step "Starting BorgStudio Server" start_service
 
 address=$(hostname -I 2> /dev/null | awk '{print $1}')
 port=$(grep -A3 '"Https"' "$INSTALL_DIR/$CONFIG" | grep -o '"Port": *[0-9]*' | grep -o '[0-9]*$' || true)
+ssh_port=$(grep -A3 '"Ssh"' "$INSTALL_DIR/$CONFIG" | grep -o '"Port": *[0-9]*' | grep -o '[0-9]*$' || true)
 
 facts=(
   "Address" "https://${address:-$(hostname)}:${port:-8443}/"
@@ -221,6 +315,7 @@ if [[ -f "$INSTALL_DIR/data/setup-code.txt" ]]; then
   facts+=("Setup code" "$(cat "$INSTALL_DIR/data/setup-code.txt")")
 fi
 facts+=(
+  "SSH for borg" "port ${ssh_port:-2222}"
   "Configuration" "$INSTALL_DIR/$CONFIG"
   "Log" "journalctl -u $SERVICE"
   "Locked out" "runuser -u $SERVICE_USER -- $INSTALL_DIR/BorgStudio.Server reset-admin"

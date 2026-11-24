@@ -1,0 +1,170 @@
+@page "/repositories/trash"
+@using System.Globalization
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<AppPageTitle Title="@Strings.Trash" />
+
+<MudBreadcrumbs Items="breadcrumbs" Class="px-0 pt-0" />
+
+<div class="d-flex flex-wrap align-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.Trash</MudText>
+    @if (isAdministrator && items is { Count: > 0 })
+    {
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever" OnClick="EmptyAsync">
+            @Strings.TrashEmpty
+        </MudButton>
+    }
+</div>
+
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-4">@Strings.TrashIntro</MudText>
+
+@if (items is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (items.Count == 0)
+{
+    <MudText Typo="Typo.body2">@Strings.TrashNothing</MudText>
+}
+else
+{
+    <MudTable Items="items" Hover="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm" Dense="true">
+        <HeaderContent>
+            <MudTh>@Strings.RepositoryNameLabel</MudTh>
+            <MudTh>@Strings.UsageLabel</MudTh>
+            <MudTh>@Strings.DatastoreLabel</MudTh>
+            <MudTh>@Strings.TrashDeletedAt</MudTh>
+            <MudTh>@Strings.TrashPurgeAt</MudTh>
+            <MudTh Style="width: 1%"></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@Strings.RepositoryNameLabel">
+                @($"{context.OwnerName}/{context.Name}")
+                @if (!context.OwnerExists)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Class="ml-2">@Strings.TrashOwnerDeleted</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Strings.UsageLabel">@ByteSize.Format(context.UsedBytes)</MudTd>
+            <MudTd DataLabel="@Strings.DatastoreLabel">@context.DatastoreName</MudTd>
+            <MudTd DataLabel="@Strings.TrashDeletedAt">@context.DeletedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</MudTd>
+            <MudTd DataLabel="@Strings.TrashPurgeAt">@context.PurgeAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</MudTd>
+            <MudTd>
+                <div class="d-flex gap-1 justify-end">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.RestoreFromTrash"
+                               OnClick="() => RestoreAsync(context)" Disabled="!context.OwnerExists && !isAdministrator">
+                        @Strings.TrashRestore
+                    </MudButton>
+                    @if (isAdministrator)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Color="Color.Error" Size="Size.Small"
+                                       OnClick="() => PurgeAsync(context)" aria-label="@Strings.TrashPurge" />
+                    }
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private readonly List<BreadcrumbItem> breadcrumbs =
+    [
+        new(Strings.NavRepositories, "repositories"),
+        new(Strings.Trash, null, disabled: true),
+    ];
+
+    private string actingUserId = string.Empty;
+    private bool isAdministrator;
+    private IReadOnlyList<TrashItem>? items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthenticationState).User;
+        actingUserId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        isAdministrator = user.IsInRole(Roles.Administrator);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => items = await Dispatcher.QueryAsync(new GetTrashQuery(actingUserId));
+
+    private async Task RestoreAsync(TrashItem item)
+    {
+        AccountResult result;
+        if (!item.OwnerExists || isAdministrator)
+        {
+            // Administrators can give it to someone else (needed when the owner was deleted) and rename it.
+            var parameters = new DialogParameters<OwnerDialog>
+            {
+                { d => d.ActingUserId, actingUserId },
+                { d => d.Intro, item.OwnerExists ? Strings.RestoreIntro : string.Format(Strings.RestoreIntroOwnerDeleted, item.OwnerName) },
+                { d => d.ShowName, true },
+                { d => d.Name, item.Name },
+            };
+            var dialog = await DialogService.ShowAsync<OwnerDialog>(Strings.TrashRestore, parameters,
+                new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            if (await dialog.Result is not { Canceled: false, Data: OwnerDialog.OwnerChoice choice })
+            {
+                return;
+            }
+
+            result = await Dispatcher.SendAsync(new RestoreRepositoryCommand(actingUserId, item.Id, choice.UserName, choice.Name));
+        }
+        else
+        {
+            result = await Dispatcher.SendAsync(new RestoreRepositoryCommand(actingUserId, item.Id));
+        }
+
+        Report(result, string.Format(Strings.TrashRestored, item.Name));
+        await LoadAsync();
+    }
+
+    private async Task PurgeAsync(TrashItem item)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            Strings.TrashPurge,
+            string.Format(Strings.TrashPurgeConfirm, $"{item.OwnerName}/{item.Name}"),
+            yesText: Strings.TrashPurge,
+            cancelText: Strings.Cancel);
+        if (confirmed == true)
+        {
+            Report(await Dispatcher.SendAsync(new PurgeRepositoriesCommand(actingUserId, item.Id)), Strings.TrashPurged);
+            await LoadAsync();
+        }
+    }
+
+    private async Task EmptyAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            Strings.TrashEmpty,
+            string.Format(Strings.TrashEmptyConfirm, items!.Count),
+            yesText: Strings.TrashEmpty,
+            cancelText: Strings.Cancel);
+        if (confirmed == true)
+        {
+            Report(await Dispatcher.SendAsync(new PurgeRepositoriesCommand(actingUserId)), Strings.TrashPurged);
+            await LoadAsync();
+        }
+    }
+
+    private void Report(AccountResult result, string success)
+    {
+        foreach (var error in result.Errors)
+        {
+            Snackbar.Add(error, Severity.Error);
+        }
+
+        if (result.Succeeded)
+        {
+            Snackbar.Add(success, Severity.Success);
+        }
+    }
+}

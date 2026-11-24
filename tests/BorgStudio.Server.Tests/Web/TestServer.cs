@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 using BorgStudio.Server.Application.Abstractions;
+using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Setup;
 using BorgStudio.Server.Application.Abstractions.Updates;
 using BorgStudio.Server.Infrastructure;
@@ -39,6 +40,9 @@ public sealed class TestServer : WebApplicationFactory<Program>
     /// <summary>What "GitHub" answers to the update check.</summary>
     public FakeReleaseFeed Releases { get; } = new();
 
+    /// <summary>The SSH service as the pages and the interface see it (no real sshd runs in tests).</summary>
+    public FakeSshService Ssh { get; } = new();
+
     public string SetupCode => Services.GetRequiredService<ISetupCodeStore>().Current
         ?? throw new InvalidOperationException("Setup is already done.");
 
@@ -72,12 +76,21 @@ public sealed class TestServer : WebApplicationFactory<Program>
         // The test host has no network listeners; no need for a certificate.
         builder.UseSetting("BorgStudio:Https:Enabled", "false");
         builder.UseSetting("BorgStudio:Http:Enabled", "true");
+        builder.UseSetting("BorgStudio:Ssh:Enabled", "false");
         builder.UseEnvironment("Production");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Clock);
             services.AddSingleton<IServerEnvironment>(new TestEnvironment(this));
             services.AddSingleton<IReleaseFeed>(Releases);
+            services.AddSingleton<ISshService>(Ssh);
+
+            // Tests run the storage work (measuring, trash, moves) themselves, at the moment they choose.
+            foreach (var worker in services.Where(d => d.ImplementationType?.Name == "StorageWorker").ToList())
+            {
+                services.Remove(worker);
+            }
+
             // Check sessions on every request, so tests see sign-outs at once instead of after a minute.
             services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
         });
@@ -252,4 +265,15 @@ internal sealed class TestEnvironment(TestServer server) : IServerEnvironment
     public string Runtime => ".NET Test";
 
     public DateTimeOffset StartedAt { get; } = DateTimeOffset.UtcNow;
+}
+
+public sealed class FakeSshService : ISshService
+{
+    public const string HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMrwjEp6Mo0LkS6ZmykR85afM0Sln3gGYEG5t4bVjFvc";
+
+    public SshServiceStatus Status { get; set; } = new(
+        SshServiceState.Running,
+        2222,
+        "borgstudio",
+        [new SshHostKey("ssh-ed25519", "SHA256:sMsVbpgq6JvKtZOhmmeeUNA6cAlp2WqnF8XXcWcTsGI", HostKey)]);
 }

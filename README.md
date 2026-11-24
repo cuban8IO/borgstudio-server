@@ -3,7 +3,8 @@
 Self-hosted server for [BorgStudio](https://github.com/cuban8IO/borgstudio), the all-in-one app to manage BorgBackup
 repositories.
 
-> **Status:** the base (sign-in, users, settings, packages) is in place; the backup features follow.
+> **Status:** sign-in, users, settings, packages, repositories and borg access over SSH are in place; the BorgStudio
+> app's support for the server follows.
 
 ## Goals
 
@@ -59,6 +60,41 @@ such as `BorgStudio__Http__Enabled=true`.
   (Linux: `runuser -u borgstudio -- /opt/borgstudio-server/BorgStudio.Server reset-admin`, Windows: elevated, Docker:
   `docker exec <container> /app/BorgStudio.Server reset-admin`).
   It prints a temporary password, turns two-factor authentication off, lifts the lockout and enables the account.
+
+## Repositories and datastores
+
+- **Repositories** belong to one user and can be shared with others, with *Full* access or *Append only* (new
+  backups and restoring, nothing can be deleted). Every user may create repositories unless an administrator
+  forbids it; administrators manage all of them. The data is encrypted by the BorgStudio app, the server never sees
+  its contents.
+- **Datastores** are the folders repositories live in, e.g. a second disk or a mounted NAS share; a new server has one
+  in `data/repositories`. A repository is the folder `<datastore>/<owner>/<name>`. Administrators add datastores,
+  set them read-only for maintenance and move repositories between them. In Docker, mount a volume for every
+  additional datastore.
+- **Quotas** can be set per repository (enforced by borg) and per user (the space of all their repositories,
+  measured every 15 minutes).
+- **Deleted** repositories stay in the trash for 7 days and can be restored until then; the repositories of a deleted
+  user go there too, so an administrator can hand them on.
+- Backups into the repositories need a server on Linux (LXC, VM, Linux service or Docker); on Windows they can only be
+  managed.
+
+## Backing up with borg
+
+- **SSH for borg:** the server runs its own OpenSSH service for borg on port 2222 (`BorgStudio:Ssh` in
+  `borgstudio-server.json`), under its own account and without touching the system's SSH service. It only lets in
+  the keys it knows, and every key can run nothing but `borg serve` for its one repository – with *Append only* and
+  the quotas applied. The install script sets up OpenSSH and downloads the official borg 1.4 build from the
+  [borg project](https://github.com/borgbackup/borg/releases) (checked against a fixed checksum); the container
+  image uses Debian's borg and needs port 2222 published.
+- **BorgStudio app:** it pairs with the server through the browser (the app shows a code, you confirm it after
+  signing in), then lists and creates repositories and registers its keys by itself. Paired apps and API tokens are
+  listed under *Devices*, where they can be revoked.
+- **Other borg clients** (scripts, borgmatic, Vorta): add a public key on the repository's page and use the address
+  shown there, e.g. `borg init --encryption=repokey-blake2 ssh://borgstudio@backup.example.org:2222/./3f2a…`.
+- **Interface:** JSON at `/api/v1` with `Authorization: Bearer <token>` – `GET server`, `GET datastores`,
+  `GET|POST repositories`, `GET repositories/{id}` (usage, quota, last access, who else uses it),
+  `PUT repositories/{id}/ssh-key`; pairing at `POST pairing` and `POST pairing/complete`. It can only do what backing
+  up needs: deleting, sharing and quotas stay in the web interface.
 
 ## Development
 

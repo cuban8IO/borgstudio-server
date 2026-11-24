@@ -1,0 +1,68 @@
+@using BorgStudio.Server.Application.Access
+@using BorgStudio.Server.Domain.Access
+@inject IDispatcher Dispatcher
+
+@* Adds a public SSH key by hand, for borg without the BorgStudio app (scripts, borgmatic, Vorta). *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        <MudText Typo="Typo.body2" Class="mb-3">@Strings.SshKeyAddIntro</MudText>
+        <MudTextField @bind-Value="name" Label="@Strings.SshKeyName" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      MaxLength="SshKey.MaxNameLength" HelperText="@Strings.SshKeyNameHint" />
+        <MudTextField @bind-Value="publicKey" Label="@Strings.SshKeyPublicKey" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Lines="4" Immediate="true" AutoFocus="true" Class="mt-2" Placeholder="ssh-ed25519 AAAA… user@host"
+                      HelperText="@Strings.SshKeyPublicKeyHint" />
+        @if (Url is not null)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4">@Strings.SshKeyUsage</MudText>
+            <pre class="update-command">borg init --encryption=repokey-blake2 @Url
+borg create @(Url)::{hostname}-{now} ~/Documents</pre>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync" Disabled="busy || string.IsNullOrWhiteSpace(publicKey)">
+            @Strings.SshKeyAddSubmit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public Guid RepositoryId { get; set; }
+
+    /// <summary>The repository's borg address, for the usage example.</summary>
+    [Parameter]
+    public string? Url { get; set; }
+
+    private string? name;
+    private string publicKey = string.Empty;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    private async Task AddAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new AddSshKeyCommand(ActingUserId, RepositoryId, name, publicKey));
+            if (result.Succeeded)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            errors = result.Errors;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

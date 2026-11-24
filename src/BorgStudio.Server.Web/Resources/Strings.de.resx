@@ -750,4 +750,592 @@
   <data name="UpdatesOff" xml:space="preserve">
     <value>Die Suche nach Updates ist ausgeschaltet.</value>
   </data>
+  <data name="NavRepositories" xml:space="preserve">
+    <value>Repositories</value>
+  </data>
+  <data name="NavDatastores" xml:space="preserve">
+    <value>Datenspeicher</value>
+  </data>
+  <data name="RepositoriesIntro" xml:space="preserve">
+    <value>Repositories nehmen die Sicherungen der BorgStudio-App auf. Sie gehören einem Benutzer, der sie mit anderen teilen kann. Die Daten verschlüsselt die App; dieser Server sieht ihren Inhalt nie.</value>
+  </data>
+  <data name="RepositoriesNeedLinux" xml:space="preserve">
+    <value>Dieser Server läuft unter Windows: Repositories lassen sich hier verwalten, Sicherungen hinein brauchen aber einen Server unter Linux (LXC, VM, Linux-Dienst oder Docker).</value>
+  </data>
+  <data name="RepositoriesEmpty" xml:space="preserve">
+    <value>Noch keine Repositories. Lege eines an oder lass dir eines freigeben.</value>
+  </data>
+  <data name="RepositoriesEmptyNoCreate" xml:space="preserve">
+    <value>Mit dir wurde noch kein Repository geteilt.</value>
+  </data>
+  <data name="YourStorage" xml:space="preserve">
+    <value>Dein Speicher</value>
+  </data>
+  <data name="UserQuotaExceededHint" xml:space="preserve">
+    <value>Dein Kontingent ist aufgebraucht: Neue Sicherungen starten erst wieder, wenn du Platz schaffst (Archive löschen oder ausdünnen) oder ein Administrator es erhöht.</value>
+  </data>
+  <data name="RepositoryCreate" xml:space="preserve">
+    <value>Neues Repository</value>
+  </data>
+  <data name="RepositoryCreateSubmit" xml:space="preserve">
+    <value>Repository anlegen</value>
+  </data>
+  <data name="RepositoryNameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="RepositoryNameHint" xml:space="preserve">
+    <value>Buchstaben, Ziffern, „.“, „-“ und „_“, z. B. „laptop“. Angezeigt als besitzer/name.</value>
+  </data>
+  <data name="RepositoryQuotaLabel" xml:space="preserve">
+    <value>Kontingent (optional)</value>
+  </data>
+  <data name="RepositoryQuotaHint" xml:space="preserve">
+    <value>Obergrenze für dieses Repository; leer = unbegrenzt. borg setzt sie durch.</value>
+  </data>
+  <data name="RepositoryRenameWarning" xml:space="preserve">
+    <value>Clients mit dem alten Namen müssen neu verbunden werden.</value>
+  </data>
+  <data name="RepositoryYourAccess" xml:space="preserve">
+    <value>Dein Zugriff</value>
+  </data>
+  <data name="RepositorySharedWith" xml:space="preserve">
+    <value>Geteilt mit</value>
+  </data>
+  <data name="RepositoryShareCount" xml:space="preserve">
+    <value>{0} Benutzer</value>
+  </data>
+  <data name="RepositoryRoleOwner" xml:space="preserve">
+    <value>Besitzer</value>
+  </data>
+  <data name="RepositoryRoleAdministration" xml:space="preserve">
+    <value>Verwaltung</value>
+  </data>
+  <data name="RepositoryMoving" xml:space="preserve">
+    <value>Wird umgezogen</value>
+  </data>
+  <data name="RepositoryNotFoundTitle" xml:space="preserve">
+    <value>Repository nicht gefunden</value>
+  </data>
+  <data name="RepositoryNotFound" xml:space="preserve">
+    <value>Es existiert nicht, liegt im Papierkorb oder du hast keinen Zugriff darauf.</value>
+  </data>
+  <data name="RepositoryEdit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="RepositoryActions" xml:space="preserve">
+    <value>Weitere Aktionen</value>
+  </data>
+  <data name="RepositorySaved" xml:space="preserve">
+    <value>Gespeichert.</value>
+  </data>
+  <data name="RepositoryDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="RepositoryOwner" xml:space="preserve">
+    <value>Besitzer</value>
+  </data>
+  <data name="RepositoryLocation" xml:space="preserve">
+    <value>Ordner auf dem Server</value>
+  </data>
+  <data name="RepositoryCreated" xml:space="preserve">
+    <value>Angelegt</value>
+  </data>
+  <data name="RepositoryNoQuota" xml:space="preserve">
+    <value>kein Kontingent</value>
+  </data>
+  <data name="OwnerStorage" xml:space="preserve">
+    <value>Alle Repositories von {0}</value>
+  </data>
+  <data name="UsageLabel" xml:space="preserve">
+    <value>Belegt</value>
+  </data>
+  <data name="UsageOfQuota" xml:space="preserve">
+    <value>{0} von {1}</value>
+  </data>
+  <data name="UsageMeasuredAt" xml:space="preserve">
+    <value>Gemessen {0}</value>
+  </data>
+  <data name="UsageNotMeasured" xml:space="preserve">
+    <value>Noch nicht gemessen</value>
+  </data>
+  <data name="UsageMeasureNow" xml:space="preserve">
+    <value>Jetzt messen</value>
+  </data>
+  <data name="RepositoryAccessTitle" xml:space="preserve">
+    <value>Zugriff</value>
+  </data>
+  <data name="RepositoryAccessIntro" xml:space="preserve">
+    <value>„Voll“ erlaubt alles, auch Archive löschen und ausdünnen. „Nur anhängen“ erlaubt neue Sicherungen und Wiederherstellen, aber kein Löschen und schützt so vor Ransomware. Jeder mit Zugriff braucht die Passphrase des Repositorys vom Besitzer.</value>
+  </data>
+  <data name="RepositoryShare" xml:space="preserve">
+    <value>Teilen</value>
+  </data>
+  <data name="RepositoryShareSubmit" xml:space="preserve">
+    <value>Teilen</value>
+  </data>
+  <data name="RepositoryShareHint" xml:space="preserve">
+    <value>Die Passphrase wird nicht mitgeteilt: Gib sie selbst weiter.</value>
+  </data>
+  <data name="RepositoryAccessOf" xml:space="preserve">
+    <value>Zugriff von {0}</value>
+  </data>
+  <data name="RepositoryUnshare" xml:space="preserve">
+    <value>Zugriff von {0} entfernen</value>
+  </data>
+  <data name="RepositoryUnshareConfirm" xml:space="preserve">
+    <value>{0} kann dieses Repository dann nicht mehr nutzen.</value>
+  </data>
+  <data name="RepositoryLeave" xml:space="preserve">
+    <value>Verlassen</value>
+  </data>
+  <data name="RepositoryLeaveConfirm" xml:space="preserve">
+    <value>Du kannst dieses Repository dann nicht mehr nutzen.</value>
+  </data>
+  <data name="AccessFull" xml:space="preserve">
+    <value>Voll</value>
+  </data>
+  <data name="AccessFullHint" xml:space="preserve">
+    <value>Alles, auch Archive löschen und ausdünnen.</value>
+  </data>
+  <data name="AccessAppendOnly" xml:space="preserve">
+    <value>Nur anhängen</value>
+  </data>
+  <data name="AccessAppendOnlyHint" xml:space="preserve">
+    <value>Neue Sicherungen, Auflisten und Wiederherstellen; löschen ist nicht möglich.</value>
+  </data>
+  <data name="RepositoryChangeOwner" xml:space="preserve">
+    <value>Besitzer ändern</value>
+  </data>
+  <data name="RepositoryChangeOwnerIntro" xml:space="preserve">
+    <value>Wem soll {0} gehören? Der Ordner auf dem Server zieht mit um, Clients müssen neu verbunden werden.</value>
+  </data>
+  <data name="RepositoryMove" xml:space="preserve">
+    <value>Auf anderen Datenspeicher umziehen</value>
+  </data>
+  <data name="RepositoryMoveIntro" xml:space="preserve">
+    <value>{0} liegt auf {1} und belegt {2}.</value>
+  </data>
+  <data name="RepositoryMoveTarget" xml:space="preserve">
+    <value>Umziehen nach</value>
+  </data>
+  <data name="RepositoryMoveHint" xml:space="preserve">
+    <value>Der Server kopiert das Repository im Hintergrund und löscht es danach am alten Ort. Solange ist es nicht nutzbar.</value>
+  </data>
+  <data name="RepositoryMoveNoTarget" xml:space="preserve">
+    <value>Es gibt keinen anderen beschreibbaren Datenspeicher. Lege zuerst einen unter Datenspeicher an.</value>
+  </data>
+  <data name="RepositoryMoveSubmit" xml:space="preserve">
+    <value>Umziehen</value>
+  </data>
+  <data name="RepositoryMovingTo" xml:space="preserve">
+    <value>Wird nach {0} umgezogen …</value>
+  </data>
+  <data name="RepositoryMoveFailed" xml:space="preserve">
+    <value>Der letzte Umzug ist fehlgeschlagen: {0}</value>
+  </data>
+  <data name="RepositoryDeleteTitle" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="RepositoryDeleteIntro" xml:space="preserve">
+    <value>Das Repository kommt in den Papierkorb: Niemand kann es mehr nutzen, nach 7 Tagen wird es endgültig gelöscht. Bis dahin lässt es sich wiederherstellen.</value>
+  </data>
+  <data name="RepositoryDelete" xml:space="preserve">
+    <value>Repository löschen</value>
+  </data>
+  <data name="RepositoryDeleteConfirm" xml:space="preserve">
+    <value>{0} in den Papierkorb verschieben? Nach 7 Tagen wird es endgültig gelöscht.</value>
+  </data>
+  <data name="RepositoryDeleted" xml:space="preserve">
+    <value>{0} liegt im Papierkorb.</value>
+  </data>
+  <data name="Trash" xml:space="preserve">
+    <value>Papierkorb</value>
+  </data>
+  <data name="TrashWithCount" xml:space="preserve">
+    <value>Papierkorb ({0})</value>
+  </data>
+  <data name="TrashIntro" xml:space="preserve">
+    <value>Gelöschte Repositories bleiben hier 7 Tage und werden dann endgültig gelöscht. Auch Repositories gelöschter Benutzer landen hier; ein Administrator kann sie jemand anderem geben.</value>
+  </data>
+  <data name="TrashNothing" xml:space="preserve">
+    <value>Der Papierkorb ist leer.</value>
+  </data>
+  <data name="TrashDeletedAt" xml:space="preserve">
+    <value>Gelöscht</value>
+  </data>
+  <data name="TrashPurgeAt" xml:space="preserve">
+    <value>Endgültig gelöscht</value>
+  </data>
+  <data name="TrashOwnerDeleted" xml:space="preserve">
+    <value>Besitzer gelöscht</value>
+  </data>
+  <data name="TrashRestore" xml:space="preserve">
+    <value>Wiederherstellen</value>
+  </data>
+  <data name="TrashRestored" xml:space="preserve">
+    <value>{0} ist wiederhergestellt.</value>
+  </data>
+  <data name="TrashPurge" xml:space="preserve">
+    <value>Endgültig löschen</value>
+  </data>
+  <data name="TrashPurgeConfirm" xml:space="preserve">
+    <value>{0} mit allen Sicherungen darin endgültig löschen? Das lässt sich nicht rückgängig machen.</value>
+  </data>
+  <data name="TrashPurged" xml:space="preserve">
+    <value>Endgültig gelöscht.</value>
+  </data>
+  <data name="TrashEmpty" xml:space="preserve">
+    <value>Papierkorb leeren</value>
+  </data>
+  <data name="TrashEmptyConfirm" xml:space="preserve">
+    <value>Alle {0} Repositories im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.</value>
+  </data>
+  <data name="RestoreIntro" xml:space="preserve">
+    <value>Wem soll das Repository gehören? Unter welchem Namen?</value>
+  </data>
+  <data name="RestoreIntroOwnerDeleted" xml:space="preserve">
+    <value>Sein Besitzer {0} wurde gelöscht: Wähle, wer es bekommt.</value>
+  </data>
+  <data name="RestoreNameHint" xml:space="preserve">
+    <value>Ändern, falls der Besitzer inzwischen ein Repository mit diesem Namen hat.</value>
+  </data>
+  <data name="DatastoresIntro" xml:space="preserve">
+    <value>Datenspeicher sind Ordner, die Repositories aufnehmen, z. B. eine zweite Platte oder eine eingebundene NAS-Freigabe. Der Ordner muss existieren und der Server muss hineinschreiben dürfen.</value>
+  </data>
+  <data name="DatastoreCreate" xml:space="preserve">
+    <value>Datenspeicher hinzufügen</value>
+  </data>
+  <data name="DatastoreCreateSubmit" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="DatastoreEdit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="DatastoreDelete" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="DatastoreDeleteConfirm" xml:space="preserve">
+    <value>{0} aus der Liste entfernen? Der Ordner bleibt auf der Platte.</value>
+  </data>
+  <data name="DatastoreActions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="DatastoreSaved" xml:space="preserve">
+    <value>Gespeichert.</value>
+  </data>
+  <data name="DatastoreLabel" xml:space="preserve">
+    <value>Datenspeicher</value>
+  </data>
+  <data name="DatastoreNameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DatastorePathLabel" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+  <data name="DatastorePathHint" xml:space="preserve">
+    <value>Vollständiger Pfad eines vorhandenen Ordners, z. B. /mnt/backup. Bei Docker ein eingebundenes Volume.</value>
+  </data>
+  <data name="DatastoreDisk" xml:space="preserve">
+    <value>Platte</value>
+  </data>
+  <data name="DatastoreFree" xml:space="preserve">
+    <value>{0} frei</value>
+  </data>
+  <data name="DatastoreRepositories" xml:space="preserve">
+    <value>{0} Repositories, {1}</value>
+  </data>
+  <data name="DatastoreInTrash" xml:space="preserve">
+    <value>{0} im Papierkorb</value>
+  </data>
+  <data name="DatastoreReadOnly" xml:space="preserve">
+    <value>Nur lesen</value>
+  </data>
+  <data name="DatastoreReadOnlyHint" xml:space="preserve">
+    <value>Nimmt keine neuen Repositories und keine Umzüge an, z. B. während die Platte getauscht wird. Vorhandene Repositories funktionieren weiter.</value>
+  </data>
+  <data name="DatastoreAutomatic" xml:space="preserve">
+    <value>Automatisch (meisten freier Platz)</value>
+  </data>
+  <data name="DatastoreWithFree" xml:space="preserve">
+    <value>{0} ({1} frei)</value>
+  </data>
+  <data name="UserStorageLabel" xml:space="preserve">
+    <value>Speicher</value>
+  </data>
+  <data name="UserMayCreateRepositories" xml:space="preserve">
+    <value>Darf Repositories anlegen</value>
+  </data>
+  <data name="UserMayNotCreate" xml:space="preserve">
+    <value>Darf keine Repositories anlegen</value>
+  </data>
+  <data name="UserQuotaLabel" xml:space="preserve">
+    <value>Kontingent für alle eigenen Repositories (optional)</value>
+  </data>
+  <data name="UserQuotaHint" xml:space="preserve">
+    <value>Gemessen: Darüber starten keine neuen Sicherungen; löschen, um Platz zu schaffen, geht weiter. Leer = unbegrenzt.</value>
+  </data>
+  <data name="ErrorRepositoryNameInvalid" xml:space="preserve">
+    <value>Verwende 1–64 Buchstaben, Ziffern, „.“, „-“ oder „_“, beginnend mit Buchstabe oder Ziffer.</value>
+  </data>
+  <data name="ErrorRepositoryNameTaken" xml:space="preserve">
+    <value>Es gibt schon ein Repository namens {0}.</value>
+  </data>
+  <data name="ErrorMayNotCreateRepositories" xml:space="preserve">
+    <value>Dein Konto darf keine Repositories anlegen.</value>
+  </data>
+  <data name="ErrorUserQuotaExceeded" xml:space="preserve">
+    <value>Dein Speicherkontingent ist aufgebraucht.</value>
+  </data>
+  <data name="ErrorQuotaInvalid" xml:space="preserve">
+    <value>Ein Kontingent muss größer als 0 sein.</value>
+  </data>
+  <data name="ErrorDatastoreUnknown" xml:space="preserve">
+    <value>Wähle einen Datenspeicher.</value>
+  </data>
+  <data name="ErrorDatastoreReadOnly" xml:space="preserve">
+    <value>Dieser Datenspeicher ist schreibgeschützt.</value>
+  </data>
+  <data name="ErrorDatastoreNameInvalid" xml:space="preserve">
+    <value>Der Name muss 1 bis 64 Zeichen lang sein.</value>
+  </data>
+  <data name="ErrorDatastoreNameTaken" xml:space="preserve">
+    <value>Es gibt schon einen Datenspeicher namens {0}.</value>
+  </data>
+  <data name="ErrorDatastorePathNotAbsolute" xml:space="preserve">
+    <value>Gib den vollständigen Pfad des Ordners an, z. B. /mnt/backup.</value>
+  </data>
+  <data name="ErrorDatastorePathMissing" xml:space="preserve">
+    <value>Den Ordner gibt es nicht (ist die Platte eingebunden?).</value>
+  </data>
+  <data name="ErrorDatastorePathNotWritable" xml:space="preserve">
+    <value>Der Server darf in diesen Ordner nicht schreiben.</value>
+  </data>
+  <data name="ErrorDatastorePathContainsServerData" xml:space="preserve">
+    <value>Der Ordner enthält den Datenordner des Servers.</value>
+  </data>
+  <data name="ErrorDatastorePathOverlaps" xml:space="preserve">
+    <value>Der Ordner überschneidet sich mit dem Datenspeicher {0}.</value>
+  </data>
+  <data name="ErrorDatastoreNotEmpty" xml:space="preserve">
+    <value>Der Datenspeicher enthält noch Repositories (auch im Papierkorb). Zieh sie zuerst um oder lösche sie.</value>
+  </data>
+  <data name="ErrorDatastoreLast" xml:space="preserve">
+    <value>Der letzte Datenspeicher kann nicht entfernt werden.</value>
+  </data>
+  <data name="ErrorUserUnknown" xml:space="preserve">
+    <value>Es gibt keinen Benutzer namens {0}.</value>
+  </data>
+  <data name="ErrorShareWithOwner" xml:space="preserve">
+    <value>Der Besitzer hat immer vollen Zugriff.</value>
+  </data>
+  <data name="ErrorRepositoryMoving" xml:space="preserve">
+    <value>Das Repository wird gerade umgezogen; versuch es danach noch einmal.</value>
+  </data>
+  <data name="ErrorRestoreNeedsOwner" xml:space="preserve">
+    <value>Der Besitzer wurde gelöscht: Ein Administrator muss einen neuen wählen.</value>
+  </data>
+  <data name="ErrorFolderProblem" xml:space="preserve">
+    <value>Der Ordner {0} konnte nicht geändert werden.</value>
+  </data>
+  <data name="NavDevices" xml:space="preserve">
+    <value>Geräte</value>
+  </data>
+  <data name="DevicesIntro" xml:space="preserve">
+    <value>Mit deinem Konto gekoppelte BorgStudio-Apps und API-Token. Sie gelten, bis du sie widerrufst; „Zuletzt benutzt“ zeigt vergessene. Widerrufen entfernt auch ihre SSH-Schlüssel; eine laufende Sicherung darf noch zu Ende laufen.</value>
+  </data>
+  <data name="DevicesEmpty" xml:space="preserve">
+    <value>Noch keine App gekoppelt und keine API-Token. Füge in der BorgStudio-App ein Repository vom Typ BorgStudio Server hinzu, um sie zu koppeln.</value>
+  </data>
+  <data name="DevicesEnterCode" xml:space="preserve">
+    <value>Kopplungscode eingeben</value>
+  </data>
+  <data name="DeviceName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DeviceDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="DeviceLastUsed" xml:space="preserve">
+    <value>Zuletzt benutzt</value>
+  </data>
+  <data name="DeviceNeverUsed" xml:space="preserve">
+    <value>Nie</value>
+  </data>
+  <data name="DeviceKeys" xml:space="preserve">
+    <value>SSH-Schlüssel</value>
+  </data>
+  <data name="DeviceKindApp" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="DeviceKindToken" xml:space="preserve">
+    <value>API-Token</value>
+  </data>
+  <data name="DeviceKindTokenHint" xml:space="preserve">
+    <value>Token für Skripte und andere Programme</value>
+  </data>
+  <data name="DeviceExpired" xml:space="preserve">
+    <value>Abgelaufen</value>
+  </data>
+  <data name="DeviceCreatedAt" xml:space="preserve">
+    <value>Erstellt {0}</value>
+  </data>
+  <data name="DeviceExpiresAt" xml:space="preserve">
+    <value>Gültig bis {0}</value>
+  </data>
+  <data name="DevicePlatform" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="DeviceAppVersion" xml:space="preserve">
+    <value>App-Version</value>
+  </data>
+  <data name="DeviceRevoke" xml:space="preserve">
+    <value>Widerrufen</value>
+  </data>
+  <data name="DeviceRevokeConfirm" xml:space="preserve">
+    <value>{0} widerrufen? Es kann den Server dann nicht mehr nutzen, seine SSH-Schlüssel werden entfernt. Eine laufende Sicherung darf noch zu Ende laufen.</value>
+  </data>
+  <data name="DeviceRevoked" xml:space="preserve">
+    <value>{0} wurde widerrufen.</value>
+  </data>
+  <data name="TokenCreate" xml:space="preserve">
+    <value>Neues API-Token</value>
+  </data>
+  <data name="TokenCreateSubmit" xml:space="preserve">
+    <value>Token erstellen</value>
+  </data>
+  <data name="TokenNameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="TokenNameHint" xml:space="preserve">
+    <value>Wofür das Token ist, z. B. „Sicherungsskript auf dem NAS“.</value>
+  </data>
+  <data name="TokenExpiresLabel" xml:space="preserve">
+    <value>Gültig bis (optional)</value>
+  </data>
+  <data name="TokenExpiresHint" xml:space="preserve">
+    <value>Leer = bis zum Widerruf.</value>
+  </data>
+  <data name="TokenCreatedIntro" xml:space="preserve">
+    <value>Verwende es als „Authorization: Bearer &lt;Token&gt;“ für die Schnittstelle unter /api/v1. Es hat deine Rechte zum Sichern: Repositories auflisten und anlegen, SSH-Schlüssel hinterlegen, Statistiken.</value>
+  </data>
+  <data name="PairTitle" xml:space="preserve">
+    <value>BorgStudio koppeln</value>
+  </data>
+  <data name="PairEnterCode" xml:space="preserve">
+    <value>Gib den Code ein, den die BorgStudio-App anzeigt.</value>
+  </data>
+  <data name="PairCodeLabel" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="PairQuestion" xml:space="preserve">
+    <value>Soll diese BorgStudio-App den Server als {0} nutzen?</value>
+  </data>
+  <data name="PairHint" xml:space="preserve">
+    <value>Bestätige nur, wenn die App denselben Code anzeigt. Sie kann dann deine Repositories auflisten, anlegen und hineinsichern, aber nichts löschen oder teilen.</value>
+  </data>
+  <data name="PairApprove" xml:space="preserve">
+    <value>Koppeln</value>
+  </data>
+  <data name="PairDeny" xml:space="preserve">
+    <value>Nicht koppeln</value>
+  </data>
+  <data name="PairApproved" xml:space="preserve">
+    <value>Erledigt. Die App ist gekoppelt und macht von selbst weiter; du kannst diese Seite schließen.</value>
+  </data>
+  <data name="PairDenied" xml:space="preserve">
+    <value>Die App wurde nicht gekoppelt.</value>
+  </data>
+  <data name="SshAccessTitle" xml:space="preserve">
+    <value>Zugriff mit borg</value>
+  </data>
+  <data name="SshAccessIntro" xml:space="preserve">
+    <value>Die BorgStudio-App richtet das selbst ein. Für borg ohne die App (Skripte, borgmatic, Vorta) einen SSH-Schlüssel hinzufügen und diese Adresse verwenden.</value>
+  </data>
+  <data name="SshRepositoryUrl" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="SshHostKey" xml:space="preserve">
+    <value>Host-Schlüssel</value>
+  </data>
+  <data name="SshKeysNone" xml:space="preserve">
+    <value>Noch keine SSH-Schlüssel.</value>
+  </data>
+  <data name="SshKeyAdd" xml:space="preserve">
+    <value>SSH-Schlüssel hinzufügen</value>
+  </data>
+  <data name="SshKeyAddSubmit" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="SshKeyAddIntro" xml:space="preserve">
+    <value>Der Schlüssel bekommt deine Rechte an diesem Repository. Jeder Schlüssel öffnet nur ein Repository: Verwende für jedes einen eigenen.</value>
+  </data>
+  <data name="SshKeyName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SshKeyNameHint" xml:space="preserve">
+    <value>Optional, z. B. „borgmatic auf dem NAS“.</value>
+  </data>
+  <data name="SshKeyPublicKey" xml:space="preserve">
+    <value>Öffentlicher Schlüssel</value>
+  </data>
+  <data name="SshKeyPublicKeyHint" xml:space="preserve">
+    <value>Der Inhalt der .pub-Datei, z. B. ~/.ssh/id_ed25519.pub.</value>
+  </data>
+  <data name="SshKeyUsage" xml:space="preserve">
+    <value>Danach zum Beispiel:</value>
+  </data>
+  <data name="SshKeyFingerprint" xml:space="preserve">
+    <value>Fingerabdruck</value>
+  </data>
+  <data name="SshKeyRemove" xml:space="preserve">
+    <value>Schlüssel {0} entfernen</value>
+  </data>
+  <data name="SshKeyRemoveConfirm" xml:space="preserve">
+    <value>Verbindungen mit diesem Schlüssel werden ab sofort abgelehnt. Eine laufende Sicherung darf noch zu Ende laufen.</value>
+  </data>
+  <data name="SshSettingsTitle" xml:space="preserve">
+    <value>SSH für borg</value>
+  </data>
+  <data name="SshSettingsAddress" xml:space="preserve">
+    <value>Clients verbinden sich mit</value>
+  </data>
+  <data name="SshPublicAddressLabel" xml:space="preserve">
+    <value>Öffentliche SSH-Adresse (optional)</value>
+  </data>
+  <data name="SshPublicAddressHint" xml:space="preserve">
+    <value>Host oder Host:Port, falls Clients den SSH-Dienst anders erreichen, z. B. über eine Portweiterleitung. Leer = der Rechnername, den der Client verwendet, Port aus der Konfiguration.</value>
+  </data>
+  <data name="SshStateRunning" xml:space="preserve">
+    <value>Der SSH-Dienst für borg läuft.</value>
+  </data>
+  <data name="SshStateStarting" xml:space="preserve">
+    <value>Der SSH-Dienst für borg startet.</value>
+  </data>
+  <data name="SshStateDisabled" xml:space="preserve">
+    <value>Der SSH-Dienst für borg ist in der Konfiguration ausgeschaltet (BorgStudio:Ssh:Enabled).</value>
+  </data>
+  <data name="SshStateFailed" xml:space="preserve">
+    <value>Der SSH-Dienst für borg läuft nicht: {0}</value>
+  </data>
+  <data name="ErrorSshKeyInvalid" xml:space="preserve">
+    <value>Das ist kein gültiger öffentlicher SSH-Schlüssel (ssh-ed25519, ssh-rsa oder ecdsa, wie in einer .pub-Datei).</value>
+  </data>
+  <data name="ErrorSshKeyInUse" xml:space="preserve">
+    <value>Dieser Schlüssel öffnet schon das Repository {0}. Verwende für jedes Repository einen eigenen Schlüssel.</value>
+  </data>
+  <data name="ErrorNoAccessToRepository" xml:space="preserve">
+    <value>Du hast keinen Zugriff auf dieses Repository.</value>
+  </data>
+  <data name="ErrorPairingCodeUnknown" xml:space="preserve">
+    <value>Dieser Code ist unbekannt oder abgelaufen. Starte die Kopplung in der App neu.</value>
+  </data>
+  <data name="ErrorTokenNameInvalid" xml:space="preserve">
+    <value>Der Name muss 1 bis 100 Zeichen lang sein.</value>
+  </data>
+  <data name="ErrorTokenExpiryInPast" xml:space="preserve">
+    <value>Das Enddatum muss in der Zukunft liegen.</value>
+  </data>
+  <data name="ErrorSshAddressInvalid" xml:space="preserve">
+    <value>Gib einen Rechnernamen oder eine Adresse ein, optional mit :Port.</value>
+  </data>
 </root>

@@ -57,14 +57,7 @@ public sealed class UpdateTests
         var grant = await DispatchAsync(server, new CreateUserCommand(
             adminId, "alice", null, Roles.User, NewUserAccess.TemporaryPassword, 7, "http://localhost/"));
         using var alice = server.CreateBrowser();
-        var page = await SignInAsync(alice, "alice", grant.Value!.TemporaryPassword!);
-        page = await alice.SubmitAsync(page, "new-password", new()
-        {
-            ["PasswordInput.NewPassword"] = "Alice-Secret-42",
-            ["PasswordInput.ConfirmPassword"] = "Alice-Secret-42",
-        });
-        page = await alice.SubmitAsync(page, "skip-two-factor");
-        await alice.SubmitAsync(page, "reveal-codes");
+        await SignInNewUserAsync(alice, "alice", grant.Value!.TemporaryPassword!);
         Assert.DoesNotContain("is available", (await alice.GetAsync("/")).Text);
         Assert.DoesNotContain("Version 0.2.0 is available", (await alice.GetAsync("/changelog")).Text);
     }
@@ -127,6 +120,19 @@ public sealed class UpdateTests
 
         Assert.Contains("Look for new versions daily", page.Text);
         Assert.Contains("Not checked yet", page.Text);
+    }
+
+    /// <summary>First sign-in of a user with a temporary password: new password, no 2FA, codes seen.</summary>
+    internal static async Task SignInNewUserAsync(Browser browser, string userName, string temporaryPassword)
+    {
+        var page = await SignInAsync(browser, userName, temporaryPassword);
+        page = await browser.SubmitAsync(page, "new-password", new()
+        {
+            ["PasswordInput.NewPassword"] = "Alice-Secret-42",
+            ["PasswordInput.ConfirmPassword"] = "Alice-Secret-42",
+        });
+        page = await browser.SubmitAsync(page, "skip-two-factor");
+        await browser.SubmitAsync(page, "reveal-codes");
     }
 
     private static async Task<Page> SignInAsync(Browser browser, string userName, string password)

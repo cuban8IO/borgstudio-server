@@ -2,6 +2,12 @@
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
         @Strings.NavOverview
     </MudNavLink>
+    <MudNavLink Href="repositories" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">
+        @Strings.NavRepositories
+    </MudNavLink>
+    <MudNavLink Href="devices" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Devices">
+        @Strings.NavDevices
+    </MudNavLink>
     <MudNavLink Href="account" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ManageAccounts">
         @Strings.NavAccount
     </MudNavLink>
@@ -9,6 +15,9 @@
         <MudDivider Class="my-2" />
         <MudNavLink Href="users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">
             @Strings.NavUsers
+        </MudNavLink>
+        <MudNavLink Href="datastores" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Storage">
+            @Strings.NavDatastores
         </MudNavLink>
         <MudNavLink Href="settings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings">
             @Strings.NavSettings

@@ -2,8 +2,11 @@ using System.Reflection;
 
 using BorgStudio.Server.Application;
 using BorgStudio.Server.Application.Abstractions.Accounts;
+using BorgStudio.Server.Application.Abstractions.Storage;
 using BorgStudio.Server.Infrastructure;
 using BorgStudio.Server.Infrastructure.Persistence;
+using BorgStudio.Server.Infrastructure.Ssh;
+using BorgStudio.Server.Web.Api;
 using BorgStudio.Server.Web.Authentication;
 using BorgStudio.Server.Web.Components;
 using BorgStudio.Server.Web.Hosting;
@@ -18,6 +21,12 @@ using MudBlazor.Services;
 if (Assembly.GetEntryAssembly() == typeof(Program).Assembly)
 {
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+}
+
+// sshd runs these for borg connections: answer which key may log in, or serve borg for one key.
+if (SshConsole.Handles(args))
+{
+    return await SshCommands.RunAsync(args);
 }
 
 // "BorgStudio.Server reset-admin [user name]" runs a console command instead of the server.
@@ -38,6 +47,7 @@ builder.Services.AddInfrastructure(builder.Configuration)
     .AddSignInManager()
     .AddErrorDescriber<LocalizedIdentityErrorDescriber>();
 builder.Services.AddSingleton<IAccountTexts, AccountTexts>();
+builder.Services.AddSingleton<IStorageTexts, StorageTexts>();
 builder.Services.AddSingleton<RecoveryCodeFlash>();
 builder.Services.AddWebAuthentication(ServerPaths.FromConfiguration(builder.Configuration));
 
@@ -72,6 +82,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets().AllowAnonymous();
 app.MapAccountEndpoints();
+app.MapApiEndpoints();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

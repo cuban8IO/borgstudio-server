@@ -1,5 +1,7 @@
 @using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Storage
 @using BorgStudio.Server.Application.Users
+@using BorgStudio.Server.Web.Localization
 @using BorgStudio.Server.Domain.Settings
 @inject IDispatcher Dispatcher
 
@@ -16,6 +18,12 @@
             <MudSelectItem T="string" Value="@Roles.User">@Strings.RoleUser</MudSelectItem>
             <MudSelectItem T="string" Value="@Roles.Administrator">@Strings.RoleAdministrator</MudSelectItem>
         </MudSelect>
+
+        <MudText Typo="Typo.subtitle2" Class="mt-4">@Strings.UserStorageLabel</MudText>
+        <MudSwitch T="bool" @bind-Value="mayCreateRepositories" Color="Color.Primary" Label="@Strings.UserMayCreateRepositories" />
+        <MudNumericField T="decimal?" @bind-Value="quotaGigabytes" Label="@Strings.UserQuotaLabel" Variant="Variant.Outlined"
+                         Margin="Margin.Dense" Min="0" Step="10" Adornment="Adornment.End" AdornmentText="GB"
+                         HelperText="@Strings.UserQuotaHint" />
 
         @if (User is null)
         {
@@ -55,11 +63,17 @@
     [Parameter]
     public AccountInfo? User { get; set; }
 
+    /// <summary>The user's current storage rights, when editing.</summary>
+    [Parameter]
+    public StorageAllowance? Storage { get; set; }
+
     private string userName = string.Empty;
     private string? email;
     private string role = Roles.User;
     private NewUserAccess access = NewUserAccess.TemporaryPassword;
     private int invitationDays = 7;
+    private bool mayCreateRepositories = true;
+    private decimal? quotaGigabytes;
     private IReadOnlyList<string>? errors;
     private bool busy;
 
@@ -70,6 +84,12 @@
             userName = User.UserName;
             email = User.Email;
             role = User.IsAdministrator ? Roles.Administrator : Roles.User;
+        }
+
+        if (Storage is not null)
+        {
+            mayCreateRepositories = Storage.MayCreate;
+            quotaGigabytes = ByteSize.ToGigabytes(Storage.QuotaBytes);
         }
     }
 
@@ -84,6 +104,7 @@
                     ActingUserId, userName, email, role, access, invitationDays, CurrentBaseUrl));
                 if (created.Succeeded)
                 {
+                    await SaveStorageAsync(created.Value!.UserId);
                     MudDialog.Close(DialogResult.Ok(created.Value!));
                     return;
                 }
@@ -95,6 +116,7 @@
                 var updated = await Dispatcher.SendAsync(new UpdateUserCommand(ActingUserId, User.Id, userName, email, role));
                 if (updated.Succeeded)
                 {
+                    await SaveStorageAsync(User.Id);
                     MudDialog.Close(DialogResult.Ok(true));
                     return;
                 }
@@ -111,4 +133,7 @@
             busy = false;
         }
     }
+
+    private Task SaveStorageAsync(string userId) =>
+        Dispatcher.SendAsync(new SetUserStorageCommand(ActingUserId, userId, mayCreateRepositories, ByteSize.FromGigabytes(quotaGigabytes)));
 }

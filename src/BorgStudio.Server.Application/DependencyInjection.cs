@@ -1,7 +1,9 @@
 using System.Reflection;
 
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Access;
 using BorgStudio.Server.Application.Messaging;
+using BorgStudio.Server.Application.Storage;
 using BorgStudio.Server.Application.Updates;
 using BorgStudio.Server.Application.Users;
 
@@ -24,6 +26,10 @@ public static class DependencyInjection
         services.AddSingleton<IDispatcher, Dispatcher>();
         services.AddScoped<UserAdministration>();
         services.AddSingleton<UpdateStatusStore>();
+        services.AddScoped<StorageContext>();
+        services.AddScoped<RepositoryOwners>();
+        services.AddSingleton<RepositoryMoves>();
+        services.AddScoped<SshEndpoints>();
         services.AddRequestHandlers(typeof(DependencyInjection).Assembly);
         return services;
     }

@@ -25,6 +25,9 @@ public sealed class ServerPaths
 
     public string SetupCodeFile => Path.Combine(DataDirectory, "setup-code.txt");
 
+    /// <summary>The datastore a new server starts with.</summary>
+    public string DefaultDatastoreDirectory => Path.Combine(DataDirectory, "repositories");
+
     public static ServerPaths FromConfiguration(IConfiguration configuration)
     {
         var configured = configuration[ConfigurationKey];

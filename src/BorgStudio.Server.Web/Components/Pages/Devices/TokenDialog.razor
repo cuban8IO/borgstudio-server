@@ -1,0 +1,82 @@
+@using BorgStudio.Server.Application.Access
+@using BorgStudio.Server.Domain.Access
+@inject IDispatcher Dispatcher
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+@* Creates an API token and shows it the one time it exists in readable form. *@
+<MudDialog>
+    <DialogContent>
+        @if (token is null)
+        {
+            <FormErrors Errors="errors" />
+            <MudTextField @bind-Value="name" Label="@Strings.TokenNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Immediate="true" AutoFocus="true" MaxLength="Device.MaxNameLength" HelperText="@Strings.TokenNameHint" />
+            <MudDatePicker @bind-Date="expires" Label="@Strings.TokenExpiresLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           MinDate="DateTime.Today.AddDays(1)" Clearable="true" Class="mt-2" HelperText="@Strings.TokenExpiresHint" />
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@Strings.UserAccessShownOnce</MudAlert>
+            <MudText Typo="Typo.body2" Class="mb-3">@Strings.TokenCreatedIntro</MudText>
+            <div class="access-secret" data-testid="api-token">@token</div>
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (token is null)
+        {
+            <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="busy || string.IsNullOrWhiteSpace(name)">
+                @Strings.TokenCreateSubmit
+            </MudButton>
+        }
+        else
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyAsync">@Strings.Copy</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => MudDialog.Close()">@Strings.Done</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    private string name = string.Empty;
+    private DateTime? expires;
+    private string? token;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    private async Task CreateAsync()
+    {
+        busy = true;
+        try
+        {
+            // Valid through the chosen day (until the following midnight, UTC).
+            DateTimeOffset? end = expires is { } day ? new DateTimeOffset(day.Date.AddDays(1), TimeSpan.Zero) : null;
+            var result = await Dispatcher.SendAsync(new CreateApiTokenCommand(ActingUserId, name, end));
+            if (result.Succeeded)
+            {
+                token = result.Value;
+            }
+            else
+            {
+                errors = result.Errors;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task CopyAsync()
+    {
+        var copied = await JS.InvokeAsync<bool>("borgStudio.copyText", token);
+        Snackbar.Add(copied ? Strings.Copied : Strings.CopyFailed, copied ? Severity.Success : Severity.Warning);
+    }
+}

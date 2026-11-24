@@ -1,0 +1,73 @@
+@using BorgStudio.Server.Application.Abstractions.Access
+@using BorgStudio.Server.Application.Access
+@using BorgStudio.Server.Application.Settings
+@using BorgStudio.Server.Web.Components.Pages.Repositories
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+@* The SSH service borg connects to: state, host key, and the address clients use. *@
+<MudPaper Outlined="true" Class="pa-4">
+    <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SshSettingsTitle</MudText>
+    @if (endpoint is null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <MudAlert Severity="@(endpoint.State == SshServiceState.Running ? Severity.Success : Severity.Warning)" Dense="true" Class="mb-3">
+            @SshTexts.State(endpoint)
+        </MudAlert>
+        <dl class="status-list mb-3">
+            <dt>@Strings.SshSettingsAddress</dt>
+            <dd><code>@($"{endpoint.UserName}@{endpoint.Host}:{endpoint.Port}")</code></dd>
+            @foreach (var hostKey in endpoint.HostKeys)
+            {
+                <dt>@Strings.SshHostKey</dt>
+                <dd><code class="text-break">@hostKey.Fingerprint</code></dd>
+            }
+        </dl>
+        <FormErrors Errors="errors" />
+        <MudTextField @bind-Value="publicAddress" Label="@Strings.SshPublicAddressLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Placeholder="backup.example.org:2222" HelperText="@Strings.SshPublicAddressHint" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveAsync" Disabled="busy">@Strings.Save</MudButton>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    private SshEndpoint? endpoint;
+    private string? publicAddress;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        publicAddress = (await Dispatcher.QueryAsync(new GetServerSettingsQuery())).SshPublicAddress;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() =>
+        endpoint = await Dispatcher.QueryAsync(new GetSshEndpointQuery(new Uri(Navigation.BaseUri).Host));
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new UpdateSshSettingsCommand(ActingUserId, publicAddress));
+            errors = result.Errors;
+            if (result.Succeeded)
+            {
+                Snackbar.Add(Strings.SettingsSaved, Severity.Success);
+                await LoadAsync();
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}
