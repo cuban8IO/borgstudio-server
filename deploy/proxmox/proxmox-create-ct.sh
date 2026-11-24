@@ -24,13 +24,25 @@ else
   BOLD='' RESET='' GREEN='' PINK='' RED='' GRAY='' INTERACTIVE=0
 fi
 LOG=$(mktemp -t borgstudio-proxmox-XXXXXX.log)
-# The log stays only when something went wrong.
+# The log stays only when something went wrong. A container this script created is removed again
+# if a later step fails (or the script is interrupted), so no half-installed container stays behind.
+CREATED_CT=""
 cleanup() {
   local status=$?
-  if [[ $status -eq 0 ]]; then rm -f "$LOG"; fi
+  if [[ $status -eq 0 ]]; then
+    rm -f "$LOG"
+  elif [[ -n "$CREATED_CT" ]] && pct status "$CREATED_CT" > /dev/null 2>&1; then
+    pct stop "$CREATED_CT" > /dev/null 2>&1 || true
+    if pct destroy "$CREATED_CT" --purge > /dev/null 2>&1; then
+      info "The unfinished container $CREATED_CT was removed again." >&2
+    else
+      info "Remove the unfinished container with:  pct destroy $CREATED_CT --purge" >&2
+    fi
+  fi
   exit "$status"
 }
 trap cleanup EXIT
+trap 'exit 130' INT TERM
 
 banner() {
   printf '%s%s' "$GREEN" "$BOLD"
@@ -191,9 +203,15 @@ ok "Container $CT_ID ($CT_HOSTNAME): $CT_CORES cores, $CT_MEMORY MB, $CT_DISK GB
 
 step "Updating the list of templates" pveam update
 
-template=$(pveam available --section system | awk '{ print $2 }' | grep -E '^debian-13-standard_' | sort -V | tail -n 1 || true)
-[[ -n "$template" ]] || template=$(pveam available --section system | awk '{ print $2 }' | grep -E '^debian-12-standard_' | sort -V | tail -n 1 || true)
-[[ -n "$template" ]] || fail "No Debian standard template available"
+# Templates exist for several architectures (amd64, arm64); only the host's own one can run here.
+architecture=$(dpkg --print-architecture)
+newest_template() {
+  pveam available --section system | awk '{ print $2 }' \
+    | grep -E "^debian-$1-standard_.*_${architecture}\.tar\.(zst|xz|gz)$" | sort -V | tail -n 1 || true
+}
+template=$(newest_template 13)
+[[ -n "$template" ]] || template=$(newest_template 12)
+[[ -n "$template" ]] || fail "No Debian standard template for $architecture available"
 if pveam list "$CT_TEMPLATE_STORAGE" | grep -q "$template"; then
   ok "Template $template is present"
 else
@@ -205,6 +223,7 @@ if [[ "$CT_IP" != "dhcp" && -n "$CT_GATEWAY" ]]; then
   network+=",gw=$CT_GATEWAY"
 fi
 
+CREATED_CT=$CT_ID
 step "Creating container $CT_ID" pct create "$CT_ID" "$CT_TEMPLATE_STORAGE:vztmpl/$template" \
   --hostname "$CT_HOSTNAME" \
   --cores "$CT_CORES" \
