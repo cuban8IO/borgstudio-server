@@ -31,6 +31,9 @@ public sealed class ServerSettings
         ServerName = name;
     }
 
+    /// <summary>Look for new releases on GitHub once a day (administrators see a hint).</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
     public const int MaxPublicUrlLength = 256;
 
     /// <summary>

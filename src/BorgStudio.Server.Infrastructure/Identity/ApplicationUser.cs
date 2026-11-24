@@ -12,6 +12,9 @@ public sealed class ApplicationUser : IdentityUser
     /// <summary>New accounts start dark, like the BorgStudio app.</summary>
     public ThemeMode ThemeMode { get; set; } = ThemeMode.Dark;
 
+    /// <summary>The newest version whose changes the user has been told about (administrators).</summary>
+    public string? ChangelogSeenVersion { get; set; }
+
     /// <summary>Disabled by an administrator: cannot sign in until enabled again.</summary>
     public bool IsDisabled { get; set; }
 }

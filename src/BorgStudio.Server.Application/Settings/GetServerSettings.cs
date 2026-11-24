@@ -10,7 +10,7 @@ namespace BorgStudio.Server.Application.Settings;
 
 public sealed record GetServerSettingsQuery : IQuery<ServerSettingsInfo>;
 
-public sealed record ServerSettingsInfo(string ServerName, string? PublicUrl);
+public sealed record ServerSettingsInfo(string ServerName, string? PublicUrl, bool CheckForUpdates);
 
 internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
     : IQueryHandler<GetServerSettingsQuery, ServerSettingsInfo>
@@ -18,7 +18,7 @@ internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
     public async Task<ServerSettingsInfo> HandleAsync(GetServerSettingsQuery query, CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new ServerSettingsInfo(settings.ServerName, settings.PublicUrl);
+        return new ServerSettingsInfo(settings.ServerName, settings.PublicUrl, settings.CheckForUpdates);
     }
 }
 
@@ -26,7 +26,8 @@ internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
 public sealed record UpdateServerSettingsCommand(
     [property: Required] string ActingUserId,
     [property: MaxLength(ServerSettings.MaxServerNameLength)] string? ServerName,
-    string? PublicUrl) : ICommand<AccountResult>;
+    string? PublicUrl,
+    bool CheckForUpdates = true) : ICommand<AccountResult>;
 
 internal sealed class UpdateServerSettingsCommandHandler(UserAdministration admin, IServerSettingsStore store)
     : ICommandHandler<UpdateServerSettingsCommand, AccountResult>
@@ -42,6 +43,7 @@ internal sealed class UpdateServerSettingsCommandHandler(UserAdministration admi
         var settings = await store.GetAsync(cancellationToken);
         settings.Rename(command.ServerName);
         settings.SetPublicUrl(command.PublicUrl);
+        settings.CheckForUpdates = command.CheckForUpdates;
         await store.SaveAsync(settings, cancellationToken);
         return AccountResult.Success;
     }

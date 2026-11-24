@@ -1,0 +1,86 @@
+@page "/changelog"
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Abstractions.Updates
+@using BorgStudio.Server.Application.Updates
+@inject IDispatcher Dispatcher
+
+<AppPageTitle Title="@Strings.NavChangelog" />
+
+<MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.NavChangelog</MudText>
+
+@if (view is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudText Typo="Typo.body1" Class="mud-text-secondary mb-6">@string.Format(Strings.ChangelogRunning, RunningText)</MudText>
+
+    @if (view.Update is { } update)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-6 update-card" id="update">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@string.Format(Strings.UpdateAvailableTitle, update.Latest)</MudText>
+            <MudText Typo="Typo.body2">@HowTo(update.Installation)</MudText>
+            @if (Command(update.Installation) is { } command)
+            {
+                <pre class="update-command">@command</pre>
+            }
+            @if (update.Installation == InstallationKind.Lxc)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@Strings.UpdateHowLxcHost</MudText>
+            }
+            <MudLink Href="@update.Url" Target="_blank" Class="d-inline-block mt-2">@Strings.UpdateReleaseOnGitHub</MudLink>
+            @foreach (var release in update.Releases)
+            {
+                <ReleaseNotes Release="release" />
+            }
+        </MudPaper>
+    }
+
+    @if (view.Releases.Count == 0)
+    {
+        <MudText Typo="Typo.body2">@Strings.ChangelogEmpty</MudText>
+    }
+
+    @foreach (var release in view.Releases)
+    {
+        <ReleaseNotes Release="release" Installed="@(release.Version.ToString() == view.Running.Version)" />
+    }
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private ChangelogView? view;
+
+    private string RunningText => view!.Running.IsDevelopmentBuild
+        ? Strings.StatusDevelopmentBuild
+        : view.Running.Version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        view = await Dispatcher.QueryAsync(new GetChangelogQuery(userId));
+        // Whoever reads the changelog has seen what the update brought.
+        await Dispatcher.SendAsync(new DismissUpdateNoticeCommand(userId));
+    }
+
+    private static string HowTo(InstallationKind kind) => kind switch
+    {
+        InstallationKind.Lxc => Strings.UpdateHowLxc,
+        InstallationKind.LinuxService => Strings.UpdateHowLinux,
+        InstallationKind.WindowsService => Strings.UpdateHowWindows,
+        InstallationKind.Docker => Strings.UpdateHowDocker,
+        _ => Strings.UpdateHowOther,
+    };
+
+    private static string? Command(InstallationKind kind) => kind switch
+    {
+        InstallationKind.Lxc => "update",
+        InstallationKind.LinuxService => "sudo ./borgstudio-server/install.sh",
+        InstallationKind.WindowsService => @".\borgstudio-server\install.ps1",
+        InstallationKind.Docker => "docker pull ghcr.io/cuban8io/borgstudio-server:latest\ndocker compose up -d   # or: docker run … with the new image",
+        _ => null,
+    };
+}

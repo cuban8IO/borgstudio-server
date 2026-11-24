@@ -1,7 +1,10 @@
 @page "/settings"
 @attribute [Authorize(Policy = Policies.Administrator)]
 @using System.Security.Claims
+@using System.Globalization
 @using BorgStudio.Server.Application.Settings
+@using BorgStudio.Server.Application.Status
+@using BorgStudio.Server.Application.Updates
 @using BorgStudio.Server.Domain.Settings
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
@@ -25,9 +28,24 @@
                           HelperText="@Strings.ServerNameHint" />
             <MudTextField @bind-Value="publicUrl" Label="@Strings.PublicUrlLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
                           Placeholder="https://backup.example.org/" HelperText="@Strings.PublicUrlHint" Class="mt-2" />
+            <MudSwitch T="bool" @bind-Value="checkForUpdates" Color="Color.Primary" Class="mt-3" Label="@Strings.UpdatesCheckDaily" />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@Strings.UpdatesHint</MudText>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveAsync" Disabled="busy">
                 @Strings.Save
             </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8" lg="6">
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.UpdatesTitle</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">@UpdateStatusText</MudText>
+            <div class="d-flex flex-wrap gap-2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="CheckNowAsync" Disabled="checking || !checkForUpdates">
+                    @Strings.UpdatesCheckNow
+                </MudButton>
+                <MudButton Variant="Variant.Text" Href="changelog">@Strings.NavChangelog</MudButton>
+            </div>
         </MudPaper>
     </MudItem>
 
@@ -45,6 +63,10 @@
 
     private string? serverName;
     private string? publicUrl;
+    private bool checkForUpdates = true;
+    private UpdateStatus? updateStatus;
+    private bool checking;
+    private bool developmentBuild;
     private IReadOnlyList<string>? errors;
     private bool busy;
     private string userId = string.Empty;
@@ -55,12 +77,53 @@
         var settings = await Dispatcher.QueryAsync(new GetServerSettingsQuery());
         serverName = settings.ServerName;
         publicUrl = settings.PublicUrl;
+        checkForUpdates = settings.CheckForUpdates;
+        updateStatus = await Dispatcher.QueryAsync(new GetUpdateStatusQuery(userId));
+        developmentBuild = (await Dispatcher.QueryAsync(new GetServerStatusQuery())).Version.IsDevelopmentBuild;
+    }
+
+    private string UpdateStatusText
+    {
+        get
+        {
+            if (developmentBuild)
+            {
+                return Strings.UpdatesDevelopment;
+            }
+
+            if (!checkForUpdates)
+            {
+                return Strings.UpdatesOff;
+            }
+
+            if (updateStatus?.CheckedAt is not { } checkedAt)
+            {
+                return Strings.UpdatesNotChecked;
+            }
+
+            var when = checkedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+            if (updateStatus.Failed)
+            {
+                return string.Format(Strings.UpdatesFailed, when);
+            }
+
+            return updateStatus.Latest is { } latest
+                ? string.Format(Strings.UpdatesAvailable, latest.Version, when)
+                : string.Format(Strings.UpdatesUpToDate, when);
+        }
+    }
+
+    private async Task CheckNowAsync()
+    {
+        checking = true;
+        updateStatus = await Dispatcher.SendAsync(new CheckForUpdatesNowCommand(userId));
+        checking = false;
     }
 
     private async Task SaveAsync()
     {
         busy = true;
-        var result = await Dispatcher.SendAsync(new UpdateServerSettingsCommand(userId, serverName, publicUrl));
+        var result = await Dispatcher.SendAsync(new UpdateServerSettingsCommand(userId, serverName, publicUrl, checkForUpdates));
         busy = false;
         if (!result.Succeeded)
         {

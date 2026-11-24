@@ -666,4 +666,88 @@
   <data name="PasswordRuleMatch" xml:space="preserve">
     <value>Beide Passwörter stimmen überein</value>
   </data>
+  <data name="NavChangelog" xml:space="preserve">
+    <value>Changelog</value>
+  </data>
+  <data name="ChangelogRunning" xml:space="preserve">
+    <value>Dieser Server läuft mit Version {0}.</value>
+  </data>
+  <data name="ChangelogInstalled" xml:space="preserve">
+    <value>installiert</value>
+  </data>
+  <data name="ChangelogSectionFeatures" xml:space="preserve">
+    <value>Neue Funktionen</value>
+  </data>
+  <data name="ChangelogSectionFixes" xml:space="preserve">
+    <value>Fehlerbehebungen</value>
+  </data>
+  <data name="ChangelogEmpty" xml:space="preserve">
+    <value>Noch keine Änderungen verzeichnet.</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Version {0} ist verfügbar</value>
+  </data>
+  <data name="UpdateReleaseOnGitHub" xml:space="preserve">
+    <value>Release auf GitHub</value>
+  </data>
+  <data name="UpdateHowLxc" xml:space="preserve">
+    <value>In der Konsole des Containers ausführen:</value>
+  </data>
+  <data name="UpdateHowLxcHost" xml:space="preserve">
+    <value>Oder auf dem Proxmox-Host: pct exec &lt;Container-ID&gt; -- update</value>
+  </data>
+  <data name="UpdateHowLinux" xml:space="preserve">
+    <value>Das Linux-Archiv des neuen Releases herunterladen, entpacken und ausführen:</value>
+  </data>
+  <data name="UpdateHowWindows" xml:space="preserve">
+    <value>Das Windows-Archiv des neuen Releases herunterladen, entpacken und in einer PowerShell als Administrator ausführen:</value>
+  </data>
+  <data name="UpdateHowDocker" xml:space="preserve">
+    <value>Das neue Image holen und den Container neu erstellen:</value>
+  </data>
+  <data name="UpdateHowOther" xml:space="preserve">
+    <value>Die Dateien stehen im Release auf GitHub.</value>
+  </data>
+  <data name="UpdateNoticeAvailable" xml:space="preserve">
+    <value>BorgStudio Server {0} ist verfügbar.</value>
+  </data>
+  <data name="UpdateNoticeUpdated" xml:space="preserve">
+    <value>BorgStudio Server wurde auf {0} aktualisiert.</value>
+  </data>
+  <data name="UpdateNoticeWhatsNew" xml:space="preserve">
+    <value>Neuigkeiten ansehen</value>
+  </data>
+  <data name="UpdateNoticeHowTo" xml:space="preserve">
+    <value>Neuigkeiten und Anleitung</value>
+  </data>
+  <data name="UpdatesTitle" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="UpdatesCheckDaily" xml:space="preserve">
+    <value>Täglich nach neuen Versionen suchen</value>
+  </data>
+  <data name="UpdatesHint" xml:space="preserve">
+    <value>Fragt api.github.com nach der Liste der Releases; über diesen Server wird nichts gesendet. Gespeichert wird mit dem Knopf darüber.</value>
+  </data>
+  <data name="UpdatesCheckNow" xml:space="preserve">
+    <value>Jetzt prüfen</value>
+  </data>
+  <data name="UpdatesNotChecked" xml:space="preserve">
+    <value>Noch nicht geprüft; die erste Prüfung läuft eine Minute nach dem Start.</value>
+  </data>
+  <data name="UpdatesUpToDate" xml:space="preserve">
+    <value>Aktuell (geprüft {0}).</value>
+  </data>
+  <data name="UpdatesAvailable" xml:space="preserve">
+    <value>Version {0} ist verfügbar (geprüft {1}).</value>
+  </data>
+  <data name="UpdatesFailed" xml:space="preserve">
+    <value>GitHub war nicht erreichbar (letzter Versuch {0}).</value>
+  </data>
+  <data name="UpdatesDevelopment" xml:space="preserve">
+    <value>Entwicklungsversionen werden nicht auf Updates geprüft.</value>
+  </data>
+  <data name="UpdatesOff" xml:space="preserve">
+    <value>Die Suche nach Updates ist ausgeschaltet.</value>
+  </data>
 </root>

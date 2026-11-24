@@ -2,7 +2,9 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
+using BorgStudio.Server.Application.Abstractions;
 using BorgStudio.Server.Application.Abstractions.Setup;
+using BorgStudio.Server.Application.Abstractions.Updates;
 using BorgStudio.Server.Infrastructure;
 
 using Microsoft.AspNetCore.Hosting;
@@ -30,6 +32,12 @@ public sealed class TestServer : WebApplicationFactory<Program>
 
     /// <summary>The server's clock; starts at the real time and only moves when a test moves it.</summary>
     public FakeTimeProvider Clock { get; } = new(DateTimeOffset.UtcNow);
+
+    /// <summary>The version the server reports; tests change it to simulate an update.</summary>
+    public string Version { get; set; } = "0.1.0";
+
+    /// <summary>What "GitHub" answers to the update check.</summary>
+    public FakeReleaseFeed Releases { get; } = new();
 
     public string SetupCode => Services.GetRequiredService<ISetupCodeStore>().Current
         ?? throw new InvalidOperationException("Setup is already done.");
@@ -68,6 +76,8 @@ public sealed class TestServer : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Clock);
+            services.AddSingleton<IServerEnvironment>(new TestEnvironment(this));
+            services.AddSingleton<IReleaseFeed>(Releases);
             // Check sessions on every request, so tests see sign-outs at once instead of after a minute.
             services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
         });
@@ -214,4 +224,32 @@ public static class Totp
 
         return [.. output];
     }
+}
+
+/// <summary>Stands in for GitHub's list of releases.</summary>
+public sealed class FakeReleaseFeed : IReleaseFeed
+{
+    public List<PublishedRelease> Releases { get; } = [];
+
+    public bool Fails { get; set; }
+
+    public Task<IReadOnlyList<PublishedRelease>> GetReleasesAsync(CancellationToken cancellationToken) =>
+        Fails
+            ? throw new HttpRequestException("GitHub is not reachable.")
+            : Task.FromResult<IReadOnlyList<PublishedRelease>>([.. Releases]);
+
+    public void Add(string version, string notes) => Releases.Add(new PublishedRelease(
+        Version.Parse(version), DateTimeOffset.UtcNow, notes, $"https://github.com/cuban8IO/borgstudio-server/releases/tag/v{version}"));
+}
+
+/// <summary>The running version comes from the test server, so a test can "update" it.</summary>
+internal sealed class TestEnvironment(TestServer server) : IServerEnvironment
+{
+    public string InformationalVersion => server.Version + "+0123456789abcdef";
+
+    public string OperatingSystem => "Test OS";
+
+    public string Runtime => ".NET Test";
+
+    public DateTimeOffset StartedAt { get; } = DateTimeOffset.UtcNow;
 }

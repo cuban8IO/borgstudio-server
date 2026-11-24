@@ -30,6 +30,10 @@ container or VM set up with `lxc-install.sh`, the command `update` does that: it
 does nothing when the server is up to date (from the Proxmox host: `pct exec <id> -- update`). `uninstall.sh` /
 `uninstall.ps1` remove it (`--purge` / `-Purge` also deletes the data).
 
+What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md) and on the server's *Changelog* page. Once a day
+the server asks GitHub for a newer release and tells administrators about it, with the update command for the way it
+is installed (can be switched off under *Settings*).
+
 **HTTPS:** installed servers listen on HTTPS port 8443 with a self-signed certificate until you upload your own under
 *Settings* or name one in `borgstudio-server.json`. The container listens on HTTP port 8080 for a reverse proxy.
 Ports, certificate files and proxy handling are set in `borgstudio-server.json` next to the program (see
