@@ -10,7 +10,7 @@ namespace BorgStudio.Server.Application.Settings;
 
 public sealed record GetServerSettingsQuery : IQuery<ServerSettingsInfo>;
 
-public sealed record ServerSettingsInfo(string ServerName, string? PublicUrl, bool CheckForUpdates);
+public sealed record ServerSettingsInfo(string ServerName, string? PublicUrl, bool CheckForUpdates, string? SshPublicAddress = null);
 
 internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
     : IQueryHandler<GetServerSettingsQuery, ServerSettingsInfo>
@@ -18,7 +18,7 @@ internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
     public async Task<ServerSettingsInfo> HandleAsync(GetServerSettingsQuery query, CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new ServerSettingsInfo(settings.ServerName, settings.PublicUrl, settings.CheckForUpdates);
+        return new ServerSettingsInfo(settings.ServerName, settings.PublicUrl, settings.CheckForUpdates, settings.SshPublicAddress);
     }
 }
 

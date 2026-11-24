@@ -165,6 +165,10 @@ else
             </MudPaper>
         </MudItem>
 
+        <MudItem xs="12">
+            <SshAccessCard ActingUserId="@actingUserId" Repository="repository" />
+        </MudItem>
+
         @if (repository.CanManage)
         {
             <MudItem xs="12">

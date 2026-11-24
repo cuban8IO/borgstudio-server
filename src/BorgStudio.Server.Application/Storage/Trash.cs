@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
+using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Access;
 using BorgStudio.Server.Domain.Storage;
 
 using Microsoft.Extensions.Logging;
@@ -55,7 +57,8 @@ public sealed record RestoreRepositoryCommand(
     string? OwnerUserName = null,
     string? Name = null) : ICommand<AccountResult>;
 
-internal sealed class RestoreRepositoryCommandHandler(StorageContext storage, ILogger<RestoreRepositoryCommandHandler> logger)
+internal sealed class RestoreRepositoryCommandHandler(
+    StorageContext storage, IAccessStore access, ILogger<RestoreRepositoryCommandHandler> logger)
     : ICommandHandler<RestoreRepositoryCommand, AccountResult>
 {
     public async Task<AccountResult> HandleAsync(RestoreRepositoryCommand command, CancellationToken cancellationToken)
@@ -110,6 +113,7 @@ internal sealed class RestoreRepositoryCommandHandler(StorageContext storage, IL
             return AccountResult.Failed(problem);
         }
 
+        await SshKeyRules.PruneAsync(access, repository, cancellationToken);
         await storage.Store.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Repository {Owner}/{Name} was restored from the trash.", owner.UserName, name);
         return AccountResult.Success;

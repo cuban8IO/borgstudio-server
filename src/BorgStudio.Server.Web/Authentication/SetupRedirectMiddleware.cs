@@ -17,7 +17,8 @@ internal sealed class SetupRedirectMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, IDispatcher dispatcher)
     {
         var path = context.Request.Path;
-        if (IsAsset(path))
+        // The interface answers for itself (without users nobody can pair or sign in anyway).
+        if (IsAsset(path) || path.StartsWithSegments(Api.ApiEndpoints.Prefix))
         {
             await next(context);
             return;

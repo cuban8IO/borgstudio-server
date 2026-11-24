@@ -80,10 +80,23 @@ jobs:
 
       - name: Start image
         run: |
-          docker run -d --name server -p 8080:8080 borgstudio-server:ci
+          docker run -d --name server -p 8080:8080 -p 2222:2222 borgstudio-server:ci
           for _ in $(seq 1 30); do
             if curl -fsS -o /dev/null http://localhost:8080/setup; then
               docker logs server | grep -q "setup code" && echo "Server answers and shows its setup code." && exit 0
+            fi
+            sleep 2
+          done
+          docker logs server
+          exit 1
+
+      # The server starts its own sshd for borg inside the container.
+      - name: SSH service for borg
+        run: |
+          for _ in $(seq 1 30); do
+            if ssh-keyscan -p 2222 -t ed25519 localhost 2> /dev/null | grep -q ssh-ed25519; then
+              docker exec server /usr/bin/borg --version
+              exit 0
             fi
             sleep 2
           done
@@ -103,6 +116,8 @@ jobs:
 
       - name: Install
         run: |
+          # On real systems /opt belongs to root and only root writes to it; sshd insists on that.
+          sudo chown root:root /opt && sudo chmod 755 /opt
           tar -xzf dist/*.tar.gz
           sudo ./borgstudio-server/install.sh | tee install.log
           grep -q "Setup code" install.log
@@ -121,6 +136,24 @@ jobs:
         run: |
           sudo runuser -u borgstudio -- /opt/borgstudio-server/BorgStudio.Server reset-admin | tee reset.log || true
           grep -q "no administrator yet" reset.log
+
+      # The real thing: set up the installed server, pair an "app" through the interface and back up
+      # with borg over the server's own SSH service.
+      - uses: actions/checkout@v7
+        with:
+          path: source
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: source/global.json
+
+      - name: Backup with borg over SSH
+        run: |
+          export BORGSTUDIO_E2E_URL=https://localhost:8443
+          BORGSTUDIO_E2E_SETUP_CODE=$(sudo cat /opt/borgstudio-server/data/setup-code.txt)
+          export BORGSTUDIO_E2E_SETUP_CODE
+          export BORGSTUDIO_E2E_BORG=/opt/borgstudio-server/borg/borg.exe
+          dotnet test source/tests/BorgStudio.Server.Tests --filter "FullyQualifiedName~EndToEnd" --logger "console;verbosity=normal"
 
       - name: Uninstall
         run: |

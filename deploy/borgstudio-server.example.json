@@ -14,6 +14,14 @@
       "CertificateKeyPath": ""
     },
 
+    // The SSH service borg clients connect to (Linux only). The server runs it under its own
+    // account on this port; clients log in as that account with keys from the web interface or a
+    // paired BorgStudio app. Needs OpenSSH (sshd) - the install script sets it up.
+    "Ssh": {
+      "Enabled": true,
+      "Port": 2222
+    },
+
     // Plain HTTP, e.g. for a reverse proxy that handles HTTPS.
     "Http": {
       "Enabled": false,

@@ -19,6 +19,9 @@ internal sealed class StorageWorker(
     private static readonly TimeSpan FirstRun = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(15);
 
+    /// <summary>Moves that wait for a running backup are tried again this often.</summary>
+    private static readonly TimeSpan MoveRetry = TimeSpan.FromMinutes(1);
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
         Task.WhenAll(MaintainAsync(stoppingToken), MoveAsync(stoppingToken));
 
@@ -48,7 +51,7 @@ internal sealed class StorageWorker(
             while (!stoppingToken.IsCancellationRequested)
             {
                 await RunAsync(new RunRepositoryMovesCommand(), "Moving repositories", stoppingToken);
-                await moves.WaitAsync(stoppingToken);
+                await moves.WaitAsync(MoveRetry, stoppingToken);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

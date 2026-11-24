@@ -1,0 +1,111 @@
+@page "/pair"
+@using System.Globalization
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Access
+@inject IDispatcher Dispatcher
+
+@* The BorgStudio app opens this page to be paired: the signed-in user confirms the code it shows. *@
+<AppPageTitle Title="@Strings.PairTitle" />
+
+<MudText Typo="Typo.h5" HtmlTag="h1" GutterBottom="true">@Strings.PairTitle</MudText>
+
+@if (decided is { } approved)
+{
+    <MudAlert Severity="@(approved ? Severity.Success : Severity.Info)" Dense="true" Class="mb-4">
+        @(approved ? Strings.PairApproved : Strings.PairDenied)
+    </MudAlert>
+    <MudText Typo="Typo.body2"><MudLink Href="devices">@Strings.NavDevices</MudLink></MudText>
+}
+else if (pairing is null)
+{
+    @if (!string.IsNullOrWhiteSpace(Code))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@Strings.ErrorPairingCodeUnknown</MudAlert>
+    }
+
+    <MudText Typo="Typo.body2" Class="mb-4">@Strings.PairEnterCode</MudText>
+    <form method="get" action="pair">
+        <FormField Label="@Strings.PairCodeLabel" For="code">
+            <input id="code" name="code" class="form-input" autocomplete="off" autofocus placeholder="ABCD-EFGH" />
+        </FormField>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
+            @Strings.Continue
+        </MudButton>
+    </form>
+}
+else
+{
+    <MudText Typo="Typo.body2" Class="mb-4">@string.Format(Strings.PairQuestion, userName)</MudText>
+
+    <dl class="status-list mb-4">
+        <dt>@Strings.PairCodeLabel</dt>
+        <dd><strong>@pairing.UserCode</strong></dd>
+        <dt>@Strings.DeviceName</dt>
+        <dd>@pairing.DeviceName</dd>
+        @if (pairing.Platform is { } platform)
+        {
+            <dt>@Strings.DevicePlatform</dt>
+            <dd>@platform</dd>
+        }
+        @if (pairing.AppVersion is { } version)
+        {
+            <dt>@Strings.DeviceAppVersion</dt>
+            <dd>@version</dd>
+        }
+    </dl>
+
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@Strings.PairHint</MudText>
+
+    <FormErrors Errors="errors" />
+
+    <EditForm Model="this" method="post" OnSubmit="ApproveAsync" FormName="approve-pairing">
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+            @Strings.PairApprove
+        </MudButton>
+    </EditForm>
+    <EditForm Model="this" method="post" OnSubmit="DenyAsync" FormName="deny-pairing" class="mt-2">
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" FullWidth="true">@Strings.PairDeny</MudButton>
+    </EditForm>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? Code { get; set; }
+
+    private string userId = string.Empty;
+    private string userName = string.Empty;
+    private PairingInfo? pairing;
+    private bool? decided;
+    private IReadOnlyList<string>? errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthenticationState).User;
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        userName = user.Identity?.Name ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(Code))
+        {
+            pairing = await Dispatcher.QueryAsync(new GetPairingQuery(userId, Code));
+        }
+    }
+
+    private Task ApproveAsync() => DecideAsync(approve: true);
+
+    private Task DenyAsync() => DecideAsync(approve: false);
+
+    private async Task DecideAsync(bool approve)
+    {
+        var result = await Dispatcher.SendAsync(new DecidePairingCommand(userId, Code, approve));
+        if (result.Succeeded)
+        {
+            decided = approve;
+        }
+        else
+        {
+            errors = result.Errors;
+        }
+    }
+}
