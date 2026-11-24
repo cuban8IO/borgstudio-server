@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using BorgStudio.Server.Application;
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Infrastructure;
@@ -10,6 +12,13 @@ using BorgStudio.Server.Web.Localization;
 using Microsoft.AspNetCore.Identity;
 
 using MudBlazor.Services;
+
+// appsettings.json, wwwroot and the like are found next to the program, wherever it is started from
+// (e.g. "reset-admin" from a home folder). Not when tests host the server.
+if (Assembly.GetEntryAssembly() == typeof(Program).Assembly)
+{
+    Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+}
 
 // "BorgStudio.Server reset-admin [user name]" runs a console command instead of the server.
 var isResetAdmin = args.Length > 0 && args[0] == ResetAdminConsole.CommandName;

@@ -151,7 +151,7 @@ jobs:
       - name: Install
         run: |
           Expand-Archive (Get-Item dist/*.zip) -DestinationPath .
-          ./borgstudio-server/install.ps1 | Tee-Object install.log
+          ./borgstudio-server/install.ps1 *>&1 | Tee-Object -FilePath install.log
           if (-not (Select-String -Path install.log -Pattern 'Setup code for the first administrator' -Quiet)) { throw 'No setup code shown' }
           if ((Get-Service BorgStudioServer).Status -ne 'Running') { throw 'Service is not running' }
           $response = Invoke-WebRequest https://localhost:8443/setup -SkipCertificateCheck

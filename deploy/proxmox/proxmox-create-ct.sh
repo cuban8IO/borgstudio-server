@@ -21,7 +21,9 @@ die() {
 }
 
 [[ $EUID -eq 0 ]] || die "run as root on the Proxmox VE host"
-command -v pct > /dev/null && command -v pveam > /dev/null || die "this is not a Proxmox VE host (pct/pveam missing)"
+if ! command -v pct > /dev/null || ! command -v pveam > /dev/null; then
+  die "this is not a Proxmox VE host (pct/pveam missing)"
+fi
 
 # ask <variable> <question> <suggestion>: keeps an already set variable, else asks (or takes the suggestion).
 ask() {
@@ -47,7 +49,11 @@ ask CT_MEMORY "Memory in MB" "1024"
 ask CT_DISK "Disk size in GB" "8"
 
 storages=$(pvesm status --content rootdir 2> /dev/null | awk 'NR > 1 { print $1 }' | paste -sd ' ' -)
-suggested_storage=$(grep -qw local-lvm <<< "$storages" && echo local-lvm || awk '{ print $1 }' <<< "$storages")
+if grep -qw local-lvm <<< "$storages"; then
+  suggested_storage=local-lvm
+else
+  suggested_storage=$(awk '{ print $1 }' <<< "$storages")
+fi
 [[ -n "$suggested_storage" ]] || die "no storage for containers found"
 ask CT_STORAGE "Storage for the container ($storages)" "$suggested_storage"
 ask CT_TEMPLATE_STORAGE "Storage for the template" "local"
