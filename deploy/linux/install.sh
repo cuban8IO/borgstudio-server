@@ -235,7 +235,11 @@ else
 fi
 
 set_permissions() {
+  # The program belongs to root and only root may change it, the folder itself included (tar takes
+  # its owner from the archive): sshd runs it for borg logins and refuses it otherwise.
+  chown root:root "$INSTALL_DIR"
   find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name "$CONFIG" -exec chown -R root:root {} +
+  find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name "$CONFIG" -exec chmod -R go-w {} +
   chmod 755 "$INSTALL_DIR" "$INSTALL_DIR/BorgStudio.Server" "$INSTALL_DIR/install.sh" "$INSTALL_DIR/uninstall.sh"
   mkdir -p "$INSTALL_DIR/data"
   chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/data"
