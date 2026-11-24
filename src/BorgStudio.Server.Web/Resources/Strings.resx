@@ -1137,4 +1137,205 @@
   <data name="ErrorFolderProblem" xml:space="preserve">
     <value>The folder {0} could not be changed.</value>
   </data>
+  <data name="NavDevices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="DevicesIntro" xml:space="preserve">
+    <value>BorgStudio apps paired with your account and API tokens. They stay valid until you revoke them; "last used" shows forgotten ones. Revoking also removes their SSH keys; a backup that is running may finish.</value>
+  </data>
+  <data name="DevicesEmpty" xml:space="preserve">
+    <value>No app is paired and there are no API tokens yet. In the BorgStudio app, add a repository of type BorgStudio Server to pair it.</value>
+  </data>
+  <data name="DevicesEnterCode" xml:space="preserve">
+    <value>Enter pairing code</value>
+  </data>
+  <data name="DeviceName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DeviceDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="DeviceLastUsed" xml:space="preserve">
+    <value>Last used</value>
+  </data>
+  <data name="DeviceNeverUsed" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="DeviceKeys" xml:space="preserve">
+    <value>SSH keys</value>
+  </data>
+  <data name="DeviceKindApp" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="DeviceKindToken" xml:space="preserve">
+    <value>API token</value>
+  </data>
+  <data name="DeviceKindTokenHint" xml:space="preserve">
+    <value>Token for scripts and other programs</value>
+  </data>
+  <data name="DeviceExpired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="DeviceCreatedAt" xml:space="preserve">
+    <value>Created {0}</value>
+  </data>
+  <data name="DeviceExpiresAt" xml:space="preserve">
+    <value>Valid until {0}</value>
+  </data>
+  <data name="DevicePlatform" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="DeviceAppVersion" xml:space="preserve">
+    <value>App version</value>
+  </data>
+  <data name="DeviceRevoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="DeviceRevokeConfirm" xml:space="preserve">
+    <value>Revoke {0}? It can no longer use the server, and its SSH keys are removed. A backup that is running may finish.</value>
+  </data>
+  <data name="DeviceRevoked" xml:space="preserve">
+    <value>{0} was revoked.</value>
+  </data>
+  <data name="TokenCreate" xml:space="preserve">
+    <value>New API token</value>
+  </data>
+  <data name="TokenCreateSubmit" xml:space="preserve">
+    <value>Create token</value>
+  </data>
+  <data name="TokenNameLabel" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="TokenNameHint" xml:space="preserve">
+    <value>What the token is for, e.g. "backup script on the NAS".</value>
+  </data>
+  <data name="TokenExpiresLabel" xml:space="preserve">
+    <value>Valid until (optional)</value>
+  </data>
+  <data name="TokenExpiresHint" xml:space="preserve">
+    <value>Empty = until revoked.</value>
+  </data>
+  <data name="TokenCreatedIntro" xml:space="preserve">
+    <value>Use it as "Authorization: Bearer &lt;token&gt;" for the interface at /api/v1. It has your rights for backing up: listing and creating repositories, registering SSH keys, statistics.</value>
+  </data>
+  <data name="PairTitle" xml:space="preserve">
+    <value>Pair BorgStudio</value>
+  </data>
+  <data name="PairEnterCode" xml:space="preserve">
+    <value>Enter the code the BorgStudio app shows.</value>
+  </data>
+  <data name="PairCodeLabel" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="PairQuestion" xml:space="preserve">
+    <value>Should this BorgStudio app use the server as {0}?</value>
+  </data>
+  <data name="PairHint" xml:space="preserve">
+    <value>Only confirm if the app shows the same code. It can then list and create your repositories and back up to them, but not delete or share them.</value>
+  </data>
+  <data name="PairApprove" xml:space="preserve">
+    <value>Pair</value>
+  </data>
+  <data name="PairDeny" xml:space="preserve">
+    <value>Do not pair</value>
+  </data>
+  <data name="PairApproved" xml:space="preserve">
+    <value>Done. The app is paired and continues by itself; you can close this page.</value>
+  </data>
+  <data name="PairDenied" xml:space="preserve">
+    <value>The app was not paired.</value>
+  </data>
+  <data name="SshAccessTitle" xml:space="preserve">
+    <value>Access with borg</value>
+  </data>
+  <data name="SshAccessIntro" xml:space="preserve">
+    <value>The BorgStudio app sets this up by itself. For borg without the app (scripts, borgmatic, Vorta), add an SSH key and use this address.</value>
+  </data>
+  <data name="SshRepositoryUrl" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="SshHostKey" xml:space="preserve">
+    <value>Host key</value>
+  </data>
+  <data name="SshKeysNone" xml:space="preserve">
+    <value>No SSH keys yet.</value>
+  </data>
+  <data name="SshKeyAdd" xml:space="preserve">
+    <value>Add SSH key</value>
+  </data>
+  <data name="SshKeyAddSubmit" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SshKeyAddIntro" xml:space="preserve">
+    <value>The key gets your rights on this repository. Each key opens only one repository: use a separate key for each.</value>
+  </data>
+  <data name="SshKeyName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SshKeyNameHint" xml:space="preserve">
+    <value>Optional, e.g. "borgmatic on the NAS".</value>
+  </data>
+  <data name="SshKeyPublicKey" xml:space="preserve">
+    <value>Public key</value>
+  </data>
+  <data name="SshKeyPublicKeyHint" xml:space="preserve">
+    <value>The content of the .pub file, e.g. ~/.ssh/id_ed25519.pub.</value>
+  </data>
+  <data name="SshKeyUsage" xml:space="preserve">
+    <value>Then, for example:</value>
+  </data>
+  <data name="SshKeyFingerprint" xml:space="preserve">
+    <value>Fingerprint</value>
+  </data>
+  <data name="SshKeyRemove" xml:space="preserve">
+    <value>Remove key {0}</value>
+  </data>
+  <data name="SshKeyRemoveConfirm" xml:space="preserve">
+    <value>Connections with this key are refused from now on. A backup that is running may finish.</value>
+  </data>
+  <data name="SshSettingsTitle" xml:space="preserve">
+    <value>SSH for borg</value>
+  </data>
+  <data name="SshSettingsAddress" xml:space="preserve">
+    <value>Clients connect to</value>
+  </data>
+  <data name="SshPublicAddressLabel" xml:space="preserve">
+    <value>Public SSH address (optional)</value>
+  </data>
+  <data name="SshPublicAddressHint" xml:space="preserve">
+    <value>Host or host:port, if clients reach the SSH service differently, e.g. through a forwarded port. Empty = the host name the client uses, port from the configuration.</value>
+  </data>
+  <data name="SshStateRunning" xml:space="preserve">
+    <value>The SSH service for borg is running.</value>
+  </data>
+  <data name="SshStateStarting" xml:space="preserve">
+    <value>The SSH service for borg is starting.</value>
+  </data>
+  <data name="SshStateDisabled" xml:space="preserve">
+    <value>The SSH service for borg is switched off in the configuration (BorgStudio:Ssh:Enabled).</value>
+  </data>
+  <data name="SshStateFailed" xml:space="preserve">
+    <value>The SSH service for borg is not running: {0}</value>
+  </data>
+  <data name="ErrorSshKeyInvalid" xml:space="preserve">
+    <value>This is not a valid public SSH key (ssh-ed25519, ssh-rsa or ecdsa, as in a .pub file).</value>
+  </data>
+  <data name="ErrorSshKeyInUse" xml:space="preserve">
+    <value>This key already opens the repository {0}. Use a separate key for each repository.</value>
+  </data>
+  <data name="ErrorNoAccessToRepository" xml:space="preserve">
+    <value>You have no access to this repository.</value>
+  </data>
+  <data name="ErrorPairingCodeUnknown" xml:space="preserve">
+    <value>This code is unknown or expired. Start the pairing in the app again.</value>
+  </data>
+  <data name="ErrorTokenNameInvalid" xml:space="preserve">
+    <value>The name must have 1 to 100 characters.</value>
+  </data>
+  <data name="ErrorTokenExpiryInPast" xml:space="preserve">
+    <value>The end date must be in the future.</value>
+  </data>
+  <data name="ErrorSshAddressInvalid" xml:space="preserve">
+    <value>Enter a host name or address, optionally with :port.</value>
+  </data>
 </root>

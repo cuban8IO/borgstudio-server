@@ -46,4 +46,18 @@ internal sealed class StorageTexts : IStorageTexts
     public string RestoreNeedsOwner => Strings.ErrorRestoreNeedsOwner;
 
     public string FolderProblem => Strings.ErrorFolderProblem;
+
+    public string SshKeyInvalid => Strings.ErrorSshKeyInvalid;
+
+    public string SshKeyInUse => Strings.ErrorSshKeyInUse;
+
+    public string NoAccessToRepository => Strings.ErrorNoAccessToRepository;
+
+    public string PairingCodeUnknown => Strings.ErrorPairingCodeUnknown;
+
+    public string TokenNameInvalid => Strings.ErrorTokenNameInvalid;
+
+    public string TokenExpiryInPast => Strings.ErrorTokenExpiryInPast;
+
+    public string SshAddressInvalid => Strings.ErrorSshAddressInvalid;
 }

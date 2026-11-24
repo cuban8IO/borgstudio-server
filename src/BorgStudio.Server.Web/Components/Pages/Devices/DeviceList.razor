@@ -1,0 +1,128 @@
+@page "/devices"
+@using System.Globalization
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Access
+@using BorgStudio.Server.Domain.Access
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<AppPageTitle Title="@Strings.NavDevices" />
+
+<div class="d-flex flex-wrap align-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.NavDevices</MudText>
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Link" Href="pair">@Strings.DevicesEnterCode</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Key" OnClick="CreateTokenAsync">
+        @Strings.TokenCreate
+    </MudButton>
+</div>
+
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-4">@Strings.DevicesIntro</MudText>
+
+@if (devices is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (devices.Count == 0)
+{
+    <MudText Typo="Typo.body2">@Strings.DevicesEmpty</MudText>
+}
+else
+{
+    <MudTable Items="devices" Hover="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm" Dense="true">
+        <HeaderContent>
+            <MudTh>@Strings.DeviceName</MudTh>
+            @if (isAdministrator)
+            {
+                <MudTh>@Strings.UserNameLabel</MudTh>
+            }
+            <MudTh>@Strings.DeviceDetails</MudTh>
+            <MudTh>@Strings.DeviceLastUsed</MudTh>
+            <MudTh>@Strings.DeviceKeys</MudTh>
+            <MudTh Style="width: 1%"></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@Strings.DeviceName">
+                @context.Name
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2"
+                         Color="@(context.Kind == DeviceKind.App ? Color.Primary : Color.Default)">
+                    @(context.Kind == DeviceKind.App ? Strings.DeviceKindApp : Strings.DeviceKindToken)
+                </MudChip>
+                @if (context.IsExpired)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error">@Strings.DeviceExpired</MudChip>
+                }
+            </MudTd>
+            @if (isAdministrator)
+            {
+                <MudTd DataLabel="@Strings.UserNameLabel">@context.UserName</MudTd>
+            }
+            <MudTd DataLabel="@Strings.DeviceDetails">
+                <div>@Details(context)</div>
+                <div class="mud-text-secondary">@string.Format(Strings.DeviceCreatedAt, context.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))</div>
+                @if (context.ExpiresAt is { } expires)
+                {
+                    <div class="mud-text-secondary">@string.Format(Strings.DeviceExpiresAt, expires.ToLocalTime().ToString("d", CultureInfo.CurrentCulture))</div>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Strings.DeviceLastUsed">
+                @(context.LastUsedAt is { } used ? used.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) : Strings.DeviceNeverUsed)
+            </MudTd>
+            <MudTd DataLabel="@Strings.DeviceKeys">@context.KeyCount</MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => RevokeAsync(context)">
+                    @Strings.DeviceRevoke
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private string actingUserId = string.Empty;
+    private bool isAdministrator;
+    private IReadOnlyList<DeviceInfo>? devices;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthenticationState).User;
+        actingUserId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        isAdministrator = user.IsInRole(Roles.Administrator);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => devices = await Dispatcher.QueryAsync(new GetDevicesQuery(actingUserId));
+
+    private static string Details(DeviceInfo device) =>
+        device.Kind == DeviceKind.ApiToken ? Strings.DeviceKindTokenHint
+        : string.Join(" · ", new[] { device.Platform, device.AppVersion is { } v ? $"BorgStudio {v}" : null }.Where(s => s is not null));
+
+    private async Task CreateTokenAsync()
+    {
+        var parameters = new DialogParameters<TokenDialog> { { d => d.ActingUserId, actingUserId } };
+        var dialog = await DialogService.ShowAsync<TokenDialog>(Strings.TokenCreate, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false });
+        await dialog.Result;
+        await LoadAsync();
+    }
+
+    private async Task RevokeAsync(DeviceInfo device)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            Strings.DeviceRevoke,
+            string.Format(Strings.DeviceRevokeConfirm, device.Name),
+            yesText: Strings.DeviceRevoke,
+            cancelText: Strings.Cancel);
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        await Dispatcher.SendAsync(new RevokeDeviceCommand(actingUserId, device.Id));
+        Snackbar.Add(string.Format(Strings.DeviceRevoked, device.Name), Severity.Success);
+        await LoadAsync();
+    }
+}

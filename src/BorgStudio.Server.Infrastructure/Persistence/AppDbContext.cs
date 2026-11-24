@@ -1,3 +1,4 @@
+using BorgStudio.Server.Domain.Access;
 using BorgStudio.Server.Domain.Settings;
 using BorgStudio.Server.Domain.Storage;
 using BorgStudio.Server.Domain.Users;
@@ -19,6 +20,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<BackupRepository> Repositories => Set<BackupRepository>();
 
     public DbSet<UserStoragePolicy> StoragePolicies => Set<UserStoragePolicy>();
+
+    public DbSet<Device> Devices => Set<Device>();
+
+    public DbSet<PairingRequest> PairingRequests => Set<PairingRequest>();
+
+    public DbSet<SshKey> SshKeys => Set<SshKey>();
+
+    public DbSet<RepositorySession> RepositorySessions => Set<RepositorySession>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -61,6 +70,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             repository.Property(r => r.FormerOwnerName).HasMaxLength(256);
             repository.Property(r => r.RelativePath).HasMaxLength(512).IsRequired();
             repository.Property(r => r.MoveError).HasMaxLength(1024);
+            repository.Property(r => r.LastAccessUserId).HasMaxLength(450);
+            repository.Property(r => r.LastAccessBy).HasMaxLength(100);
             repository.HasIndex(r => r.OwnerId);
             // Owners are handled before a user is deleted (their repositories go to the trash).
             repository.HasOne<ApplicationUser>().WithMany().HasForeignKey(r => r.OwnerId).OnDelete(DeleteBehavior.SetNull);
@@ -84,6 +95,58 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             policy.HasOne<ApplicationUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<Device>(device =>
+        {
+            device.ToTable("Devices");
+            device.HasKey(d => d.Id);
+            device.Property(d => d.Kind).HasConversion<int>();
+            device.Property(d => d.Name).HasMaxLength(Device.MaxNameLength).IsRequired();
+            device.Property(d => d.Platform).HasMaxLength(100);
+            device.Property(d => d.AppVersion).HasMaxLength(50);
+            device.Property(d => d.TokenHash).HasMaxLength(64).IsRequired();
+            device.HasIndex(d => d.TokenHash).IsUnique();
+            device.HasIndex(d => d.UserId);
+            device.HasOne<ApplicationUser>().WithMany().HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PairingRequest>(pairing =>
+        {
+            pairing.ToTable("PairingRequests");
+            pairing.HasKey(p => p.Id);
+            pairing.Property(p => p.PairingCodeHash).HasMaxLength(64).IsRequired();
+            pairing.HasIndex(p => p.PairingCodeHash).IsUnique();
+            pairing.Property(p => p.UserCode).HasMaxLength(9).IsRequired();
+            pairing.HasIndex(p => p.UserCode).IsUnique();
+            pairing.Property(p => p.DeviceName).HasMaxLength(Device.MaxNameLength).IsRequired();
+            pairing.Property(p => p.Platform).HasMaxLength(100);
+            pairing.Property(p => p.AppVersion).HasMaxLength(50);
+            pairing.HasOne<ApplicationUser>().WithMany().HasForeignKey(p => p.ApprovedUserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SshKey>(key =>
+        {
+            key.ToTable("SshKeys");
+            key.HasKey(k => k.Id);
+            key.Property(k => k.Name).HasMaxLength(SshKey.MaxNameLength).IsRequired();
+            key.Property(k => k.Algorithm).HasMaxLength(64).IsRequired();
+            key.Property(k => k.Blob).HasMaxLength(4096).IsRequired();
+            key.Property(k => k.Fingerprint).HasMaxLength(64).IsRequired();
+            // One key opens one repository: the server tells repositories apart by the key.
+            key.HasIndex(k => k.Fingerprint).IsUnique();
+            key.HasIndex(k => k.RepositoryId);
+            key.HasOne<BackupRepository>().WithMany().HasForeignKey(k => k.RepositoryId).OnDelete(DeleteBehavior.Cascade);
+            key.HasOne<ApplicationUser>().WithMany().HasForeignKey(k => k.UserId).OnDelete(DeleteBehavior.Cascade);
+            key.HasOne<Device>().WithMany().HasForeignKey(k => k.DeviceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<RepositorySession>(session =>
+        {
+            session.ToTable("RepositorySessions");
+            session.HasKey(s => s.Id);
+            session.HasIndex(s => s.RepositoryId);
+            session.HasOne<BackupRepository>().WithMany().HasForeignKey(s => s.RepositoryId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<ServerSettings>(settings =>
         {
             settings.ToTable("ServerSettings");
@@ -91,6 +154,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             settings.Property(s => s.Id).ValueGeneratedNever();
             settings.Property(s => s.ServerName).HasMaxLength(Domain.Settings.ServerSettings.MaxServerNameLength).IsRequired();
             settings.Property(s => s.PublicUrl).HasMaxLength(Domain.Settings.ServerSettings.MaxPublicUrlLength);
+            settings.Property(s => s.SshPublicAddress).HasMaxLength(Domain.Settings.ServerSettings.MaxSshAddressLength);
             settings.HasData(new
             {
                 Id = Domain.Settings.ServerSettings.SingletonId,

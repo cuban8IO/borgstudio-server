@@ -2,6 +2,7 @@ using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Infrastructure;
 using BorgStudio.Server.Infrastructure.Identity;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -18,6 +19,9 @@ public static class Policies
 
     /// <summary>Signed in with nothing left to do, and an administrator.</summary>
     public const string Administrator = "Administrator";
+
+    /// <summary>The interface: a valid token of a paired app or an API token (no cookies).</summary>
+    public const string Api = "Api";
 }
 
 /// <summary>How long a sign-in lasts.</summary>
@@ -45,6 +49,8 @@ public static class AuthenticationSetup
                 options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
             })
             .AddIdentityCookies();
+        services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, Api.ApiTokenAuthenticationHandler>(Api.ApiTokenAuthenticationHandler.SchemeName, null);
 
         services.ConfigureApplicationCookie(options =>
         {
@@ -86,6 +92,9 @@ public static class AuthenticationSetup
             options.FallbackPolicy = signedIn;
             options.AddPolicy(Policies.AccountTasks, policy => policy.RequireAuthenticatedUser());
             options.AddPolicy(Policies.Administrator, policy => policy.Combine(signedIn).RequireRole(Roles.Administrator));
+            options.AddPolicy(Policies.Api, policy => policy
+                .AddAuthenticationSchemes(Api.ApiTokenAuthenticationHandler.SchemeName)
+                .RequireAuthenticatedUser());
         });
 
         // Keys of the sign-in cookies live in the data folder, so restarts and updates keep everyone signed in.

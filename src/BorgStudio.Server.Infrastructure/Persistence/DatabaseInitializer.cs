@@ -21,6 +21,10 @@ public static class DatabaseInitializer
         var logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DatabaseInitializer));
 
         var db = provider.GetRequiredService<AppDbContext>();
+
+        // Write-ahead logging: the processes that serve borg connections read and write the database
+        // while the server runs, without blocking each other. The setting stays with the file.
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", cancellationToken);
         var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
         if (pending.Count > 0)
         {

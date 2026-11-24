@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
+using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Access;
 using BorgStudio.Server.Domain.Storage;
 
 using Microsoft.Extensions.Logging;
@@ -157,7 +159,8 @@ public sealed record SetRepositoryOwnerCommand(
     Guid RepositoryId,
     [property: Required] string OwnerUserName) : ICommand<AccountResult>;
 
-internal sealed class SetRepositoryOwnerCommandHandler(StorageContext storage, ILogger<SetRepositoryOwnerCommandHandler> logger)
+internal sealed class SetRepositoryOwnerCommandHandler(
+    StorageContext storage, IAccessStore access, ILogger<SetRepositoryOwnerCommandHandler> logger)
     : ICommandHandler<SetRepositoryOwnerCommand, AccountResult>
 {
     public async Task<AccountResult> HandleAsync(SetRepositoryOwnerCommand command, CancellationToken cancellationToken)
@@ -199,6 +202,7 @@ internal sealed class SetRepositoryOwnerCommandHandler(StorageContext storage, I
             return AccountResult.Failed(problem);
         }
 
+        await SshKeyRules.PruneAsync(access, repository, cancellationToken);
         await storage.Store.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Repository {Name} now belongs to {Owner}.", repository.Name, owner.UserName);
         return AccountResult.Success;
@@ -246,7 +250,7 @@ public sealed record RemoveShareCommand(
     Guid RepositoryId,
     [property: Required] string UserId) : ICommand;
 
-internal sealed class RemoveShareCommandHandler(StorageContext storage) : ICommandHandler<RemoveShareCommand>
+internal sealed class RemoveShareCommandHandler(StorageContext storage, IAccessStore access) : ICommandHandler<RemoveShareCommand>
 {
     public async Task HandleAsync(RemoveShareCommand command, CancellationToken cancellationToken)
     {
@@ -259,6 +263,7 @@ internal sealed class RemoveShareCommandHandler(StorageContext storage) : IComma
 
         if (repository.Unshare(command.UserId))
         {
+            await SshKeyRules.PruneAsync(access, repository, cancellationToken);
             await storage.Store.SaveChangesAsync(cancellationToken);
         }
     }

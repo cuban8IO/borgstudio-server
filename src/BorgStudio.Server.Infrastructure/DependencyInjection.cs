@@ -1,4 +1,5 @@
 using BorgStudio.Server.Application.Abstractions;
+using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Abstractions.Setup;
@@ -10,6 +11,7 @@ using BorgStudio.Server.Infrastructure.Identity;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Infrastructure.Platform;
 using BorgStudio.Server.Infrastructure.Setup;
+using BorgStudio.Server.Infrastructure.Ssh;
 using BorgStudio.Server.Infrastructure.Storage;
 using BorgStudio.Server.Infrastructure.Tls;
 using BorgStudio.Server.Infrastructure.Updates;
@@ -46,6 +48,13 @@ public static class DependencyInjection
         services.AddScoped<IStorageStore, StorageStore>();
         services.AddSingleton<IRepositoryFolders, RepositoryFolders>();
         services.AddHostedService<StorageWorker>();
+
+        services.AddScoped<IAccessStore, AccessStore>();
+        services.AddSingleton<IProcessInfo, ProcessInfo>();
+        services.Configure<SshOptions>(configuration.GetSection(SshOptions.SectionName));
+        services.AddSingleton<SshServer>();
+        services.AddSingleton<ISshService>(provider => provider.GetRequiredService<SshServer>());
+        services.AddHostedService(provider => provider.GetRequiredService<SshServer>());
 
         services.AddHttpClient<IReleaseFeed, GitHubReleaseFeed>(GitHubReleaseFeed.Configure);
         services.AddSingleton<IChangelogSource, EmbeddedChangelog>();

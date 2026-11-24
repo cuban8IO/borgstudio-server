@@ -1,0 +1,145 @@
+@using System.Globalization
+@using BorgStudio.Server.Application.Abstractions.Access
+@using BorgStudio.Server.Application.Access
+@using BorgStudio.Server.Application.Storage
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+@* How borg reaches this repository: its address, the server's host key and the SSH keys that may open it. *@
+<MudPaper Outlined="true" Class="pa-4">
+    <div class="d-flex flex-wrap align-center gap-2 mb-2">
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="flex-grow-1">@Strings.SshAccessTitle</MudText>
+        @if (Repository.Access is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.VpnKey" OnClick="AddKeyAsync">
+                @Strings.SshKeyAdd
+            </MudButton>
+        }
+    </div>
+
+    @if (endpoint is null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        @if (endpoint.State != SshServiceState.Running)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@SshTexts.State(endpoint)</MudAlert>
+        }
+
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@Strings.SshAccessIntro</MudText>
+        <dl class="status-list mb-3">
+            <dt>@Strings.SshRepositoryUrl</dt>
+            <dd>
+                <code class="text-break" data-testid="repository-url">@endpoint.UrlFor(Repository.Id)</code>
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" aria-label="@Strings.Copy"
+                               OnClick="() => CopyAsync(endpoint.UrlFor(Repository.Id))" />
+            </dd>
+            @foreach (var hostKey in endpoint.HostKeys)
+            {
+                <dt>@Strings.SshHostKey</dt>
+                <dd><code class="text-break">@hostKey.Fingerprint</code> <span class="mud-text-secondary">(@hostKey.Algorithm)</span></dd>
+            }
+        </dl>
+
+        @if (keys is { Count: > 0 })
+        {
+            <MudSimpleTable Dense="true" Elevation="0">
+                <thead>
+                    <tr>
+                        <th>@Strings.SshKeyName</th>
+                        <th>@Strings.UserNameLabel</th>
+                        <th>@Strings.SshKeyFingerprint</th>
+                        <th>@Strings.DeviceLastUsed</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var key in keys)
+                    {
+                        <tr>
+                            <td>
+                                @key.Name
+                                @if (key.DeviceName is not null)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@Strings.DeviceKindApp</MudChip>
+                                }
+                            </td>
+                            <td>@key.UserName</td>
+                            <td><code class="text-break">@key.Fingerprint</code></td>
+                            <td>@(key.LastUsedAt is { } used ? used.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) : Strings.DeviceNeverUsed)</td>
+                            <td class="text-right">
+                                @if (key.CanRemove)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="() => RemoveAsync(key)"
+                                                   aria-label="@string.Format(Strings.SshKeyRemove, key.Name)" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2">@Strings.SshKeysNone</MudText>
+        }
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public RepositorySummary Repository { get; set; } = default!;
+
+    private SshEndpoint? endpoint;
+    private IReadOnlyList<SshKeyInfo>? keys;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        endpoint = await Dispatcher.QueryAsync(new GetSshEndpointQuery(new Uri(Navigation.BaseUri).Host));
+        keys = await Dispatcher.QueryAsync(new GetSshKeysQuery(ActingUserId, Repository.Id));
+    }
+
+    private async Task AddKeyAsync()
+    {
+        var parameters = new DialogParameters<SshKeyDialog>
+        {
+            { d => d.ActingUserId, ActingUserId },
+            { d => d.RepositoryId, Repository.Id },
+            { d => d.Url, endpoint?.UrlFor(Repository.Id) },
+        };
+        var dialog = await DialogService.ShowAsync<SshKeyDialog>(Strings.SshKeyAdd, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        if (await dialog.Result is { Canceled: false })
+        {
+            keys = await Dispatcher.QueryAsync(new GetSshKeysQuery(ActingUserId, Repository.Id));
+        }
+    }
+
+    private async Task RemoveAsync(SshKeyInfo key)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            string.Format(Strings.SshKeyRemove, key.Name),
+            Strings.SshKeyRemoveConfirm,
+            yesText: Strings.Confirm,
+            cancelText: Strings.Cancel);
+        if (confirmed == true)
+        {
+            await Dispatcher.SendAsync(new RemoveSshKeyCommand(ActingUserId, key.Id));
+            keys = await Dispatcher.QueryAsync(new GetSshKeysQuery(ActingUserId, Repository.Id));
+        }
+    }
+
+    private async Task CopyAsync(string text)
+    {
+        var copied = await JS.InvokeAsync<bool>("borgStudio.copyText", text);
+        Snackbar.Add(copied ? Strings.Copied : Strings.CopyFailed, copied ? Severity.Success : Severity.Warning);
+    }
+}

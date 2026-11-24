@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 
+using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Access;
 using BorgStudio.Server.Domain.Storage;
 
 using Microsoft.Extensions.Logging;
@@ -84,7 +86,8 @@ public sealed class RepositoryMoves
 
     public void Wake() => wake.Release();
 
-    public Task WaitAsync(CancellationToken cancellationToken) => wake.WaitAsync(cancellationToken);
+    /// <summary>Waits for a new move request, or at most <paramref name="timeout"/> (moves waiting for a running backup retry then).</summary>
+    public Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken) => wake.WaitAsync(timeout, cancellationToken);
 
     public RepositoryMoveProgress? Progress(Guid repositoryId) => progress.TryGetValue(repositoryId, out var p) ? p : null;
 
@@ -93,12 +96,17 @@ public sealed class RepositoryMoves
     internal void Clear(Guid repositoryId) => progress.TryRemove(repositoryId, out _);
 }
 
-/// <summary>Carries out the requested moves to other datastores, one after the other.</summary>
+/// <summary>
+/// Carries out the requested moves to other datastores, one after the other. A repository someone is
+/// backing up to right now waits for the next run (no new connections start while a move is pending).
+/// </summary>
 public sealed record RunRepositoryMovesCommand : ICommand;
 
 internal sealed class RunRepositoryMovesCommandHandler(
     StorageContext storage,
     RepositoryMoves moves,
+    IAccessStore access,
+    IProcessInfo processes,
     ILogger<RunRepositoryMovesCommandHandler> logger) : ICommandHandler<RunRepositoryMovesCommand>
 {
     public async Task HandleAsync(RunRepositoryMovesCommand command, CancellationToken cancellationToken)
@@ -110,6 +118,14 @@ internal sealed class RunRepositoryMovesCommandHandler(
             var pending = (await storage.Store.GetRepositoriesAsync(cancellationToken)).Where(r => r.IsMoving).ToList();
             foreach (var repository in pending)
             {
+                await OpenBorgSessionCommandHandler.RemoveDeadSessionsAsync(access, processes, repository.Id, cancellationToken);
+                await access.SaveChangesAsync(cancellationToken);
+                if ((await access.GetSessionsAsync(repository.Id, cancellationToken)).Count > 0)
+                {
+                    logger.LogInformation("Repository {Name} is in use; its move waits.", repository.Name);
+                    continue;
+                }
+
                 await MoveAsync(repository, datastores, cancellationToken);
             }
         }

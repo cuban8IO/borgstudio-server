@@ -49,6 +49,15 @@ public sealed class BackupRepository
     /// <summary>Why the last move failed, if it did.</summary>
     public string? MoveError { get; private set; }
 
+    /// <summary>When borg last connected to it.</summary>
+    public DateTimeOffset? LastAccessAt { get; private set; }
+
+    /// <summary>Whose key the last connection used.</summary>
+    public string? LastAccessUserId { get; private set; }
+
+    /// <summary>Name of the key (or paired app) of the last connection.</summary>
+    public string? LastAccessBy { get; private set; }
+
     public IReadOnlyList<RepositoryShare> Shares => shares;
 
     public bool IsDeleted => DeletedAt is not null;
@@ -146,6 +155,13 @@ public sealed class BackupRepository
         DeletedAt = null;
         shares.RemoveAll(s => s.UserId == ownerId);
         RelativePath = RepositoryNames.RelativePath(ownerName, name);
+    }
+
+    public void RecordAccess(string userId, string by, DateTimeOffset now)
+    {
+        LastAccessAt = now;
+        LastAccessUserId = userId;
+        LastAccessBy = by.Length > 100 ? by[..100] : by;
     }
 
     public void RecordUsage(long usedBytes, DateTimeOffset now)

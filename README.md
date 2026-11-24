@@ -3,8 +3,8 @@
 Self-hosted server for [BorgStudio](https://github.com/cuban8IO/borgstudio), the all-in-one app to manage BorgBackup
 repositories.
 
-> **Status:** sign-in, users, settings, packages and the management of repositories are in place; connecting the
-> BorgStudio app to them follows.
+> **Status:** sign-in, users, settings, packages, repositories and borg access over SSH are in place; the BorgStudio
+> app's support for the server follows.
 
 ## Goals
 
@@ -77,6 +77,24 @@ such as `BorgStudio__Http__Enabled=true`.
   user go there too, so an administrator can hand them on.
 - Backups into the repositories need a server on Linux (LXC, VM, Linux service or Docker); on Windows they can only be
   managed.
+
+## Backing up with borg
+
+- **SSH for borg:** the server runs its own OpenSSH service for borg on port 2222 (`BorgStudio:Ssh` in
+  `borgstudio-server.json`), under its own account and without touching the system's SSH service. It only lets in
+  the keys it knows, and every key can run nothing but `borg serve` for its one repository – with *Append only* and
+  the quotas applied. The install script sets up OpenSSH and downloads the official borg 1.4 build from the
+  [borg project](https://github.com/borgbackup/borg/releases) (checked against a fixed checksum); the container
+  image uses Debian's borg and needs port 2222 published.
+- **BorgStudio app:** it pairs with the server through the browser (the app shows a code, you confirm it after
+  signing in), then lists and creates repositories and registers its keys by itself. Paired apps and API tokens are
+  listed under *Devices*, where they can be revoked.
+- **Other borg clients** (scripts, borgmatic, Vorta): add a public key on the repository's page and use the address
+  shown there, e.g. `borg init --encryption=repokey-blake2 ssh://borgstudio@backup.example.org:2222/./3f2a…`.
+- **Interface:** JSON at `/api/v1` with `Authorization: Bearer <token>` – `GET server`, `GET datastores`,
+  `GET|POST repositories`, `GET repositories/{id}` (usage, quota, last access, who else uses it),
+  `PUT repositories/{id}/ssh-key`; pairing at `POST pairing` and `POST pairing/complete`. It can only do what backing
+  up needs: deleting, sharing and quotas stay in the web interface.
 
 ## Development
 

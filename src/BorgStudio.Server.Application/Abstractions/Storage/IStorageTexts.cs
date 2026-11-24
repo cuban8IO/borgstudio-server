@@ -49,4 +49,19 @@ public interface IStorageTexts
 
     /// <summary>{0}: the folder.</summary>
     string FolderProblem { get; }
+
+    string SshKeyInvalid { get; }
+
+    /// <summary>{0}: the repository the key already opens.</summary>
+    string SshKeyInUse { get; }
+
+    string NoAccessToRepository { get; }
+
+    string PairingCodeUnknown { get; }
+
+    string TokenNameInvalid { get; }
+
+    string TokenExpiryInPast { get; }
+
+    string SshAddressInvalid { get; }
 }
