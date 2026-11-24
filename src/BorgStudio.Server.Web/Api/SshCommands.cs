@@ -6,6 +6,7 @@ using BorgStudio.Server.Infrastructure.Ssh;
 using BorgStudio.Server.Web.Hosting;
 using BorgStudio.Server.Web.Localization;
 
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
 namespace BorgStudio.Server.Web.Api;
@@ -48,6 +49,8 @@ internal static class SshCommands
             services.AddInfrastructure(configuration);
             services.AddSingleton<IAccountTexts, AccountTexts>();
             services.AddSingleton<IStorageTexts, StorageTexts>();
+            // Identity's token providers need it; nothing here protects data that outlives the process.
+            services.AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider());
             await using var provider = services.BuildServiceProvider();
             var borg = provider.GetRequiredService<IOptions<SshOptions>>().Value.ResolvedBorgPath;
             return await SshConsole.BorgServeAsync(provider, keyId, borg, provider.GetRequiredService<ServerPaths>(), Console.Error);
