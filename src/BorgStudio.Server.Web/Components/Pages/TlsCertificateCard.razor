@@ -1,0 +1,159 @@
+@using System.Globalization
+@using BorgStudio.Server.Application.Abstractions.Tls
+@using BorgStudio.Server.Application.Settings
+@inject IDispatcher Dispatcher
+@inject ISnackbar Snackbar
+
+@* The HTTPS certificate: what is in use, and uploading another one (PKCS#12 or PEM). *@
+<MudPaper Outlined="true" Class="pa-4">
+    <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.TlsTitle</MudText>
+
+    @if (status is { HttpsEnabled: false })
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">@Strings.TlsHttpsOff</MudAlert>
+    }
+
+    @if (certificate is not null)
+    {
+        <dl class="status-list mb-3">
+            <dt>@Strings.TlsSubject</dt>
+            <dd>@certificate.Subject</dd>
+            <dt>@Strings.TlsIssuer</dt>
+            <dd>@certificate.Issuer</dd>
+            <dt>@Strings.TlsValidUntil</dt>
+            <dd>@certificate.NotAfter.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)</dd>
+            <dt>@Strings.TlsNames</dt>
+            <dd>@(certificate.Names.Count == 0 ? "–" : string.Join(", ", certificate.Names))</dd>
+            <dt>@Strings.TlsSource</dt>
+            <dd>@SourceText(certificate.Source)</dd>
+            <dt>@Strings.TlsThumbprint</dt>
+            <dd><code>@certificate.Thumbprint</code></dd>
+        </dl>
+    }
+
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@Strings.TlsHint</MudText>
+    <FormErrors Errors="errors" />
+
+    <MudRadioGroup T="bool" @bind-Value="pem">
+        <MudRadio T="bool" Value="false" Color="Color.Primary">@Strings.TlsFormatPfx</MudRadio>
+        <MudRadio T="bool" Value="true" Color="Color.Primary">@Strings.TlsFormatPem</MudRadio>
+    </MudRadioGroup>
+
+    @if (pem)
+    {
+        <label class="file-field">
+            <span>@Strings.TlsCertificateFile</span>
+            <InputFile OnChange="e => ReadTextAsync(e, data => certificatePem = data)" accept=".pem,.crt,.cer" />
+        </label>
+        <label class="file-field">
+            <span>@Strings.TlsKeyFile</span>
+            <InputFile OnChange="e => ReadTextAsync(e, data => keyPem = data)" accept=".pem,.key" />
+        </label>
+    }
+    else
+    {
+        <label class="file-field">
+            <span>@Strings.TlsPfxFile</span>
+            <InputFile OnChange="e => ReadBytesAsync(e, data => pfx = data)" accept=".pfx,.p12" />
+        </label>
+        <MudTextField @bind-Value="password" Label="@Strings.TlsPfxPassword" InputType="InputType.Password"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="off" />
+    }
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UploadAsync" Disabled="busy || !CanUpload">
+            @Strings.TlsUpload
+        </MudButton>
+        @if (certificate?.Source == TlsCertificateSource.Uploaded)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RemoveAsync" Disabled="busy">
+                @Strings.TlsRemoveUploaded
+            </MudButton>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    private const long MaxFileSize = 1024 * 1024;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    private TlsCertificateStatus? status;
+    private bool pem;
+    private byte[]? pfx;
+    private string? password;
+    private string? certificatePem;
+    private string? keyPem;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    private TlsCertificateInfo? certificate => status?.Certificate;
+
+    private bool CanUpload => pem ? certificatePem is not null && keyPem is not null : pfx is not null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(ActingUserId))
+        {
+            status = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
+        }
+    }
+
+    private Task ReadTextAsync(InputFileChangeEventArgs e, Action<string> setText) =>
+        ReadBytesAsync(e, bytes => setText(System.Text.Encoding.UTF8.GetString(bytes)));
+
+    private async Task ReadBytesAsync(InputFileChangeEventArgs e, Action<byte[]> setBytes)
+    {
+        errors = null;
+        try
+        {
+            await using var stream = e.File.OpenReadStream(MaxFileSize);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            setBytes(buffer.ToArray());
+        }
+        catch (IOException)
+        {
+            errors = [Strings.ErrorCertificateTooLarge];
+        }
+    }
+
+    private async Task UploadAsync()
+    {
+        busy = true;
+        var result = await Dispatcher.SendAsync(pem
+            ? new UploadTlsCertificateCommand(ActingUserId, null, null, certificatePem, keyPem)
+            : new UploadTlsCertificateCommand(ActingUserId, pfx, password, null, null));
+        busy = false;
+        password = null;
+        if (!result.Succeeded)
+        {
+            errors = result.Errors;
+            return;
+        }
+
+        errors = null;
+        pfx = null;
+        certificatePem = null;
+        keyPem = null;
+        status = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
+        Snackbar.Add(Strings.TlsUploaded, Severity.Success);
+    }
+
+    private async Task RemoveAsync()
+    {
+        busy = true;
+        await Dispatcher.SendAsync(new RemoveUploadedTlsCertificateCommand(ActingUserId));
+        status = await Dispatcher.QueryAsync(new GetTlsCertificateQuery(ActingUserId));
+        busy = false;
+        Snackbar.Add(Strings.TlsRemoved, Severity.Success);
+    }
+
+    private static string SourceText(TlsCertificateSource source) => source switch
+    {
+        TlsCertificateSource.Uploaded => Strings.TlsSourceUploaded,
+        TlsCertificateSource.Configured => Strings.TlsSourceConfigured,
+        _ => Strings.TlsSourceSelfSigned,
+    };
+}

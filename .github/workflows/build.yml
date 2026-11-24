@@ -1,6 +1,6 @@
 name: build
 
-# Build and test every branch except main (main gets its own release workflow).
+# Build, test and package check for every branch except main (main gets the release workflow).
 # Windows and Linux only: BorgStudio Server supports no other platforms.
 on:
   push:
@@ -32,3 +32,137 @@ jobs:
 
       - name: Test
         run: dotnet test BorgStudio.Server.slnx --configuration Release --no-build
+
+  # The install scripts: ShellCheck for the shell scripts, the PowerShell parser for the Windows ones.
+  scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: ShellCheck
+        run: shellcheck deploy/linux/*.sh deploy/lxc/*.sh deploy/proxmox/*.sh .github/scripts/*.sh
+
+      - name: PowerShell syntax
+        shell: pwsh
+        run: |
+          $failed = $false
+          foreach ($file in Get-ChildItem deploy/windows/*.ps1) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$errors) | Out-Null
+            foreach ($e in $errors) { Write-Host "::error file=$($file.Name),line=$($e.Extent.StartLineNumber)::$($e.Message)"; $failed = $true }
+          }
+          if ($failed) { exit 1 }
+
+  package:
+    needs: build
+    uses: ./.github/workflows/package.yml
+    with:
+      version: 0.0.0-ci.${{ github.run_number }}
+
+  # Builds the container image (amd64) and starts it once, without publishing anything.
+  docker:
+    needs: package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: docker-amd64
+          path: context/amd64
+
+      - name: Build image
+        run: |
+          cp deploy/docker/Dockerfile context/
+          docker build --build-arg TARGETARCH=amd64 --build-arg VERSION=0.0.0-ci -t borgstudio-server:ci context
+
+      - name: Start image
+        run: |
+          docker run -d --name server -p 8080:8080 borgstudio-server:ci
+          for _ in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:8080/setup; then
+              docker logs server | grep -q "setup code" && echo "Server answers and shows its setup code." && exit 0
+            fi
+            sleep 2
+          done
+          docker logs server
+          exit 1
+
+  # Installs the Linux archive as a systemd service, updates it, and removes it again.
+  install-linux:
+    needs: package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: package-linux-x64
+          path: dist
+
+      - name: Install
+        run: |
+          tar -xzf dist/*.tar.gz
+          sudo ./borgstudio-server/install.sh | tee install.log
+          grep -q "Setup code for the first administrator" install.log
+          systemctl is-active --quiet borgstudio-server
+          curl -fsSk -o /dev/null https://localhost:8443/setup
+          test "$(sudo stat -c %a /opt/borgstudio-server/data)" = 700
+
+      - name: Update keeps the data
+        run: |
+          code=$(sudo cat /opt/borgstudio-server/data/setup-code.txt)
+          sudo ./borgstudio-server/install.sh > /dev/null
+          test "$(sudo cat /opt/borgstudio-server/data/setup-code.txt)" = "$code"
+          curl -fsSk -o /dev/null https://localhost:8443/setup
+
+      - name: Emergency command runs as the service user
+        run: |
+          sudo runuser -u borgstudio -- /opt/borgstudio-server/BorgStudio.Server reset-admin | tee reset.log || true
+          grep -q "no administrator yet" reset.log
+
+      - name: Uninstall
+        run: |
+          sudo /opt/borgstudio-server/uninstall.sh
+          test -d /opt/borgstudio-server/data
+          sudo /opt/borgstudio-server/uninstall.sh --purge 2> /dev/null || sudo ./borgstudio-server/uninstall.sh --purge
+          test ! -e /opt/borgstudio-server
+          ! id borgstudio 2> /dev/null
+
+      - name: Service log
+        if: failure()
+        run: sudo journalctl -u borgstudio-server --no-pager | tail -50
+
+  # Installs the Windows archive as a Windows service and removes it again.
+  install-windows:
+    needs: package
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: package-win-x64
+          path: dist
+
+      - name: Install
+        run: |
+          Expand-Archive (Get-Item dist/*.zip) -DestinationPath .
+          ./borgstudio-server/install.ps1 *>&1 | Tee-Object -FilePath install.log
+          if (-not (Select-String -Path install.log -Pattern 'Setup code for the first administrator' -Quiet)) { throw 'No setup code shown' }
+          if ((Get-Service BorgStudioServer).Status -ne 'Running') { throw 'Service is not running' }
+          $response = Invoke-WebRequest https://localhost:8443/setup -SkipCertificateCheck
+          if ($response.StatusCode -ne 200) { throw "HTTP $($response.StatusCode)" }
+
+      - name: Uninstall
+        run: |
+          & "$env:ProgramFiles/BorgStudio Server/uninstall.ps1" -Purge
+          if (Get-Service BorgStudioServer -ErrorAction SilentlyContinue) { throw 'Service still exists' }
+          if (Test-Path "$env:ProgramFiles/BorgStudio Server") { throw 'Folder still exists' }
+
+      - name: Service log
+        if: failure()
+        run: Get-WinEvent -LogName Application -MaxEvents 30 | Format-List TimeCreated, ProviderName, Message

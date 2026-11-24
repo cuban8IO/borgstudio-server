@@ -573,4 +573,82 @@
   <data name="ErrorAccountDisabled" xml:space="preserve">
     <value>Dieses Konto ist deaktiviert. Wende dich an einen Administrator.</value>
   </data>
+  <data name="TlsTitle" xml:space="preserve">
+    <value>HTTPS-Zertifikat</value>
+  </data>
+  <data name="TlsHttpsOff" xml:space="preserve">
+    <value>HTTPS ist in dieser Installation aus (z. B. hinter einem Reverse Proxy, der HTTPS übernimmt). Ein hier hochgeladenes Zertifikat wird verwendet, sobald HTTPS eingeschaltet ist.</value>
+  </data>
+  <data name="TlsSubject" xml:space="preserve">
+    <value>Ausgestellt für</value>
+  </data>
+  <data name="TlsIssuer" xml:space="preserve">
+    <value>Ausgestellt von</value>
+  </data>
+  <data name="TlsValidUntil" xml:space="preserve">
+    <value>Gültig bis</value>
+  </data>
+  <data name="TlsNames" xml:space="preserve">
+    <value>Namen</value>
+  </data>
+  <data name="TlsSource" xml:space="preserve">
+    <value>Herkunft</value>
+  </data>
+  <data name="TlsThumbprint" xml:space="preserve">
+    <value>Fingerabdruck</value>
+  </data>
+  <data name="TlsSourceUploaded" xml:space="preserve">
+    <value>Hier hochgeladen</value>
+  </data>
+  <data name="TlsSourceConfigured" xml:space="preserve">
+    <value>Aus borgstudio-server.json</value>
+  </data>
+  <data name="TlsSourceSelfSigned" xml:space="preserve">
+    <value>Vom Server selbst signiert (Browser warnen davor)</value>
+  </data>
+  <data name="TlsHint" xml:space="preserve">
+    <value>Ein hochgeladenes Zertifikat gilt sofort für neue Verbindungen und hat Vorrang vor dem konfigurierten. Ports und Zertifikatsdatei stehen in borgstudio-server.json neben dem Programm.</value>
+  </data>
+  <data name="TlsFormatPfx" xml:space="preserve">
+    <value>PKCS#12-Datei (.pfx, .p12)</value>
+  </data>
+  <data name="TlsFormatPem" xml:space="preserve">
+    <value>PEM-Dateien (Zertifikat und Schlüssel)</value>
+  </data>
+  <data name="TlsPfxFile" xml:space="preserve">
+    <value>Zertifikatsdatei</value>
+  </data>
+  <data name="TlsPfxPassword" xml:space="preserve">
+    <value>Passwort der Datei</value>
+  </data>
+  <data name="TlsCertificateFile" xml:space="preserve">
+    <value>Zertifikat (mit Kette)</value>
+  </data>
+  <data name="TlsKeyFile" xml:space="preserve">
+    <value>Privater Schlüssel (unverschlüsselt)</value>
+  </data>
+  <data name="TlsUpload" xml:space="preserve">
+    <value>Zertifikat hochladen</value>
+  </data>
+  <data name="TlsRemoveUploaded" xml:space="preserve">
+    <value>Hochgeladenes Zertifikat entfernen</value>
+  </data>
+  <data name="TlsUploaded" xml:space="preserve">
+    <value>Das Zertifikat ist jetzt in Gebrauch.</value>
+  </data>
+  <data name="TlsRemoved" xml:space="preserve">
+    <value>Das hochgeladene Zertifikat wurde entfernt.</value>
+  </data>
+  <data name="ErrorCertificateUnreadable" xml:space="preserve">
+    <value>Die Datei ließ sich nicht als Zertifikat lesen, oder das Passwort ist falsch.</value>
+  </data>
+  <data name="ErrorCertificateNoPrivateKey" xml:space="preserve">
+    <value>Das Zertifikat hat keinen privaten Schlüssel.</value>
+  </data>
+  <data name="ErrorCertificateExpired" xml:space="preserve">
+    <value>Das Zertifikat ist abgelaufen.</value>
+  </data>
+  <data name="ErrorCertificateTooLarge" xml:space="preserve">
+    <value>Die Datei ist zu groß (höchstens 1 MB).</value>
+  </data>
 </root>

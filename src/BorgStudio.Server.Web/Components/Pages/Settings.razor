@@ -30,6 +30,10 @@
             </MudButton>
         </MudPaper>
     </MudItem>
+
+    <MudItem xs="12" md="8" lg="6">
+        <TlsCertificateCard ActingUserId="@userId" />
+    </MudItem>
 </MudGrid>
 
 @code {
@@ -43,9 +47,11 @@
     private string? publicUrl;
     private IReadOnlyList<string>? errors;
     private bool busy;
+    private string userId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         var settings = await Dispatcher.QueryAsync(new GetServerSettingsQuery());
         serverName = settings.ServerName;
         publicUrl = settings.PublicUrl;
@@ -54,7 +60,6 @@
     private async Task SaveAsync()
     {
         busy = true;
-        var userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         var result = await Dispatcher.SendAsync(new UpdateServerSettingsCommand(userId, serverName, publicUrl));
         busy = false;
         if (!result.Succeeded)

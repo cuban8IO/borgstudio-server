@@ -2,10 +2,12 @@ using BorgStudio.Server.Application.Abstractions;
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Abstractions.Setup;
+using BorgStudio.Server.Application.Abstractions.Tls;
 using BorgStudio.Server.Infrastructure.Identity;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Infrastructure.Platform;
 using BorgStudio.Server.Infrastructure.Setup;
+using BorgStudio.Server.Infrastructure.Tls;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +33,10 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options => options.UseSqlite($"Data Source={paths.DatabaseFile}"));
         services.AddScoped<IServerSettingsStore, ServerSettingsStore>();
         services.AddSingleton<ISetupCodeStore, SetupCodeStore>();
+
+        services.Configure<ServerEndpointOptions>(configuration.GetSection(ServerEndpointOptions.SectionName));
+        services.AddSingleton<TlsCertificateStore>();
+        services.AddSingleton<ITlsCertificateService>(provider => provider.GetRequiredService<TlsCertificateStore>());
 
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IInvitationStore, InvitationStore>();
