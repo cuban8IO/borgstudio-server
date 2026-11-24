@@ -69,6 +69,35 @@ public sealed class WebHostTests
     }
 
     [Fact]
+    public async Task WithoutAChoice_PagesAreDark_EvenWithALightSystem()
+    {
+        using var server = new TestServer();
+        using var client = server.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/setup");
+        request.Headers.Add("Cookie", "borgstudio.system-dark=0");
+
+        using var response = await client.SendAsync(request);
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("--mud-palette-background: rgba(20,20,20,1)", html);
+    }
+
+    [Fact]
+    public async Task PasswordForms_ShowTheRules()
+    {
+        using var server = new TestServer();
+        using var browser = server.CreateBrowser("de-DE");
+
+        var page = await browser.GetAsync("/setup");
+
+        Assert.Contains("data-password-for=\"password\"", page.Html);
+        Assert.Contains("data-confirm-for=\"confirm-password\"", page.Html);
+        Assert.Contains("Mindestens 8 Zeichen", page.Text);
+        Assert.Contains("Ein Sonderzeichen", page.Text);
+        Assert.Contains("Beide Passwörter stimmen überein", page.Text);
+    }
+
+    [Fact]
     public async Task Overview_ShowsTheServerStatus()
     {
         using var server = new TestServer();

@@ -33,7 +33,7 @@ else
             <input id="user-name" class="form-input" value="@invitation.UserName" readonly autocomplete="username" />
         </FormField>
 
-        <FormField Label="@Strings.PasswordLabel" For="password" Hint="@Strings.PasswordRules">
+        <FormField Label="@Strings.PasswordLabel" For="password">
             <InputText id="password" type="password" @bind-Value="Input.Password" class="form-input" autocomplete="new-password" autofocus />
             <ValidationMessage For="() => Input.Password" class="form-error" />
         </FormField>
@@ -42,6 +42,8 @@ else
             <InputText id="confirm-password" type="password" @bind-Value="Input.ConfirmPassword" class="form-input" autocomplete="new-password" />
             <ValidationMessage For="() => Input.ConfirmPassword" class="form-error" />
         </FormField>
+
+        <PasswordChecklist For="password" ConfirmFor="confirm-password" />
 
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
             @Strings.InvitationSubmit

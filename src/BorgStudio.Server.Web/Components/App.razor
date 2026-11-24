@@ -31,7 +31,7 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    private ThemeContext theme = new(ThemeMode.System, null);
+    private ThemeContext theme = new(ThemeMode.Dark, null);
     private string? idleMinutes;
 
     // Pages marked [ExcludeFromInteractiveRouting] (sign-in, setup, errors) render statically.

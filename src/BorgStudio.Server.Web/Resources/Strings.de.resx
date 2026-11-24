@@ -117,9 +117,6 @@
   <data name="ConfirmPasswordLabel" xml:space="preserve">
     <value>Passwort wiederholen</value>
   </data>
-  <data name="PasswordRules" xml:space="preserve">
-    <value>Mindestens 8 Zeichen mit Groß- und Kleinbuchstaben, einer Ziffer und einem Sonderzeichen.</value>
-  </data>
   <data name="Continue" xml:space="preserve">
     <value>Weiter</value>
   </data>
@@ -127,7 +124,7 @@
     <value>Abbrechen</value>
   </data>
   <data name="SkipForNow" xml:space="preserve">
-    <value>Jetzt nicht</value>
+    <value>Ohne 2FA weiter</value>
   </data>
   <data name="StateOn" xml:space="preserve">
     <value>An</value>
@@ -247,7 +244,7 @@
     <value>Wiederherstellungscodes</value>
   </data>
   <data name="RecoveryCodesIntro" xml:space="preserve">
-    <value>Mit Wiederherstellungscodes kommst du in dein Konto, wenn Passwort oder Authenticator verloren sind. Sie werden nur einmal angezeigt.</value>
+    <value>Mit Wiederherstellungscodes kommst du in dein Konto, wenn du dein Passwort vergisst oder deinen Authenticator verlierst – du brauchst sie also auch ohne Zwei-Faktor-Anmeldung. Sie werden nur einmal angezeigt.</value>
   </data>
   <data name="RecoveryCodesReveal" xml:space="preserve">
     <value>Meine Wiederherstellungscodes anzeigen</value>
@@ -650,5 +647,23 @@
   </data>
   <data name="ErrorCertificateTooLarge" xml:space="preserve">
     <value>Die Datei ist zu groß (höchstens 1 MB).</value>
+  </data>
+  <data name="PasswordRuleLength" xml:space="preserve">
+    <value>Mindestens {0} Zeichen</value>
+  </data>
+  <data name="PasswordRuleUpper" xml:space="preserve">
+    <value>Ein Großbuchstabe</value>
+  </data>
+  <data name="PasswordRuleLower" xml:space="preserve">
+    <value>Ein Kleinbuchstabe</value>
+  </data>
+  <data name="PasswordRuleDigit" xml:space="preserve">
+    <value>Eine Ziffer</value>
+  </data>
+  <data name="PasswordRuleSymbol" xml:space="preserve">
+    <value>Ein Sonderzeichen (z. B. ! ? # -)</value>
+  </data>
+  <data name="PasswordRuleMatch" xml:space="preserve">
+    <value>Beide Passwörter stimmen überein</value>
   </data>
 </root>

@@ -3,6 +3,7 @@ using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Abstractions.Setup;
 using BorgStudio.Server.Application.Abstractions.Tls;
+using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Infrastructure.Identity;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Infrastructure.Platform;
@@ -54,7 +55,7 @@ public static class DependencyInjection
     private static void ConfigureIdentity(IdentityOptions options)
     {
         // Identity's default rules, at least 8 characters.
-        options.Password.RequiredLength = 8;
+        options.Password.RequiredLength = PasswordPolicy.MinimumLength;
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
         options.Password.RequireUppercase = true;

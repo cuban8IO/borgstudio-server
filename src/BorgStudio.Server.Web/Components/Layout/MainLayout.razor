@@ -45,7 +45,7 @@
 
 @code {
     [CascadingParameter]
-    public ThemeContext InitialTheme { get; set; } = new(ThemeMode.System, null);
+    public ThemeContext InitialTheme { get; set; } = new(ThemeMode.Dark, null);
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
