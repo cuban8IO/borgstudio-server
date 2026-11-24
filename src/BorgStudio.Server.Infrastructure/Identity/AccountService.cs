@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BorgStudio.Server.Infrastructure.Identity;
 
-internal sealed class AccountService(UserManager<ApplicationUser> users) : IAccountService
+internal sealed class AccountService(UserManager<ApplicationUser> users, IUserStore<ApplicationUser> store) : IAccountService
 {
     private const int RecoveryCodeCount = 10;
 
@@ -21,7 +21,9 @@ internal sealed class AccountService(UserManager<ApplicationUser> users) : IAcco
             PendingTasks = account.Tasks,
         };
 
-        var created = await users.CreateAsync(user, account.Password);
+        var created = account.Password is null
+            ? await users.CreateAsync(user)
+            : await users.CreateAsync(user, account.Password);
         if (!created.Succeeded)
         {
             return AccountResult<string>.Failed(Describe(created));
@@ -54,6 +56,67 @@ internal sealed class AccountService(UserManager<ApplicationUser> users) : IAcco
 
         return result;
     }
+
+    public async Task<IReadOnlyList<AccountInfo>> ListAsync(CancellationToken cancellationToken)
+    {
+        var all = await users.Users.ToListAsync(cancellationToken);
+        var result = new List<AccountInfo>(all.Count);
+        foreach (var user in all)
+        {
+            result.Add(await ToInfoAsync(user));
+        }
+
+        return result;
+    }
+
+    public async Task<AccountResult> SetUserNameAsync(string userId, string userName, CancellationToken cancellationToken) =>
+        ToResult(await users.SetUserNameAsync(await RequireAsync(userId), userName));
+
+    public async Task<AccountResult> SetEmailAsync(string userId, string? email, CancellationToken cancellationToken)
+    {
+        // Not UserManager.SetEmailAsync: that renews the security stamp and would sign the user out,
+        // although the address is only an unconfirmed profile field.
+        var user = await RequireAsync(userId);
+        user.Email = email;
+        user.EmailConfirmed = false;
+        await users.UpdateNormalizedEmailAsync(user);
+        return ToResult(await users.UpdateAsync(user));
+    }
+
+    public async Task SetRoleAsync(string userId, string role, CancellationToken cancellationToken)
+    {
+        var user = await RequireAsync(userId);
+        var current = await users.GetRolesAsync(user);
+        var obsolete = current.Where(r => r != role).ToList();
+        if (obsolete.Count > 0)
+        {
+            EnsureSucceeded(await users.RemoveFromRolesAsync(user, obsolete));
+        }
+
+        if (!current.Contains(role))
+        {
+            EnsureSucceeded(await users.AddToRoleAsync(user, role));
+        }
+    }
+
+    public async Task SetDisabledAsync(string userId, bool disabled, CancellationToken cancellationToken)
+    {
+        var user = await RequireAsync(userId);
+        if (user.IsDisabled == disabled)
+        {
+            return;
+        }
+
+        user.IsDisabled = disabled;
+        EnsureSucceeded(await users.UpdateAsync(user));
+        if (disabled)
+        {
+            EnsureSucceeded(await users.UpdateSecurityStampAsync(user));
+        }
+    }
+
+    public async Task<AccountResult> DeleteAsync(string userId, CancellationToken cancellationToken) =>
+        ToResult(await users.DeleteAsync(await RequireAsync(userId)));
 
     public async Task<bool> CheckPasswordAsync(string userId, string password, CancellationToken cancellationToken) =>
         await users.FindByIdAsync(userId) is { } user && await users.CheckPasswordAsync(user, password);
@@ -119,6 +182,21 @@ internal sealed class AccountService(UserManager<ApplicationUser> users) : IAcco
 
     public async Task<string?> GetAuthenticatorKeyAsync(string userId, CancellationToken cancellationToken) =>
         await users.GetAuthenticatorKeyAsync(await RequireAsync(userId));
+
+    public async Task<string> CreateAuthenticatorKeyAsync(string userId, CancellationToken cancellationToken)
+    {
+        var user = await RequireAsync(userId);
+        var keys = (IUserAuthenticatorKeyStore<ApplicationUser>)store;
+        if (await keys.GetAuthenticatorKeyAsync(user, cancellationToken) is { Length: > 0 } existing)
+        {
+            return existing;
+        }
+
+        var key = users.GenerateNewAuthenticatorKey();
+        await keys.SetAuthenticatorKeyAsync(user, key, cancellationToken);
+        EnsureSucceeded(await users.UpdateAsync(user));
+        return key;
+    }
 
     public async Task<string> ResetAuthenticatorKeyAsync(string userId, CancellationToken cancellationToken)
     {
@@ -189,7 +267,9 @@ internal sealed class AccountService(UserManager<ApplicationUser> users) : IAcco
         await users.CountRecoveryCodesAsync(user),
         user.PendingTasks,
         user.ThemeMode,
-        user.LockoutEnd is { } end && end > DateTimeOffset.UtcNow ? end : null);
+        user.LockoutEnd is { } end && end > DateTimeOffset.UtcNow ? end : null,
+        user.IsDisabled,
+        user.PasswordHash is not null);
 
     private async Task<ApplicationUser> RequireAsync(string userId) =>
         await users.FindByIdAsync(userId) ?? throw new InvalidOperationException("The account does not exist.");

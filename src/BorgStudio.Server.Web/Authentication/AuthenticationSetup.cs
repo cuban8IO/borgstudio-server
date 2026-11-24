@@ -57,18 +57,17 @@ public static class AuthenticationSetup
             options.ReturnUrlParameter = "returnUrl";
             options.SlidingExpiration = true;
             options.ExpireTimeSpan = SessionLifetime.Persistent;
-            options.Events = new CookieAuthenticationEvents
+            // Only this one event: replacing the events object would drop Identity's security stamp
+            // check (OnValidatePrincipal), and with it sign-outs after password or account changes.
+            options.Events.OnSigningIn = context =>
             {
                 // Sliding expiration renews with the same span, so this sets the idle limit per session kind.
-                OnSigningIn = context =>
-                {
-                    var lifetime = context.Properties.IsPersistent ? SessionLifetime.Persistent : SessionLifetime.Idle;
-                    var now = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow();
-                    context.Properties.IssuedUtc = now;
-                    context.Properties.ExpiresUtc = now + lifetime;
-                    context.Properties.AllowRefresh = true;
-                    return Task.CompletedTask;
-                },
+                var lifetime = context.Properties.IsPersistent ? SessionLifetime.Persistent : SessionLifetime.Idle;
+                var now = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow();
+                context.Properties.IssuedUtc = now;
+                context.Properties.ExpiresUtc = now + lifetime;
+                context.Properties.AllowRefresh = true;
+                return Task.CompletedTask;
             };
         });
 

@@ -51,7 +51,7 @@ internal sealed class PrepareAuthenticatorCommandHandler(
             key = await accounts.GetAuthenticatorKeyAsync(command.UserId, cancellationToken);
             if (string.IsNullOrEmpty(key))
             {
-                key = await accounts.ResetAuthenticatorKeyAsync(command.UserId, cancellationToken);
+                key = await accounts.CreateAuthenticatorKeyAsync(command.UserId, cancellationToken);
             }
         }
 

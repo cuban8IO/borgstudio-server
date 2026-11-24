@@ -22,8 +22,13 @@ repositories.
   for 15 minutes. Without "stay signed in", a session ends after 60 minutes without activity.
 - **Recovery codes**: every user gets ten, shown once. One code replaces password and authenticator; afterwards a new
   password is due, a lost authenticator has to be set up again, and new codes are shown.
+- **Users**: administrators add users with the role *Administrator* or *User* (read only), either with a temporary
+  password or with a one-time invitation link (valid for 1, 7 or 30 days). Under *Settings*, a public address makes
+  invitation links work behind a reverse proxy. Administrators can reset passwords, turn off two-factor
+  authentication, lift lockouts, sign users out everywhere, disable and delete accounts; the last active
+  administrator is protected.
 - **Locked out?** Run `BorgStudio.Server reset-admin [user name]` on the server, as the account the server runs under.
-  It prints a temporary password, turns two-factor authentication off and lifts the lockout.
+  It prints a temporary password, turns two-factor authentication off, lifts the lockout and enables the account.
 
 ## Development
 

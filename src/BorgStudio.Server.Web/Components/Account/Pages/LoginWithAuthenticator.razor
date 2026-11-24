@@ -76,6 +76,10 @@
         {
             errors = [Strings.ErrorLockedOut];
         }
+        else if (result.IsNotAllowed)
+        {
+            errors = [Strings.ErrorAccountDisabled];
+        }
         else
         {
             errors = [Strings.ErrorInvalidAuthenticatorCode];

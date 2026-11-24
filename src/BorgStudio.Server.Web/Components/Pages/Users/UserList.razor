@@ -1,0 +1,317 @@
+@page "/users"
+@attribute [Authorize(Policy = Policies.Administrator)]
+@using System.Globalization
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Abstractions.Accounts
+@using BorgStudio.Server.Application.Users
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<AppPageTitle Title="@Strings.NavUsers" />
+
+<div class="d-flex flex-wrap align-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.NavUsers</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="CreateAsync">
+        @Strings.UserCreate
+    </MudButton>
+</div>
+
+@if (users is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudTable Items="users" Hover="true" Outlined="true" Elevation="0" Breakpoint="Breakpoint.Sm" Dense="true">
+        <HeaderContent>
+            <MudTh>@Strings.UserNameLabel</MudTh>
+            <MudTh>@Strings.RoleLabel</MudTh>
+            <MudTh>@Strings.EmailLabel</MudTh>
+            <MudTh>@Strings.UserState</MudTh>
+            <MudTh Style="width: 1%"></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@Strings.UserNameLabel">
+                @context.Account.UserName
+                @if (context.Account.Id == actingUserId)
+                {
+                    <span class="mud-text-secondary"> (@Strings.UserYou)</span>
+                }
+            </MudTd>
+            <MudTd DataLabel="@Strings.RoleLabel">@RoleName(context.Account)</MudTd>
+            <MudTd DataLabel="@Strings.EmailLabel">@(context.Account.Email ?? "–")</MudTd>
+            <MudTd DataLabel="@Strings.UserState">
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach (var (text, color) in States(context))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="color" Variant="Variant.Outlined">@text</MudChip>
+                    }
+                </div>
+            </MudTd>
+            <MudTd>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="@Strings.UserActions" Dense="true"
+                         AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    @{ var user = context; var self = user.Account.Id == actingUserId; }
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => EditAsync(user)">@Strings.UserEdit</MudMenuItem>
+                    @if (!user.Account.HasPassword)
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Link" OnClick="() => InviteAgainAsync(user)">@Strings.UserNewInvitation</MudMenuItem>
+                        @if (user.InvitationExpiresAt is not null)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.LinkOff" OnClick="() => RevokeInvitationAsync(user)">@Strings.UserRevokeInvitation</MudMenuItem>
+                        }
+                    }
+                    @if (!self)
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Password" OnClick="() => ResetPasswordAsync(user)">@Strings.UserResetPassword</MudMenuItem>
+                        @if (user.Account.TwoFactorEnabled)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.PhonelinkErase" OnClick="() => DisableTwoFactorAsync(user)">@Strings.UserDisableTwoFactor</MudMenuItem>
+                        }
+                    }
+                    @if (user.Account.LockedOutUntil is not null)
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.LockOpen" OnClick="() => UnlockAsync(user)">@Strings.UserUnlock</MudMenuItem>
+                    }
+                    @if (!self)
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="() => SignOutAsync(user)">@Strings.UserSignOut</MudMenuItem>
+                        <MudDivider />
+                        @if (user.Account.IsDisabled)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.PersonOutline" OnClick="() => SetDisabledAsync(user, false)">@Strings.UserEnable</MudMenuItem>
+                        }
+                        else
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => SetDisabledAsync(user, true)">@Strings.UserDisable</MudMenuItem>
+                        }
+                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => DeleteAsync(user)">@Strings.UserDelete</MudMenuItem>
+                    }
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private string actingUserId = string.Empty;
+    private IReadOnlyList<UserSummary>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        actingUserId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => users = await Dispatcher.QueryAsync(new GetUsersQuery(actingUserId));
+
+    private async Task CreateAsync()
+    {
+        var parameters = new DialogParameters<UserDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.CurrentBaseUrl, Navigation.BaseUri },
+        };
+        var dialog = await DialogService.ShowAsync<UserDialog>(Strings.UserCreate, parameters, DialogDefaults);
+        if (await dialog.Result is { Canceled: false, Data: UserAccessGrant grant })
+        {
+            await LoadAsync();
+            await ShowGrantAsync(grant);
+        }
+    }
+
+    private async Task EditAsync(UserSummary user)
+    {
+        var parameters = new DialogParameters<UserDialog>
+        {
+            { d => d.ActingUserId, actingUserId },
+            { d => d.CurrentBaseUrl, Navigation.BaseUri },
+            { d => d.User, user.Account },
+        };
+        var dialog = await DialogService.ShowAsync<UserDialog>(Strings.UserEdit, parameters, DialogDefaults);
+        if (await dialog.Result is not { Canceled: false })
+        {
+            return;
+        }
+
+        if (user.Account.Id == actingUserId)
+        {
+            // A new user name renews the own security stamp; the reload keeps this session valid.
+            Navigation.NavigateTo($"account/refresh?returnUrl={Uri.EscapeDataString("/users")}", forceLoad: true);
+            return;
+        }
+
+        await LoadAsync();
+        Snackbar.Add(Strings.UserSaved, Severity.Success);
+    }
+
+    private async Task InviteAgainAsync(UserSummary user)
+    {
+        var parameters = new DialogParameters<InvitationDialog> { { d => d.UserName, user.Account.UserName } };
+        var dialog = await DialogService.ShowAsync<InvitationDialog>(Strings.UserNewInvitation, parameters, DialogDefaults);
+        if (await dialog.Result is not { Canceled: false, Data: int days })
+        {
+            return;
+        }
+
+        var result = await Dispatcher.SendAsync(new CreateInvitationCommand(actingUserId, user.Account.Id, days, Navigation.BaseUri));
+        await LoadAsync();
+        if (Report(result))
+        {
+            await ShowGrantAsync(result.Value!);
+        }
+    }
+
+    private async Task RevokeInvitationAsync(UserSummary user)
+    {
+        if (await ConfirmAsync(Strings.UserRevokeInvitation, string.Format(Strings.UserRevokeInvitationConfirm, user.Account.UserName)))
+        {
+            await Dispatcher.SendAsync(new RevokeInvitationCommand(actingUserId, user.Account.Id));
+            await LoadAsync();
+        }
+    }
+
+    private async Task ResetPasswordAsync(UserSummary user)
+    {
+        if (!await ConfirmAsync(Strings.UserResetPassword, string.Format(Strings.UserResetPasswordConfirm, user.Account.UserName)))
+        {
+            return;
+        }
+
+        var result = await Dispatcher.SendAsync(new ResetUserPasswordCommand(actingUserId, user.Account.Id));
+        await LoadAsync();
+        if (Report(result))
+        {
+            await ShowGrantAsync(result.Value!);
+        }
+    }
+
+    private async Task DisableTwoFactorAsync(UserSummary user)
+    {
+        if (await ConfirmAsync(Strings.UserDisableTwoFactor, string.Format(Strings.UserDisableTwoFactorConfirm, user.Account.UserName)))
+        {
+            Report(await Dispatcher.SendAsync(new DisableUserTwoFactorCommand(actingUserId, user.Account.Id)), Strings.UserTwoFactorDisabled);
+            await LoadAsync();
+        }
+    }
+
+    private async Task UnlockAsync(UserSummary user)
+    {
+        await Dispatcher.SendAsync(new UnlockUserCommand(actingUserId, user.Account.Id));
+        Snackbar.Add(string.Format(Strings.UserUnlocked, user.Account.UserName), Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task SignOutAsync(UserSummary user)
+    {
+        if (await ConfirmAsync(Strings.UserSignOut, string.Format(Strings.UserSignOutConfirm, user.Account.UserName)))
+        {
+            await Dispatcher.SendAsync(new SignOutUserCommand(actingUserId, user.Account.Id));
+            Snackbar.Add(string.Format(Strings.UserSignedOut, user.Account.UserName), Severity.Success);
+        }
+    }
+
+    private async Task SetDisabledAsync(UserSummary user, bool disabled)
+    {
+        if (disabled && !await ConfirmAsync(Strings.UserDisable, string.Format(Strings.UserDisableConfirm, user.Account.UserName)))
+        {
+            return;
+        }
+
+        Report(await Dispatcher.SendAsync(new SetUserDisabledCommand(actingUserId, user.Account.Id, disabled)));
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(UserSummary user)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            Strings.UserDelete,
+            string.Format(Strings.UserDeleteConfirm, user.Account.UserName),
+            yesText: Strings.UserDelete,
+            cancelText: Strings.Cancel);
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        Report(await Dispatcher.SendAsync(new DeleteUserCommand(actingUserId, user.Account.Id)),
+            string.Format(Strings.UserDeleted, user.Account.UserName));
+        await LoadAsync();
+    }
+
+    private async Task ShowGrantAsync(UserAccessGrant grant)
+    {
+        var parameters = new DialogParameters<AccessGrantDialog> { { d => d.Grant, grant } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false };
+        var dialog = await DialogService.ShowAsync<AccessGrantDialog>(Strings.UserAccessTitle, parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message) =>
+        await DialogService.ShowMessageBoxAsync(title, message, yesText: Strings.Confirm, cancelText: Strings.Cancel) == true;
+
+    /// <summary>Shows errors (or a success message); true when the change went through.</summary>
+    private bool Report(AccountResult result, string? success = null)
+    {
+        foreach (var error in result.Errors)
+        {
+            Snackbar.Add(error, Severity.Error);
+        }
+
+        if (result.Succeeded && success is not null)
+        {
+            Snackbar.Add(success, Severity.Success);
+        }
+
+        return result.Succeeded;
+    }
+
+    private IEnumerable<(string Text, Color Color)> States(UserSummary user)
+    {
+        var account = user.Account;
+        if (account.IsDisabled)
+        {
+            yield return (Strings.UserStateDisabled, Color.Error);
+        }
+
+        if (account.LockedOutUntil is { } locked)
+        {
+            yield return (string.Format(Strings.UserStateLocked, locked.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)), Color.Warning);
+        }
+
+        if (!account.HasPassword)
+        {
+            if (user.InvitationExpiresAt is not { } expires)
+            {
+                yield return (Strings.UserStateNoAccess, Color.Default);
+            }
+            else if (user.InvitationExpired)
+            {
+                yield return (Strings.UserStateInvitationExpired, Color.Warning);
+            }
+            else
+            {
+                yield return (string.Format(Strings.UserStateInvited, expires.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)), Color.Info);
+            }
+        }
+        else if (account.Tasks.HasFlag(AccountTasks.ChangePassword))
+        {
+            yield return (Strings.UserStateTemporaryPassword, Color.Info);
+        }
+
+        if (account.TwoFactorEnabled)
+        {
+            yield return (Strings.UserStateTwoFactor, Color.Success);
+        }
+    }
+
+    private static string RoleName(AccountInfo account) =>
+        account.IsAdministrator ? Strings.RoleAdministrator : Strings.RoleUser;
+
+    private static readonly DialogOptions DialogDefaults = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+}

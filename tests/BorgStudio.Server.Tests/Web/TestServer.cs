@@ -6,9 +6,12 @@ using BorgStudio.Server.Application.Abstractions.Setup;
 using BorgStudio.Server.Infrastructure;
 
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
 namespace BorgStudio.Server.Tests.Web;
 
@@ -24,6 +27,9 @@ public sealed class TestServer : WebApplicationFactory<Program>
     }
 
     public string DataDirectory { get; }
+
+    /// <summary>The server's clock; starts at the real time and only moves when a test moves it.</summary>
+    public FakeTimeProvider Clock { get; } = new(DateTimeOffset.UtcNow);
 
     public string SetupCode => Services.GetRequiredService<ISetupCodeStore>().Current
         ?? throw new InvalidOperationException("Setup is already done.");
@@ -56,6 +62,12 @@ public sealed class TestServer : WebApplicationFactory<Program>
     {
         builder.UseSetting(ServerPaths.ConfigurationKey, DataDirectory);
         builder.UseEnvironment("Production");
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddSingleton<TimeProvider>(Clock);
+            // Check sessions on every request, so tests see sign-outs at once instead of after a minute.
+            services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
+        });
     }
 
     protected override void Dispose(bool disposing)

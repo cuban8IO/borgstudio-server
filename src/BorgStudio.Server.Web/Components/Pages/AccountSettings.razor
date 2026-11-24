@@ -38,6 +38,22 @@
 
     <MudItem xs="12" md="6">
         <MudPaper Outlined="true" Class="pa-4 h-100">
+            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ChangeEmailTitle</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">@Strings.ChangeEmailHint</MudText>
+            <FormErrors Errors="emailErrors" />
+            <MudTextField @bind-Value="newEmail" Label="@Strings.EmailLabel" InputType="InputType.Email"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="email" />
+            <MudTextField @bind-Value="emailPassword" Label="@Strings.CurrentPasswordLabel" InputType="InputType.Password"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="current-password" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="ChangeEmailAsync"
+                       Disabled="busy || string.IsNullOrEmpty(emailPassword)">
+                @Strings.Save
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 h-100">
             <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ChangePasswordTitle</MudText>
             <FormErrors Errors="passwordErrors" />
             <MudTextField @bind-Value="currentPassword" Label="@Strings.CurrentPasswordLabel" InputType="InputType.Password"
@@ -136,16 +152,20 @@
     private string? twoFactorPassword;
     private string? authenticatorCode;
     private string? codesPassword;
+    private string? newEmail;
+    private string? emailPassword;
 
     private IReadOnlyList<string>? passwordErrors;
     private IReadOnlyList<string>? twoFactorErrors;
     private IReadOnlyList<string>? codeErrors;
+    private IReadOnlyList<string>? emailErrors;
 
     private string? StatusText => Status switch
     {
         "password-changed" => Strings.PasswordChanged,
         "two-factor-on" => Strings.TwoFactorTurnedOn,
         "two-factor-off" => Strings.TwoFactorTurnedOff,
+        "email-changed" => Strings.EmailChanged,
         _ => null,
     };
 
@@ -154,6 +174,7 @@
         var user = (await AuthenticationState).User;
         userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         account = await Dispatcher.QueryAsync(new GetAccountQuery(userId));
+        newEmail = account?.Email;
 
         // Codes created just before the page was reloaded to renew the sign-in (see EnableTwoFactorAsync).
         // Only the interactive render takes them, so they are shown exactly once.
@@ -176,6 +197,33 @@
         }
 
         RenewSignIn("password-changed");
+    }
+
+    private async Task ChangeEmailAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new ChangeOwnEmailCommand(userId, newEmail, emailPassword ?? string.Empty));
+            emailPassword = null;
+            if (!result.Succeeded)
+            {
+                emailErrors = result.Errors;
+                return;
+            }
+
+            emailErrors = null;
+            account = await Dispatcher.QueryAsync(new GetAccountQuery(userId));
+            Status = "email-changed";
+        }
+        catch (RequestValidationException)
+        {
+            emailErrors = [Strings.ValidationEmail];
+        }
+        finally
+        {
+            busy = false;
+        }
     }
 
     private async Task StartTwoFactorAsync()

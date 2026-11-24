@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddSingleton<ISetupCodeStore, SetupCodeStore>();
 
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IInvitationStore, InvitationStore>();
         services.AddSingleton<IAuthenticatorPresenter, AuthenticatorPresenter>();
 
         return services
@@ -40,6 +41,7 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders()
+            .AddUserConfirmation<AccountConfirmation>()
             .AddClaimsPrincipalFactory<AccountClaimsPrincipalFactory>();
     }
 
@@ -59,7 +61,8 @@ public static class DependencyInjection
 
         // Sign-in is by user name; an e-mail address is optional and not confirmed.
         options.User.RequireUniqueEmail = false;
-        options.SignIn.RequireConfirmedAccount = false;
+        // "Confirmed" means "not disabled by an administrator" here (see AccountConfirmation).
+        options.SignIn.RequireConfirmedAccount = true;
         options.SignIn.RequireConfirmedEmail = false;
     }
 }

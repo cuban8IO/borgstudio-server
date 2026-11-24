@@ -363,4 +363,214 @@
   <data name="IdentityPasswordRequiresUpper" xml:space="preserve">
     <value>Das Passwort braucht einen Großbuchstaben.</value>
   </data>
+  <data name="NavUsers" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="NavSettings" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="UserCreate" xml:space="preserve">
+    <value>Benutzer anlegen</value>
+  </data>
+  <data name="UserCreateSubmit" xml:space="preserve">
+    <value>Anlegen</value>
+  </data>
+  <data name="UserEdit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="UserSaved" xml:space="preserve">
+    <value>Der Benutzer wurde gespeichert.</value>
+  </data>
+  <data name="UserState" xml:space="preserve">
+    <value>Zustand</value>
+  </data>
+  <data name="UserYou" xml:space="preserve">
+    <value>du</value>
+  </data>
+  <data name="UserActions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="UserNewInvitation" xml:space="preserve">
+    <value>Neuer Einladungslink</value>
+  </data>
+  <data name="UserNewInvitationHint" xml:space="preserve">
+    <value>Erzeugt einen neuen Link für {0}. Ein früherer Link wird ungültig.</value>
+  </data>
+  <data name="UserNewInvitationSubmit" xml:space="preserve">
+    <value>Link erzeugen</value>
+  </data>
+  <data name="UserRevokeInvitation" xml:space="preserve">
+    <value>Einladung widerrufen</value>
+  </data>
+  <data name="UserRevokeInvitationConfirm" xml:space="preserve">
+    <value>Der Einladungslink von {0} wird ungültig.</value>
+  </data>
+  <data name="UserResetPassword" xml:space="preserve">
+    <value>Passwort zurücksetzen</value>
+  </data>
+  <data name="UserResetPasswordConfirm" xml:space="preserve">
+    <value>{0} bekommt ein Startpasswort und muss beim nächsten Anmelden ein neues festlegen. Laufende Sitzungen enden.</value>
+  </data>
+  <data name="UserDisableTwoFactor" xml:space="preserve">
+    <value>Zwei-Faktor-Anmeldung ausschalten</value>
+  </data>
+  <data name="UserDisableTwoFactorConfirm" xml:space="preserve">
+    <value>Für einen verlorenen Authenticator: {0} meldet sich nur mit dem Passwort an und bekommt die Zwei-Faktor-Anmeldung erneut angeboten.</value>
+  </data>
+  <data name="UserTwoFactorDisabled" xml:space="preserve">
+    <value>Die Zwei-Faktor-Anmeldung wurde ausgeschaltet.</value>
+  </data>
+  <data name="UserUnlock" xml:space="preserve">
+    <value>Sperre aufheben</value>
+  </data>
+  <data name="UserUnlocked" xml:space="preserve">
+    <value>{0} kann sich wieder anmelden.</value>
+  </data>
+  <data name="UserSignOut" xml:space="preserve">
+    <value>Überall abmelden</value>
+  </data>
+  <data name="UserSignOutConfirm" xml:space="preserve">
+    <value>Alle Sitzungen von {0} enden innerhalb einer Minute.</value>
+  </data>
+  <data name="UserSignedOut" xml:space="preserve">
+    <value>{0} wird überall abgemeldet.</value>
+  </data>
+  <data name="UserDisable" xml:space="preserve">
+    <value>Konto deaktivieren</value>
+  </data>
+  <data name="UserDisableConfirm" xml:space="preserve">
+    <value>{0} kann sich nicht mehr anmelden, laufende Sitzungen enden. Du kannst das Konto später wieder aktivieren.</value>
+  </data>
+  <data name="UserEnable" xml:space="preserve">
+    <value>Konto aktivieren</value>
+  </data>
+  <data name="UserDelete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="UserDeleteConfirm" xml:space="preserve">
+    <value>{0} endgültig löschen? Das lässt sich nicht rückgängig machen.</value>
+  </data>
+  <data name="UserDeleted" xml:space="preserve">
+    <value>{0} wurde gelöscht.</value>
+  </data>
+  <data name="UserStateDisabled" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="UserStateLocked" xml:space="preserve">
+    <value>Gesperrt bis {0}</value>
+  </data>
+  <data name="UserStateNoAccess" xml:space="preserve">
+    <value>Noch kein Passwort</value>
+  </data>
+  <data name="UserStateInvitationExpired" xml:space="preserve">
+    <value>Einladung abgelaufen</value>
+  </data>
+  <data name="UserStateInvited" xml:space="preserve">
+    <value>Eingeladen bis {0}</value>
+  </data>
+  <data name="UserStateTemporaryPassword" xml:space="preserve">
+    <value>Startpasswort</value>
+  </data>
+  <data name="UserStateTwoFactor" xml:space="preserve">
+    <value>2FA</value>
+  </data>
+  <data name="UserAccessLabel" xml:space="preserve">
+    <value>Erste Anmeldung</value>
+  </data>
+  <data name="UserAccessTemporaryPassword" xml:space="preserve">
+    <value>Startpasswort</value>
+  </data>
+  <data name="UserAccessInvitation" xml:space="preserve">
+    <value>Einladungslink</value>
+  </data>
+  <data name="UserAccessTemporaryPasswordHint" xml:space="preserve">
+    <value>Der Server erzeugt ein Passwort, das du weitergibst. Es muss beim ersten Anmelden geändert werden.</value>
+  </data>
+  <data name="UserAccessInvitationHint" xml:space="preserve">
+    <value>Der Server erzeugt einen einmaligen Link, den du weitergibst. Darüber legt der Benutzer sein Passwort selbst fest.</value>
+  </data>
+  <data name="InvitationValidLabel" xml:space="preserve">
+    <value>Link gültig für</value>
+  </data>
+  <data name="InvitationValidOneDay" xml:space="preserve">
+    <value>1 Tag</value>
+  </data>
+  <data name="InvitationValidDays" xml:space="preserve">
+    <value>{0} Tage</value>
+  </data>
+  <data name="UserAccessTitle" xml:space="preserve">
+    <value>Zugang weitergeben</value>
+  </data>
+  <data name="UserAccessShownOnce" xml:space="preserve">
+    <value>Wird nur dieses eine Mal angezeigt. Kopiere es jetzt und gib es sicher weiter.</value>
+  </data>
+  <data name="UserAccessPasswordIntro" xml:space="preserve">
+    <value>Startpasswort für {0}:</value>
+  </data>
+  <data name="UserAccessLinkIntro" xml:space="preserve">
+    <value>Einladungslink für {0}, gültig bis {1}:</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Kopiert.</value>
+  </data>
+  <data name="CopyFailed" xml:space="preserve">
+    <value>Kopieren ging nicht; bitte den Text markieren und kopieren.</value>
+  </data>
+  <data name="Done" xml:space="preserve">
+    <value>Fertig</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="InvitationTitle" xml:space="preserve">
+    <value>Einladung annehmen</value>
+  </data>
+  <data name="InvitationIntro" xml:space="preserve">
+    <value>Du wurdest als {0} eingeladen. Lege dein Passwort fest (Link gültig bis {1}).</value>
+  </data>
+  <data name="InvitationSubmit" xml:space="preserve">
+    <value>Passwort festlegen</value>
+  </data>
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Die Einstellungen wurden gespeichert.</value>
+  </data>
+  <data name="SettingsServerTitle" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="PublicUrlLabel" xml:space="preserve">
+    <value>Öffentliche Adresse (optional)</value>
+  </data>
+  <data name="PublicUrlHint" xml:space="preserve">
+    <value>So erreichen Benutzer diesen Server, z. B. hinter einem Reverse Proxy. Wird für Einladungslinks verwendet; leer wird die Adresse aus deinem Browser genommen.</value>
+  </data>
+  <data name="ChangeEmailTitle" xml:space="preserve">
+    <value>E-Mail-Adresse</value>
+  </data>
+  <data name="ChangeEmailHint" xml:space="preserve">
+    <value>Optional; wird später für Benachrichtigungen genutzt.</value>
+  </data>
+  <data name="EmailChanged" xml:space="preserve">
+    <value>Deine E-Mail-Adresse wurde gespeichert.</value>
+  </data>
+  <data name="ErrorLastAdministrator" xml:space="preserve">
+    <value>Der Server braucht mindestens einen aktiven Administrator.</value>
+  </data>
+  <data name="ErrorNotOnYourOwnAccount" xml:space="preserve">
+    <value>Das geht nicht mit deinem eigenen Konto.</value>
+  </data>
+  <data name="ErrorInvalidPublicUrl" xml:space="preserve">
+    <value>Die öffentliche Adresse muss eine vollständige http- oder https-Adresse sein, z. B. https://backup.example.org/.</value>
+  </data>
+  <data name="ErrorInvitationInvalid" xml:space="preserve">
+    <value>Dieser Einladungslink ist ungültig, schon benutzt oder abgelaufen. Bitte einen Administrator um einen neuen.</value>
+  </data>
+  <data name="ErrorAccountDisabled" xml:space="preserve">
+    <value>Dieses Konto ist deaktiviert. Wende dich an einen Administrator.</value>
+  </data>
 </root>
