@@ -3,6 +3,12 @@
 All notable changes to BorgStudio Server. The release workflow adds every release from the titles of its
 pull requests; the server shows this file on its *Changelog* page.
 
+## [0.3.0] - 2026-11-24
+
+### New features
+- Let borg clients back up over SSH, pair apps and use API tokens (#16)
+- Add datastores and repositories with sharing, quotas and trash (#15)
+
 ## [0.2.0] - 2026-11-24
 
 ### New features
