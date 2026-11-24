@@ -2,6 +2,7 @@ using System.Reflection;
 
 using BorgStudio.Server.Application.Abstractions.Messaging;
 using BorgStudio.Server.Application.Messaging;
+using BorgStudio.Server.Application.Updates;
 using BorgStudio.Server.Application.Users;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IDispatcher, Dispatcher>();
         services.AddScoped<UserAdministration>();
+        services.AddSingleton<UpdateStatusStore>();
         services.AddRequestHandlers(typeof(DependencyInjection).Assembly);
         return services;
     }

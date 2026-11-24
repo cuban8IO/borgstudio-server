@@ -191,3 +191,30 @@
 .file-field input[type="file"] {
     color: var(--mud-palette-text-primary);
 }
+
+/* Password rules, ticked while typing */
+.password-rules {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+    font-size: 0.8rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.password-rules li::before {
+    content: "\25CB";
+    display: inline-block;
+    width: 1.4em;
+    color: var(--mud-palette-text-secondary);
+}
+
+.password-rules li.met {
+    color: var(--mud-palette-text-primary);
+}
+
+.password-rules li.met::before {
+    content: "\2714";
+    color: var(--mud-palette-success);
+}

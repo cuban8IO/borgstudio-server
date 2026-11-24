@@ -11,6 +11,11 @@ on:
         description: Version baked into the binaries and file names
         required: true
         type: string
+      changelog-artifact:
+        description: Artifact with the CHANGELOG.md of this release, embedded instead of the checked-out one
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -41,6 +46,13 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+
+      # The server shows its changelog; on a release it already lists the version being built.
+      - uses: actions/download-artifact@v8
+        if: inputs.changelog-artifact != ''
+        with:
+          name: ${{ inputs.changelog-artifact }}
+          path: .
 
       - name: Publish
         run: dotnet publish "$PROJECT" -c Release -r "$RID" --self-contained -p:Version="$VERSION" -o publish

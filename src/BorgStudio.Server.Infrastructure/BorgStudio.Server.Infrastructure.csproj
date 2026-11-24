@@ -21,4 +21,9 @@
     <InternalsVisibleTo Include="BorgStudio.Server.Tests" />
   </ItemGroup>
 
+  <!-- The changelog the server shows on its "Changelog" page (written by the release workflow). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\CHANGELOG.md" LogicalName="CHANGELOG.md" Visible="false" />
+  </ItemGroup>
+
 </Project>

@@ -21,6 +21,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
         {
             user.Property(u => u.PendingTasks).HasConversion<int>();
             user.Property(u => u.ThemeMode).HasConversion<int>();
+            user.Property(u => u.ChangelogSeenVersion).HasMaxLength(32);
         });
 
         builder.Entity<Invitation>(invitation =>
@@ -46,6 +47,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             {
                 Id = Domain.Settings.ServerSettings.SingletonId,
                 ServerName = Domain.Settings.ServerSettings.DefaultServerName,
+                CheckForUpdates = true,
             });
         });
     }

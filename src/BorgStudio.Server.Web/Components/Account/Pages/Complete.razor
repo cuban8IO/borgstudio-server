@@ -25,7 +25,7 @@ else if (step == AccountTasks.ChangePassword)
 
     <EditForm Model="PasswordInput" method="post" OnValidSubmit="SetPasswordAsync" FormName="new-password">
         <DataAnnotationsValidator />
-        <FormField Label="@Strings.NewPasswordLabel" For="new-password" Hint="@Strings.PasswordRules">
+        <FormField Label="@Strings.NewPasswordLabel" For="new-password">
             <InputText id="new-password" type="password" @bind-Value="PasswordInput.NewPassword" class="form-input" autocomplete="new-password" autofocus />
             <ValidationMessage For="() => PasswordInput.NewPassword" class="form-error" />
         </FormField>
@@ -33,6 +33,7 @@ else if (step == AccountTasks.ChangePassword)
             <InputText id="confirm-password" type="password" @bind-Value="PasswordInput.ConfirmPassword" class="form-input" autocomplete="new-password" />
             <ValidationMessage For="() => PasswordInput.ConfirmPassword" class="form-error" />
         </FormField>
+        <PasswordChecklist For="new-password" ConfirmFor="confirm-password" />
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4">
             @Strings.Continue
         </MudButton>

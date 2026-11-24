@@ -3,11 +3,14 @@ using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Abstractions.Setup;
 using BorgStudio.Server.Application.Abstractions.Tls;
+using BorgStudio.Server.Application.Abstractions.Updates;
+using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Infrastructure.Identity;
 using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Infrastructure.Platform;
 using BorgStudio.Server.Infrastructure.Setup;
 using BorgStudio.Server.Infrastructure.Tls;
+using BorgStudio.Server.Infrastructure.Updates;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +41,11 @@ public static class DependencyInjection
         services.AddSingleton<TlsCertificateStore>();
         services.AddSingleton<ITlsCertificateService>(provider => provider.GetRequiredService<TlsCertificateStore>());
 
+        services.AddHttpClient<IReleaseFeed, GitHubReleaseFeed>(GitHubReleaseFeed.Configure);
+        services.AddSingleton<IChangelogSource, EmbeddedChangelog>();
+        services.AddSingleton<IInstallationInfo, InstallationInfo>();
+        services.AddHostedService<UpdateCheckWorker>();
+
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IInvitationStore, InvitationStore>();
         services.AddSingleton<IAuthenticatorPresenter, AuthenticatorPresenter>();
@@ -54,7 +62,7 @@ public static class DependencyInjection
     private static void ConfigureIdentity(IdentityOptions options)
     {
         // Identity's default rules, at least 8 characters.
-        options.Password.RequiredLength = 8;
+        options.Password.RequiredLength = PasswordPolicy.MinimumLength;
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
         options.Password.RequireUppercase = true;

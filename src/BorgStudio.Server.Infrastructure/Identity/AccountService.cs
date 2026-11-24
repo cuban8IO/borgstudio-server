@@ -236,6 +236,13 @@ internal sealed class AccountService(UserManager<ApplicationUser> users, IUserSt
         EnsureSucceeded(await users.UpdateAsync(user));
     }
 
+    public async Task SetChangelogSeenVersionAsync(string userId, string version, CancellationToken cancellationToken)
+    {
+        var user = await RequireAsync(userId);
+        user.ChangelogSeenVersion = version;
+        EnsureSucceeded(await users.UpdateAsync(user));
+    }
+
     public async Task UnlockAsync(string userId, CancellationToken cancellationToken)
     {
         var user = await RequireAsync(userId);
@@ -269,7 +276,8 @@ internal sealed class AccountService(UserManager<ApplicationUser> users, IUserSt
         user.ThemeMode,
         user.LockoutEnd is { } end && end > DateTimeOffset.UtcNow ? end : null,
         user.IsDisabled,
-        user.PasswordHash is not null);
+        user.PasswordHash is not null,
+        user.ChangelogSeenVersion);
 
     private async Task<ApplicationUser> RequireAsync(string userId) =>
         await users.FindByIdAsync(userId) ?? throw new InvalidOperationException("The account does not exist.");

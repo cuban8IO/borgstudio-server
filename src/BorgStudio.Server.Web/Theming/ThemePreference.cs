@@ -13,11 +13,12 @@ public static class ThemePreference
     /// <summary>Written by wwwroot/js/app.js on every page load: "1" when the browser prefers dark colors.</summary>
     public const string SystemDarkCookieName = "borgstudio.system-dark";
 
+    /// <summary>The chosen mode; without a (valid) choice BorgStudio is dark, like the app.</summary>
     public static ThemeMode Parse(string? cookieValue) => cookieValue?.Trim().ToLowerInvariant() switch
     {
         "light" => ThemeMode.Light,
-        "dark" => ThemeMode.Dark,
-        _ => ThemeMode.System,
+        "system" => ThemeMode.System,
+        _ => ThemeMode.Dark,
     };
 
     public static string ToCookieValue(ThemeMode mode) => mode switch

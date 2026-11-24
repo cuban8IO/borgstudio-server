@@ -1,0 +1,52 @@
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Updates
+@inject IDispatcher Dispatcher
+
+@* For administrators: "updated to x.y.z" once after an update, and "x.y.z is available". *@
+@if (notices?.UpdatedTo is { } updatedTo && !updatedDismissed)
+{
+    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="DismissAsync">
+        @string.Format(Strings.UpdateNoticeUpdated, updatedTo)
+        <MudLink Href="changelog" Class="ml-2">@Strings.UpdateNoticeWhatsNew</MudLink>
+    </MudAlert>
+}
+@if (notices?.Available is { } available)
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+        @string.Format(Strings.UpdateNoticeAvailable, available)
+        <MudLink Href="changelog#update" Class="ml-2">@Strings.UpdateNoticeHowTo</MudLink>
+    </MudAlert>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private UpdateNotices? notices;
+    private bool updatedDismissed;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        var user = (await AuthenticationState).User;
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is not null && user.IsInRole(Roles.Administrator))
+        {
+            notices = await Dispatcher.SendAsync(new GetUpdateNoticesCommand(userId));
+        }
+    }
+
+    private async Task DismissAsync()
+    {
+        updatedDismissed = true;
+        if (userId is not null)
+        {
+            await Dispatcher.SendAsync(new DismissUpdateNoticeCommand(userId));
+        }
+    }
+}

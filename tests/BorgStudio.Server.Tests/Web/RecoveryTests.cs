@@ -98,7 +98,7 @@ public sealed class RecoveryTests
 
         page = await browser.SubmitAsync(page, "lost-authenticator");
         Assert.Contains("Set up a new authenticator", page.Text);
-        Assert.DoesNotContain("Not now", page.Text);
+        Assert.DoesNotContain("Continue without 2FA", page.Text);
         var newKey = page.AuthenticatorKey();
         Assert.NotEqual(oldKey, newKey);
 

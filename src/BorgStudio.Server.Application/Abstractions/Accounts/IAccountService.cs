@@ -67,6 +67,9 @@ public interface IAccountService
 
     Task SetThemeModeAsync(string userId, ThemeMode mode, CancellationToken cancellationToken);
 
+    /// <summary>The newest version whose changes the user has been told about.</summary>
+    Task SetChangelogSeenVersionAsync(string userId, string version, CancellationToken cancellationToken);
+
     /// <summary>Lifts a lockout and resets the count of failed sign-ins.</summary>
     Task UnlockAsync(string userId, CancellationToken cancellationToken);
 
@@ -93,7 +96,8 @@ public sealed record AccountInfo(
     ThemeMode ThemeMode,
     DateTimeOffset? LockedOutUntil,
     bool IsDisabled,
-    bool HasPassword)
+    bool HasPassword,
+    string? ChangelogSeenVersion = null)
 {
     public bool IsAdministrator => Roles.Contains(Domain.Users.Roles.Administrator);
 }
