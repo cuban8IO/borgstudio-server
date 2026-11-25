@@ -67,6 +67,9 @@ public sealed class BackupRepository
     /// <summary>Name of the key (or paired app) of the last connection.</summary>
     public string? LastAccessBy { get; private set; }
 
+    /// <summary>Apps may see the other users and the last access of this repository (if the server allows it at all).</summary>
+    public bool ShowParticipantsInApps { get; private set; } = true;
+
     public IReadOnlyList<RepositoryShare> Shares => shares;
 
     public bool IsDeleted => DeletedAt is not null;
@@ -117,6 +120,8 @@ public sealed class BackupRepository
     public void FollowOwnerName(string ownerName) => RelativePath = FolderFor(ownerName, Name);
 
     public void SetQuota(long? quotaBytes) => QuotaBytes = quotaBytes;
+
+    public void SetShowParticipantsInApps(bool show) => ShowParticipantsInApps = show;
 
     /// <summary>Gives the repository to another user; a share the new owner had is no longer needed.</summary>
     public void SetOwner(string ownerId, string ownerName)

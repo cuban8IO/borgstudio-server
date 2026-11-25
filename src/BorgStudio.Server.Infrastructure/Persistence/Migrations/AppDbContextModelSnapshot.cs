@@ -232,6 +232,9 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ShowParticipantsInApps")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("SshPublicAddress")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -245,7 +248,8 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         {
                             Id = 1,
                             CheckForUpdates = true,
-                            ServerName = "BorgStudio Server"
+                            ServerName = "BorgStudio Server",
+                            ShowParticipantsInApps = true
                         });
                 });
 
@@ -515,6 +519,9 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("ShowParticipantsInApps")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("UsageMeasuredAt")
                         .HasColumnType("TEXT");

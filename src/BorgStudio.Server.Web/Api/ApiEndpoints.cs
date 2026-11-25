@@ -245,7 +245,8 @@ internal static class ApiEndpoints
         OwnerQuotaResponse? OwnerQuota,
         LastAccessResponse? LastAccess,
         IReadOnlyList<ParticipantResponse> Participants,
-        bool IsMoving)
+        bool IsMoving,
+        bool ParticipantsHidden)
     {
         public static RepositoryResponse From(RepositoryStats stats) => new(
             stats.Id,
@@ -263,7 +264,8 @@ internal static class ApiEndpoints
             stats.OwnerQuota is { } q ? new OwnerQuotaResponse(q.UsedBytes, q.QuotaBytes!.Value) : null,
             stats.LastAccess is { } a ? new LastAccessResponse(a.At, a.UserName, a.By) : null,
             [.. stats.Participants.Select(p => new ParticipantResponse(p.UserName, AccessName(p.Access), p.IsOwner))],
-            stats.IsMoving);
+            stats.IsMoving,
+            stats.ParticipantsHidden);
     }
 
     public sealed record OwnerQuotaResponse(long UsedBytes, long QuotaBytes);

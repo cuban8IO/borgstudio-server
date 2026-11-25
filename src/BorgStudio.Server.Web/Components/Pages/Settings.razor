@@ -30,6 +30,8 @@
                           Placeholder="https://backup.example.org/" HelperText="@Strings.PublicUrlHint" Class="mt-2" />
             <MudSwitch T="bool" @bind-Value="checkForUpdates" Color="Color.Primary" Class="mt-3" Label="@Strings.UpdatesCheckDaily" />
             <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@Strings.UpdatesHint</MudText>
+            <MudSwitch T="bool" @bind-Value="showParticipantsInApps" Color="Color.Primary" Class="mt-3" Label="@Strings.SettingsShowParticipants" />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@Strings.SettingsShowParticipantsHint</MudText>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveAsync" Disabled="busy">
                 @Strings.Save
             </MudButton>
@@ -78,6 +80,7 @@
     private string? serverName;
     private string? publicUrl;
     private bool checkForUpdates = true;
+    private bool showParticipantsInApps = true;
     private UpdateStatus? updateStatus;
     private UpdateChannel? channel;
     private bool checking;
@@ -93,6 +96,7 @@
         serverName = settings.ServerName;
         publicUrl = settings.PublicUrl;
         checkForUpdates = settings.CheckForUpdates;
+        showParticipantsInApps = settings.ShowParticipantsInApps;
         updateStatus = await Dispatcher.QueryAsync(new GetUpdateStatusQuery(userId));
         channel = await Dispatcher.QueryAsync(new GetUpdateChannelQuery());
         developmentBuild = (await Dispatcher.QueryAsync(new GetServerStatusQuery())).Version.IsDevelopmentBuild;
@@ -139,7 +143,7 @@
     private async Task SaveAsync()
     {
         busy = true;
-        var result = await Dispatcher.SendAsync(new UpdateServerSettingsCommand(userId, serverName, publicUrl, checkForUpdates));
+        var result = await Dispatcher.SendAsync(new UpdateServerSettingsCommand(userId, serverName, publicUrl, checkForUpdates, showParticipantsInApps));
         busy = false;
         if (!result.Succeeded)
         {

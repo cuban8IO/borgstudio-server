@@ -121,6 +121,11 @@ else
                     }
                 </div>
                 <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@Strings.RepositoryAccessIntro</MudText>
+                @if (repository.CanManage)
+                {
+                    <MudSwitch T="bool" Value="details.ShowParticipantsInApps" ValueChanged="SetShowParticipantsAsync" Color="Color.Primary"
+                               Label="@Strings.RepositoryShowParticipants" Class="mb-2" />
+                }
                 <MudSimpleTable Dense="true" Outlined="false" Elevation="0">
                     <tbody>
                         <tr>
@@ -273,6 +278,12 @@ else
             Snackbar.Add(Strings.RepositorySaved, Severity.Success);
             await LoadAsync();
         }
+    }
+
+    private async Task SetShowParticipantsAsync(bool show)
+    {
+        await Dispatcher.SendAsync(new SetRepositoryAppVisibilityCommand(actingUserId, Id, show));
+        await LoadAsync();
     }
 
     private async Task ShareAsync()

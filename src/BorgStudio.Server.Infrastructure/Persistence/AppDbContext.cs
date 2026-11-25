@@ -225,6 +225,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
                 Id = Domain.Settings.ServerSettings.SingletonId,
                 ServerName = Domain.Settings.ServerSettings.DefaultServerName,
                 CheckForUpdates = true,
+                ShowParticipantsInApps = true,
             });
         });
     }

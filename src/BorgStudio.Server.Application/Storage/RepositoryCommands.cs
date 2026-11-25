@@ -153,6 +153,20 @@ internal sealed class UpdateRepositoryCommandHandler(StorageContext storage) : I
     }
 }
 
+/// <summary>Whether apps may see the other users and the last access of a repository (owner or administrator).</summary>
+public sealed record SetRepositoryAppVisibilityCommand([property: Required] string ActingUserId, Guid RepositoryId, bool ShowParticipants) : ICommand;
+
+internal sealed class SetRepositoryAppVisibilityCommandHandler(StorageContext storage) : ICommandHandler<SetRepositoryAppVisibilityCommand>
+{
+    public async Task HandleAsync(SetRepositoryAppVisibilityCommand command, CancellationToken cancellationToken)
+    {
+        var acting = await storage.RequireActingAsync(command.ActingUserId, cancellationToken);
+        var repository = await storage.RequireManagedAsync(acting, command.RepositoryId, cancellationToken);
+        repository.SetShowParticipantsInApps(command.ShowParticipants);
+        await storage.Store.SaveChangesAsync(cancellationToken);
+    }
+}
+
 /// <summary>Gives a repository to another user (administrators only).</summary>
 public sealed record SetRepositoryOwnerCommand(
     [property: Required] string ActingUserId,

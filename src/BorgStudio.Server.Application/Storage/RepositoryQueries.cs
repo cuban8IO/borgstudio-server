@@ -86,7 +86,8 @@ public sealed record RepositoryDetails(
     string? MoveTarget,
     RepositoryMoveProgress? MoveProgress,
     string? MoveError,
-    bool HostingSupported);
+    bool HostingSupported,
+    bool ShowParticipantsInApps = true);
 
 /// <summary>One repository; <c>null</c> if it does not exist, is in the trash or the user may not see it.</summary>
 public sealed record GetRepositoryQuery([property: Required] string ActingUserId, Guid RepositoryId) : IQuery<RepositoryDetails?>;
@@ -132,7 +133,8 @@ internal sealed class GetRepositoryQueryHandler(StorageContext storage, Reposito
             target,
             moves.Progress(repository.Id),
             manage ? repository.MoveError : null,
-            storage.Folders.HostingSupported);
+            storage.Folders.HostingSupported,
+            repository.ShowParticipantsInApps);
     }
 }
 

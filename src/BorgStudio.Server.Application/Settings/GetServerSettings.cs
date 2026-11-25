@@ -10,7 +10,8 @@ namespace BorgStudio.Server.Application.Settings;
 
 public sealed record GetServerSettingsQuery : IQuery<ServerSettingsInfo>;
 
-public sealed record ServerSettingsInfo(string ServerName, string? PublicUrl, bool CheckForUpdates, string? SshPublicAddress = null);
+public sealed record ServerSettingsInfo(
+    string ServerName, string? PublicUrl, bool CheckForUpdates, string? SshPublicAddress = null, bool ShowParticipantsInApps = true);
 
 internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
     : IQueryHandler<GetServerSettingsQuery, ServerSettingsInfo>
@@ -18,7 +19,8 @@ internal sealed class GetServerSettingsQueryHandler(IServerSettingsStore store)
     public async Task<ServerSettingsInfo> HandleAsync(GetServerSettingsQuery query, CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new ServerSettingsInfo(settings.ServerName, settings.PublicUrl, settings.CheckForUpdates, settings.SshPublicAddress);
+        return new ServerSettingsInfo(
+            settings.ServerName, settings.PublicUrl, settings.CheckForUpdates, settings.SshPublicAddress, settings.ShowParticipantsInApps);
     }
 }
 
@@ -27,7 +29,8 @@ public sealed record UpdateServerSettingsCommand(
     [property: Required] string ActingUserId,
     [property: MaxLength(ServerSettings.MaxServerNameLength)] string? ServerName,
     string? PublicUrl,
-    bool CheckForUpdates = true) : ICommand<AccountResult>;
+    bool CheckForUpdates = true,
+    bool ShowParticipantsInApps = true) : ICommand<AccountResult>;
 
 internal sealed class UpdateServerSettingsCommandHandler(UserAdministration admin, IServerSettingsStore store)
     : ICommandHandler<UpdateServerSettingsCommand, AccountResult>
@@ -44,6 +47,7 @@ internal sealed class UpdateServerSettingsCommandHandler(UserAdministration admi
         settings.Rename(command.ServerName);
         settings.SetPublicUrl(command.PublicUrl);
         settings.CheckForUpdates = command.CheckForUpdates;
+        settings.ShowParticipantsInApps = command.ShowParticipantsInApps;
         await store.SaveAsync(settings, cancellationToken);
         return AccountResult.Success;
     }

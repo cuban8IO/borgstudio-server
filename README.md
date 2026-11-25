@@ -107,7 +107,8 @@ such as `BorgStudio__Http__Enabled=true`.
   `GET|POST repositories`, `GET repositories/{id}` (usage, quota, last access, who else uses it),
   `PUT repositories/{id}/ssh-key`, `POST repositories/{id}/reports` (a run of the app: backup, check, prune or
   compact with borg's figures); pairing at `POST pairing` and `POST pairing/complete`. It can only do what backing
-  up needs: deleting, sharing and quotas stay in the web interface.
+  up needs: deleting, sharing and quotas stay in the web interface. Whether apps see who else uses a repository and when it was last
+  accessed can be switched off for the whole server (*Settings*) and for each repository (its page).
 
 ## Statistics
 

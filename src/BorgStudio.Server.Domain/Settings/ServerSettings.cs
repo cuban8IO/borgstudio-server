@@ -34,6 +34,12 @@ public sealed class ServerSettings
     /// <summary>Look for new releases on GitHub once a day (administrators see a hint).</summary>
     public bool CheckForUpdates { get; set; } = true;
 
+    /// <summary>
+    /// Apps (and API tokens) may see who else uses a repository and when it was last accessed.
+    /// Off: they only learn their own access. Repositories can switch it off on their own too.
+    /// </summary>
+    public bool ShowParticipantsInApps { get; set; } = true;
+
     public const int MaxPublicUrlLength = 256;
 
     /// <summary>

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Storage;
 using BorgStudio.Server.Domain.Storage;
 
@@ -24,7 +25,8 @@ public sealed record RepositoryStats(
     StorageAllowance? OwnerQuota,
     RepositoryLastAccess? LastAccess,
     IReadOnlyList<RepositoryParticipant> Participants,
-    bool IsMoving)
+    bool IsMoving,
+    bool ParticipantsHidden = false)
 {
     public string FullName => $"{OwnerName}/{Name}";
 }
@@ -43,7 +45,7 @@ public sealed record GetRepositoryStatsQuery(
     string? RequestHost,
     Guid? RepositoryId = null) : IQuery<IReadOnlyList<RepositoryStats>>;
 
-internal sealed class GetRepositoryStatsQueryHandler(StorageContext storage, SshEndpoints endpoints)
+internal sealed class GetRepositoryStatsQueryHandler(StorageContext storage, SshEndpoints endpoints, IServerSettingsStore settings)
     : IQueryHandler<GetRepositoryStatsQuery, IReadOnlyList<RepositoryStats>>
 {
     public async Task<IReadOnlyList<RepositoryStats>> HandleAsync(GetRepositoryStatsQuery query, CancellationToken cancellationToken)
@@ -54,6 +56,7 @@ internal sealed class GetRepositoryStatsQueryHandler(StorageContext storage, Ssh
         var datastores = await storage.DatastoresByIdAsync(cancellationToken);
         var policies = (await storage.Store.GetPoliciesAsync(cancellationToken)).ToDictionary(p => p.UserId);
         var endpoint = await endpoints.GetAsync(query.RequestHost, cancellationToken);
+        var serverShows = (await settings.GetAsync(cancellationToken)).ShowParticipantsInApps;
         var free = new Dictionary<Guid, long?>();
 
         string NameOf(string id) => users.TryGetValue(id, out var user) ? user.UserName : "?";
@@ -81,6 +84,8 @@ internal sealed class GetRepositoryStatsQueryHandler(StorageContext storage, Ssh
                     .Select(s => new RepositoryParticipant(NameOf(s.UserId), s.Access, false))
                     .OrderBy(p => p.UserName, StringComparer.OrdinalIgnoreCase));
 
+                // Switched off on the server or for the repository: the app only learns its own access.
+                var hidden = !serverShows || !r.ShowParticipantsInApps;
                 return new RepositoryStats(
                     r.Id,
                     RepositoryViews.OwnerName(r, users),
@@ -94,9 +99,10 @@ internal sealed class GetRepositoryStatsQueryHandler(StorageContext storage, Ssh
                     datastore.Name,
                     freeBytes,
                     ownerQuota,
-                    r.LastAccessAt is { } at ? new RepositoryLastAccess(at, NameOf(r.LastAccessUserId ?? string.Empty), r.LastAccessBy ?? string.Empty) : null,
-                    participants,
-                    r.IsMoving);
+                    !hidden && r.LastAccessAt is { } at ? new RepositoryLastAccess(at, NameOf(r.LastAccessUserId ?? string.Empty), r.LastAccessBy ?? string.Empty) : null,
+                    hidden ? [] : participants,
+                    r.IsMoving,
+                    hidden);
             })
             .ToList();
     }

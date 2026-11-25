@@ -1716,4 +1716,13 @@
   <data name="UpdatesSwitchToStable" xml:space="preserve">
     <value>Zurück zu den Releases: „update --channel stable“ im Container (die Datenbank wird vorher gesichert).</value>
   </data>
+  <data name="SettingsShowParticipants" xml:space="preserve">
+    <value>Apps zeigen, wer ein Repository noch nutzt</value>
+  </data>
+  <data name="SettingsShowParticipantsHint" xml:space="preserve">
+    <value>Gekoppelte Apps und API-Token sehen die anderen Benutzer eines Repositorys und den letzten Zugriff. Aus: Sie sehen nur ihren eigenen Zugriff. Repositories können es auch einzeln abschalten. Gespeichert wird mit dem Knopf darunter.</value>
+  </data>
+  <data name="RepositoryShowParticipants" xml:space="preserve">
+    <value>Apps dürfen zeigen, wer dieses Repository nutzt und wann zuletzt zugegriffen wurde</value>
+  </data>
 </root>

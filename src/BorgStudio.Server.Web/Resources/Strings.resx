@@ -1716,4 +1716,13 @@
   <data name="UpdatesSwitchToStable" xml:space="preserve">
     <value>Back to the releases: "update --channel stable" in the container (the database is backed up before).</value>
   </data>
+  <data name="SettingsShowParticipants" xml:space="preserve">
+    <value>Apps show who else uses a repository</value>
+  </data>
+  <data name="SettingsShowParticipantsHint" xml:space="preserve">
+    <value>Paired apps and API tokens see the other users of a repository and its last access. Off: they only see their own access. Repositories can switch it off on their own too. Saved with the button below.</value>
+  </data>
+  <data name="RepositoryShowParticipants" xml:space="preserve">
+    <value>Apps may show who uses this repository and when it was last accessed</value>
+  </data>
 </root>
