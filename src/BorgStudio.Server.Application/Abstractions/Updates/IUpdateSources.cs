@@ -5,10 +5,17 @@ public interface IReleaseFeed
 {
     /// <summary>The newest releases, newest first; drafts and pre-releases are left out.</summary>
     Task<IReadOnlyList<PublishedRelease>> GetReleasesAsync(CancellationToken cancellationToken);
+
+    /// <summary>The current development build (the pre-release "dev"), if there is one.</summary>
+    Task<PublishedRelease?> GetDevelopmentBuildAsync(CancellationToken cancellationToken);
 }
 
 /// <param name="Notes">The release notes (Markdown, "### New features" / "### Fixes" …).</param>
-public sealed record PublishedRelease(Version Version, DateTimeOffset PublishedAt, string Notes, string Url);
+/// <param name="Name">How to show the version, e.g. "0.5.0-dev.42" for a development build.</param>
+public sealed record PublishedRelease(Version Version, DateTimeOffset PublishedAt, string Notes, string Url, string? Name = null)
+{
+    public string Label => Name ?? Version.ToString();
+}
 
 /// <summary>The CHANGELOG.md this build was made with.</summary>
 public interface IChangelogSource

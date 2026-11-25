@@ -1704,4 +1704,16 @@
   <data name="SystemDatastore" xml:space="preserve">
     <value>Datastore {0}</value>
   </data>
+  <data name="UpdatesChannelStable" xml:space="preserve">
+    <value>Channel: stable – this server follows the releases.</value>
+  </data>
+  <data name="UpdatesChannelDev" xml:space="preserve">
+    <value>Channel: dev – this server runs a development build, made from the dev branch to try what comes next.</value>
+  </data>
+  <data name="UpdatesSwitchToDev" xml:space="preserve">
+    <value>To try development builds, run "update --channel dev" in the container; "update --channel stable" goes back.</value>
+  </data>
+  <data name="UpdatesSwitchToStable" xml:space="preserve">
+    <value>Back to the releases: "update --channel stable" in the container (the database is backed up before).</value>
+  </data>
 </root>

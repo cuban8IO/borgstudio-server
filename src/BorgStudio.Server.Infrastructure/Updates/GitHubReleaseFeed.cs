@@ -29,6 +29,26 @@ internal sealed class GitHubReleaseFeed(HttpClient http) : IReleaseFeed
         return Select(releases);
     }
 
+    public async Task<PublishedRelease?> GetDevelopmentBuildAsync(CancellationToken cancellationToken)
+    {
+        using var response = await http.GetAsync($"repos/{Repository}/releases/tags/dev", cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var release = await JsonSerializer.DeserializeAsync<GitHubRelease>(stream, cancellationToken: cancellationToken);
+        return Development(release);
+    }
+
+    /// <summary>The development build's version comes from the pre-release's title.</summary>
+    internal static PublishedRelease? Development(GitHubRelease? release) =>
+        release is { Draft: false } && Changelog.FindDevelopmentBuild(release.Name) is { } name && Changelog.ParseDevelopmentBuild(name) is { } version
+            ? new PublishedRelease(version, release.PublishedAt ?? DateTimeOffset.MinValue, release.Body ?? string.Empty, release.HtmlUrl ?? string.Empty, name)
+            : null;
+
     internal static IReadOnlyList<PublishedRelease> Select(IEnumerable<GitHubRelease> releases) =>
         releases
             .Where(r => !r.Draft && !r.Prerelease)
@@ -44,5 +64,6 @@ internal sealed class GitHubReleaseFeed(HttpClient http) : IReleaseFeed
         [property: JsonPropertyName("body")] string? Body,
         [property: JsonPropertyName("published_at")] DateTimeOffset? PublishedAt,
         [property: JsonPropertyName("draft")] bool Draft,
-        [property: JsonPropertyName("prerelease")] bool Prerelease);
+        [property: JsonPropertyName("prerelease")] bool Prerelease,
+        [property: JsonPropertyName("name")] string? Name = null);
 }

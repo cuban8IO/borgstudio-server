@@ -1704,4 +1704,16 @@
   <data name="SystemDatastore" xml:space="preserve">
     <value>Datenspeicher {0}</value>
   </data>
+  <data name="UpdatesChannelStable" xml:space="preserve">
+    <value>Kanal: stable – dieser Server folgt den Releases.</value>
+  </data>
+  <data name="UpdatesChannelDev" xml:space="preserve">
+    <value>Kanal: dev – dieser Server läuft mit einer Entwicklungsversion aus dem dev-Branch, um Kommendes auszuprobieren.</value>
+  </data>
+  <data name="UpdatesSwitchToDev" xml:space="preserve">
+    <value>Um Entwicklungsversionen auszuprobieren, im Container „update --channel dev“ ausführen; „update --channel stable“ führt zurück.</value>
+  </data>
+  <data name="UpdatesSwitchToStable" xml:space="preserve">
+    <value>Zurück zu den Releases: „update --channel stable“ im Container (die Datenbank wird vorher gesichert).</value>
+  </data>
 </root>

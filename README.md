@@ -31,6 +31,13 @@ container or VM set up with `lxc-install.sh`, the command `update` does that: it
 does nothing when the server is up to date (from the Proxmox host: `pct exec <id> -- update`). `uninstall.sh` /
 `uninstall.ps1` remove it (`--purge` / `-Purge` also deletes the data).
 
+**Development builds:** every change to the dev branch that passes CI is published as the pre-release
+[`dev`](https://github.com/cuban8IO/borgstudio-server/releases/tag/dev) (and the image tag `:dev`). In an LXC container
+or VM, `update --channel dev` switches to them and `update --channel stable` goes back to the releases; `update` then
+follows the chosen channel, and `update --status` shows it. Before switching, the database is backed up to
+`data/backups`; if a release cannot start with what a development build changed, going back puts the backup from
+before the switch to dev back (changes made in between are lost, the backups in the repositories stay).
+
 What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md) and on the server's *Changelog* page. Once a day
 the server asks GitHub for a newer release and tells administrators about it, with the update command for the way it
 is installed (can be switched off under *Settings*).
