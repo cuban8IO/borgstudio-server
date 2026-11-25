@@ -27,6 +27,9 @@ public sealed class TlsCertificateStoreTests : IDisposable
         Assert.True(File.Exists(Path.Combine(dataDirectory, "tls", "self-signed.pfx")));
 
         Assert.Equal(first.Thumbprint, CreateStore().Current!.Thumbprint);
+
+        // The SHA-256 fingerprint the BorgStudio app asks to compare: 32 bytes as "AB:CD:…".
+        Assert.Matches("^([0-9A-F]{2}:){31}[0-9A-F]{2}$", first.Sha256Fingerprint);
     }
 
     [Fact]

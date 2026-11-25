@@ -26,6 +26,8 @@
             <dd>@(certificate.Names.Count == 0 ? "–" : string.Join(", ", certificate.Names))</dd>
             <dt>@Strings.TlsSource</dt>
             <dd>@SourceText(certificate.Source)</dd>
+            <dt>@Strings.TlsSha256</dt>
+            <dd><code style="word-break: break-all">@certificate.Sha256Fingerprint</code></dd>
             <dt>@Strings.TlsThumbprint</dt>
             <dd><code>@certificate.Thumbprint</code></dd>
         </dl>

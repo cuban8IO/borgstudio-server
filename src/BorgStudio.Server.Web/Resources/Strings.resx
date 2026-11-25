@@ -1725,4 +1725,7 @@
   <data name="RepositoryShowParticipants" xml:space="preserve">
     <value>Apps may show who uses this repository and when it was last accessed</value>
   </data>
+  <data name="TlsSha256" xml:space="preserve">
+    <value>SHA-256 fingerprint</value>
+  </data>
 </root>

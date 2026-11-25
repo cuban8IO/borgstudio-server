@@ -137,6 +137,19 @@ public sealed class AccessTests
             Assert.Equal("not_found", (await unknown.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString());
         }
 
+        // An app that unpairs itself: its token is gone.
+        var unpairing = (await SendAsync(server, new CreateApiTokenCommand(adminId, "unpairing", null))).Value!;
+        using var leaving = server.CreateClient();
+        leaving.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", unpairing);
+        using (var unpaired = await leaving.DeleteAsync("/api/v1/device"))
+        {
+            Assert.Equal(HttpStatusCode.NoContent, unpaired.StatusCode);
+        }
+        using (var gone = await leaving.GetAsync("/api/v1/repositories"))
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, gone.StatusCode);
+        }
+
         server.Clock.Advance(TimeSpan.FromDays(3));
         using (var expired = await app.GetAsync("/api/v1/repositories"))
         {

@@ -44,6 +44,7 @@ internal static class ApiEndpoints
         secured.MapGet("/repositories/{id:guid}", GetRepositoryAsync);
         secured.MapPut("/repositories/{id:guid}/ssh-key", SetSshKeyAsync);
         secured.MapPost("/repositories/{id:guid}/reports", AddReportAsync);
+        secured.MapDelete("/device", UnpairAsync);
 
         // Unknown paths below /api answer in JSON too, not with the HTML page for "not found".
         api.MapFallback(() => TypedResults.Json(new ApiError("not_found", "There is no such interface."), statusCode: StatusCodes.Status404NotFound))
@@ -226,6 +227,13 @@ internal static class ApiEndpoints
         return result.Succeeded
             ? TypedResults.NoContent()
             : TypedResults.Json(new ApiError("not_found", string.Join(" ", result.Errors)), statusCode: StatusCodes.Status404NotFound);
+    }
+
+    /// <summary>The app ends its pairing (or a token revokes itself): its token and SSH keys go.</summary>
+    private static async Task<NoContent> UnpairAsync(IDispatcher dispatcher, HttpContext context)
+    {
+        await dispatcher.SendAsync(new RevokeDeviceCommand(UserId(context.User), DeviceId(context.User)));
+        return TypedResults.NoContent();
     }
 
     /// <param name="Access">"full" or "appendOnly".</param>

@@ -106,7 +106,8 @@ such as `BorgStudio__Http__Enabled=true`.
 - **Interface:** JSON at `/api/v1` with `Authorization: Bearer <token>` – `GET server`, `GET datastores`,
   `GET|POST repositories`, `GET repositories/{id}` (usage, quota, last access, who else uses it),
   `PUT repositories/{id}/ssh-key`, `POST repositories/{id}/reports` (a run of the app: backup, check, prune or
-  compact with borg's figures); pairing at `POST pairing` and `POST pairing/complete`. It can only do what backing
+  compact with borg's figures), `DELETE device` (the app unpairs itself); pairing at `POST pairing` and
+  `POST pairing/complete`. It can only do what backing
   up needs: deleting, sharing and quotas stay in the web interface. Whether apps see who else uses a repository and when it was last
   accessed can be switched off for the whole server (*Settings*) and for each repository (its page).
 

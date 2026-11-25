@@ -301,7 +301,8 @@ public sealed class TlsCertificateStore : ITlsCertificateService
             new DateTimeOffset(certificate.NotAfter.ToUniversalTime(), TimeSpan.Zero),
             certificate.Thumbprint,
             names,
-            source);
+            source,
+            TlsCertificateInfo.Sha256Of(certificate.RawData));
     }
 
     /// <summary>

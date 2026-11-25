@@ -52,4 +52,10 @@ public sealed record TlsCertificateInfo(
     DateTimeOffset NotAfter,
     string Thumbprint,
     IReadOnlyList<string> Names,
-    TlsCertificateSource Source);
+    TlsCertificateSource Source,
+    string Sha256Fingerprint = "")
+{
+    /// <summary>SHA-256 of the certificate as "AB:CD:…" – what browsers and the BorgStudio app show to compare.</summary>
+    public static string Sha256Of(byte[] rawData) =>
+        string.Join(':', System.Security.Cryptography.SHA256.HashData(rawData).Select(b => b.ToString("X2", System.Globalization.CultureInfo.InvariantCulture)));
+}
