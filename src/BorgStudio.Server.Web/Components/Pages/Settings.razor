@@ -40,6 +40,16 @@
         <MudPaper Outlined="true" Class="pa-4">
             <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.UpdatesTitle</MudText>
             <MudText Typo="Typo.body2" Class="mb-3">@UpdateStatusText</MudText>
+            @if (channel is not null)
+            {
+                <MudText Typo="Typo.body2" Class="mb-3">
+                    @(channel.IsDevelopment ? Strings.UpdatesChannelDev : Strings.UpdatesChannelStable)
+                    @if (channel.Installation == BorgStudio.Server.Application.Abstractions.Updates.InstallationKind.Lxc)
+                    {
+                        <br /><span class="mud-text-secondary">@(channel.IsDevelopment ? Strings.UpdatesSwitchToStable : Strings.UpdatesSwitchToDev)</span>
+                    }
+                </MudText>
+            }
             <div class="d-flex flex-wrap gap-2">
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="CheckNowAsync" Disabled="checking || !checkForUpdates">
                     @Strings.UpdatesCheckNow
@@ -69,6 +79,7 @@
     private string? publicUrl;
     private bool checkForUpdates = true;
     private UpdateStatus? updateStatus;
+    private UpdateChannel? channel;
     private bool checking;
     private bool developmentBuild;
     private IReadOnlyList<string>? errors;
@@ -83,6 +94,7 @@
         publicUrl = settings.PublicUrl;
         checkForUpdates = settings.CheckForUpdates;
         updateStatus = await Dispatcher.QueryAsync(new GetUpdateStatusQuery(userId));
+        channel = await Dispatcher.QueryAsync(new GetUpdateChannelQuery());
         developmentBuild = (await Dispatcher.QueryAsync(new GetServerStatusQuery())).Version.IsDevelopmentBuild;
     }
 
@@ -112,7 +124,7 @@
             }
 
             return updateStatus.Latest is { } latest
-                ? string.Format(Strings.UpdatesAvailable, latest.Version, when)
+                ? string.Format(Strings.UpdatesAvailable, latest.Label, when)
                 : string.Format(Strings.UpdatesUpToDate, when);
         }
     }

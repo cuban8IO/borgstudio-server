@@ -4,7 +4,11 @@ using System.Text.RegularExpressions;
 namespace BorgStudio.Server.Domain.Changelogs;
 
 /// <summary>One release in the changelog: its version, date and changes grouped by kind.</summary>
-public sealed record ChangelogRelease(Version Version, DateOnly? Date, IReadOnlyList<ChangelogSection> Sections);
+/// <param name="Name">How to show the version when it is not a release, e.g. "0.5.0-dev.42".</param>
+public sealed record ChangelogRelease(Version Version, DateOnly? Date, IReadOnlyList<ChangelogSection> Sections, string? Name = null)
+{
+    public string Label => Name ?? Version.ToString();
+}
 
 /// <summary>A group of changes, e.g. "New features" or "Fixes".</summary>
 /// <param name="Title">The heading as written ("New features", "Fixes", …).</param>
@@ -67,6 +71,29 @@ public static partial class Changelog
         var value = text?.Trim().TrimStart('v', 'V');
         return Version.TryParse(value, out var version) && version.Build >= 0 && version.Revision < 0 ? version : null;
     }
+
+    /// <summary>
+    /// A development build "0.5.0-dev.42" as 0.5.0.42, so builds compare by their number; <c>null</c>
+    /// for anything else (releases, local builds).
+    /// </summary>
+    public static Version? ParseDevelopmentBuild(string? text)
+    {
+        var match = DevelopmentBuild().Match(text?.Trim() ?? string.Empty);
+        return match.Success && ParseVersion(match.Groups["release"].Value) is { } release
+            && int.TryParse(match.Groups["build"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var build)
+            ? new Version(release.Major, release.Minor, release.Build, build)
+            : null;
+    }
+
+    /// <summary>The development build named in a text, e.g. "BorgStudio Server 0.5.0-dev.42 (development build)".</summary>
+    public static string? FindDevelopmentBuild(string? text) =>
+        DevelopmentBuildInText().Match(text ?? string.Empty) is { Success: true } match ? match.Value : null;
+
+    [GeneratedRegex(@"^v?(?<release>\d+\.\d+\.\d+)-dev\.(?<build>\d+)$")]
+    private static partial Regex DevelopmentBuild();
+
+    [GeneratedRegex(@"\d+\.\d+\.\d+-dev\.\d+")]
+    private static partial Regex DevelopmentBuildInText();
 
     private abstract record Block;
 

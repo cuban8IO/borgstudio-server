@@ -2,6 +2,8 @@ name: build
 
 # Build, test and package check for every branch except main (main gets the release workflow).
 # Windows and Linux only: BorgStudio Server supports no other platforms.
+# On dev, a green run also publishes the development build: the pre-release "dev" on GitHub (replaced
+# every time) and the container image tag :dev, which "update --channel dev" installs.
 on:
   push:
     branches-ignore: [main]
@@ -10,6 +12,41 @@ permissions:
   contents: read
 
 jobs:
+  # The version baked into the packages: on dev the next release plus the run, e.g. 0.5.0-dev.42.
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      notes: ${{ steps.version.outputs.notes }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # tags and history for the next version
+
+      - name: Version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/heads/dev ]]; then
+            next=$(bash .github/scripts/next-release.sh notes.md)
+            version="$next-dev.$GITHUB_RUN_NUMBER"
+          else
+            version="0.0.0-ci.$GITHUB_RUN_NUMBER"
+            echo "Not on dev: no development build." > notes.md
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo "notes<<EOF_NOTES"
+            cat notes.md
+            echo "EOF_NOTES"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version **$version**" >> "$GITHUB_STEP_SUMMARY"
+
   build:
     strategy:
       fail-fast: false
@@ -55,10 +92,10 @@ jobs:
           if ($failed) { exit 1 }
 
   package:
-    needs: build
+    needs: [version, build]
     uses: ./.github/workflows/package.yml
     with:
-      version: 0.0.0-ci.${{ github.run_number }}
+      version: ${{ needs.version.outputs.version }}
 
   # Builds the container image (amd64) and starts it once, without publishing anything.
   docker:
@@ -132,6 +169,14 @@ jobs:
           test "$(sudo cat /opt/borgstudio-server/data/setup-code.txt)" = "$code"
           curl -fsSk -o /dev/null https://localhost:8443/setup
 
+      # The LXC installer's status: channel stable, and the latest release found on GitHub.
+      - name: Update channels
+        run: |
+          curl -fsSL -o lxc-install.sh "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/deploy/lxc/lxc-install.sh"
+          sudo bash lxc-install.sh --status | tee status.log
+          grep -q "Channel:   .*stable" status.log
+          grep -q "Latest release" status.log
+
       - name: Emergency command runs as the service user
         run: |
           sudo runuser -u borgstudio -- /opt/borgstudio-server/BorgStudio.Server reset-admin | tee reset.log || true
@@ -199,3 +244,79 @@ jobs:
       - name: Service log
         if: failure()
         run: Get-WinEvent -LogName Application -MaxEvents 30 | Format-List TimeCreated, ProviderName, Message
+
+  # dev only, after every check passed: replaces the pre-release "dev" and the image tag :dev.
+  publish-dev:
+    if: github.ref == 'refs/heads/dev'
+    needs: [version, build, scripts, package, docker, install-linux, install-windows]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-dev
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      NOTES: ${{ needs.version.outputs.notes }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: docker-*
+          path: context
+
+      - name: Installer scripts and checksums
+        run: |
+          cp deploy/lxc/lxc-install.sh deploy/proxmox/proxmox-create-ct.sh dist/
+          cd dist && sha256sum -- * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Replace the pre-release "dev"
+        run: |
+          {
+            printf 'Development build %s from the dev branch (%s). Not a release: for trying what comes next.\n\n' "$VERSION" "${GITHUB_SHA::7}"
+            printf 'Install or switch in an LXC container or VM: `update --channel dev`, back with `update --channel stable`.\n\n'
+            printf '%s\n' "$NOTES"
+          } > notes.md
+          gh release delete dev --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes 2> /dev/null || true
+          gh release create dev dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --latest=false \
+            --title "BorgStudio Server $VERSION (development build)" \
+            --notes-file notes.md
+
+      - name: Container image context
+        run: |
+          mv context/docker-amd64 context/amd64
+          mv context/docker-arm64 context/arm64
+          cp deploy/docker/Dockerfile context/
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: context
+          platforms: linux/amd64,linux/arm64
+          build-args: VERSION=${{ env.VERSION }}
+          push: true
+          tags: ${{ env.IMAGE }}:dev
