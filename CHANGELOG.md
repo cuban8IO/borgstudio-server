@@ -3,6 +3,11 @@
 All notable changes to BorgStudio Server. The release workflow adds every release from the titles of its
 pull requests; the server shows this file on its *Changelog* page.
 
+## [0.5.0] - 2026-11-25
+
+### New features
+- Add Storage Boxes and SSH servers as datastores, and statistics (#22)
+
 ## [0.4.0] - 2026-11-25
 
 ### New features
