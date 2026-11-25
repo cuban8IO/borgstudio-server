@@ -3,6 +3,11 @@
 All notable changes to BorgStudio Server. The release workflow adds every release from the titles of its
 pull requests; the server shows this file on its *Changelog* page.
 
+## [0.4.0] - 2026-11-25
+
+### New features
+- Let LXC installations follow development builds with update --channel (#19)
+
 ## [0.3.0] - 2026-11-24
 
 ### New features
