@@ -22,8 +22,9 @@ LABEL org.opencontainers.image.title="BorgStudio Server" \
 
 # OpenSSH's server and borg from Debian: the server runs sshd itself, under its own account, for
 # borg connections. The account needs a shell, since sshd runs borg through it; it has no password.
+# rsync moves repositories to and from external datastores (Storage Box, SSH servers).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssh-server borgbackup \
+    && apt-get install -y --no-install-recommends openssh-server borgbackup rsync \
     && rm -rf /var/lib/apt/lists/* \
     && usermod --shell /bin/sh app
 

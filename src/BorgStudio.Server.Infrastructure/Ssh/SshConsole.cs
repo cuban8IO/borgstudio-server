@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 
 using BorgStudio.Server.Application.Abstractions.Messaging;
+using BorgStudio.Server.Application.Abstractions.Storage;
 using BorgStudio.Server.Application.Access;
 
 using Microsoft.Data.Sqlite;
@@ -23,6 +24,26 @@ public static class SshConsole
     public const string AuthorizedKeysCommand = "ssh-authorized-keys";
 
     public const string BorgServeCommand = "borg-serve";
+
+    /// <summary>
+    /// When ssh asks the server program for a password (installing the key on an external datastore),
+    /// it sets this to "1"; the password itself is in <see cref="AskPassVariable"/>.
+    /// </summary>
+    public const string AskPassModeVariable = "BORGSTUDIO_ASKPASS_MODE";
+
+    public const string AskPassVariable = "BORGSTUDIO_ASKPASS";
+
+    /// <summary>Answers ssh's password question, if this is what the program was started for.</summary>
+    public static bool TryAnswerPassword(TextWriter output)
+    {
+        if (Environment.GetEnvironmentVariable(AskPassModeVariable) != "1")
+        {
+            return false;
+        }
+
+        output.WriteLine(Environment.GetEnvironmentVariable(AskPassVariable) ?? string.Empty);
+        return true;
+    }
 
     public static bool Handles(string[] args) =>
         args.Length > 0 && (args[0] == AuthorizedKeysCommand || args[0] == BorgServeCommand);
@@ -99,34 +120,57 @@ public static class SshConsole
             return 1;
         }
 
-        // The client names the repository "./<id>": a link with that name in the session's own
-        // working folder points to the real folder. borg resolves the link, so the restriction to
-        // the repository holds, and the address stays the same when the repository moves or is renamed.
+        // The client names the repository "./<id>". On this server a link with that name in the
+        // session's own working folder points to the real folder; borg resolves the link, so the
+        // restriction to the repository holds and the address stays the same when the repository
+        // moves or is renamed. On an external datastore the folder itself is named by the id, in
+        // the account's home, and borg runs there through ssh.
         var sessionFolder = Path.Combine(SshServer.Folder(paths), "sessions", plan.SessionId.ToString("N"));
         var link = Path.Combine(sessionFolder, plan.RepositoryId.ToString("N"));
+        long received = 0, sent = 0;
+        int? exitCode = null;
         try
         {
-            Directory.CreateDirectory(sessionFolder, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-            Directory.CreateSymbolicLink(link, plan.RepositoryPath);
-            var baseDirectory = Path.Combine(SshServer.Folder(paths), "borg");
-            Directory.CreateDirectory(baseDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            ProcessStartInfo start;
+            if (plan.Remote is { } remote)
+            {
+                var remoteStorage = (RemoteStorage)services.GetRequiredService<IRemoteStorage>();
+                start = new ProcessStartInfo(remoteStorage.SshPath);
+                foreach (var argument in remoteStorage.SshArguments(remote, [remote.RemoteBorg, .. BorgArguments(plan)]))
+                {
+                    start.ArgumentList.Add(argument);
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(sessionFolder, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+                Directory.CreateSymbolicLink(link, plan.RepositoryPath);
+                var baseDirectory = Path.Combine(SshServer.Folder(paths), "borg");
+                Directory.CreateDirectory(baseDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+                start = new ProcessStartInfo(borgPath) { WorkingDirectory = sessionFolder };
+                foreach (var argument in BorgArguments(plan))
+                {
+                    start.ArgumentList.Add(argument);
+                }
 
-            var start = new ProcessStartInfo(borgPath)
-            {
-                UseShellExecute = false,
-                WorkingDirectory = sessionFolder,
-            };
-            foreach (var argument in BorgArguments(plan))
-            {
-                start.ArgumentList.Add(argument);
+                start.Environment["BORG_BASE_DIR"] = baseDirectory;
+                start.Environment["LANG"] = "C.UTF-8";
             }
 
-            start.Environment["BORG_BASE_DIR"] = baseDirectory;
-            start.Environment["LANG"] = "C.UTF-8";
-
-            // Input and output are not redirected: borg talks to the client through sshd directly.
+            // borg's protocol goes through this process, which counts the bytes in both directions;
+            // its messages (standard error) go straight to the client.
+            start.UseShellExecute = false;
+            start.RedirectStandardInput = true;
+            start.RedirectStandardOutput = true;
             using var borg = Process.Start(start) ?? throw new InvalidOperationException("borg did not start.");
+            var toBorg = PumpAsync(Console.OpenStandardInput(), borg.StandardInput.BaseStream, bytes => received += bytes, closeTarget: true);
+            var fromBorg = PumpAsync(borg.StandardOutput.BaseStream, Console.OpenStandardOutput(), bytes => sent += bytes, closeTarget: false);
             await borg.WaitForExitAsync();
+            await fromBorg;
+            exitCode = borg.ExitCode;
+
+            // Reading the client's input may still wait for more; borg is done, so it is left behind.
+            _ = toBorg;
             return borg.ExitCode;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
@@ -136,7 +180,7 @@ public static class SshConsole
         }
         finally
         {
-            await dispatcher.SendAsync(new CloseBorgSessionCommand(plan.SessionId));
+            await dispatcher.SendAsync(new CloseBorgSessionCommand(plan.SessionId, received, sent, exitCode));
             try
             {
                 // The link first, on its own: deleting it never touches the repository it points to.
@@ -153,6 +197,33 @@ public static class SshConsole
             catch (IOException)
             {
                 // Left over; harmless, and it does not grant access to anything.
+            }
+        }
+    }
+
+    /// <summary>Copies one direction of the connection, counting the bytes; writes go out at once (borg waits for them).</summary>
+    private static async Task PumpAsync(Stream from, Stream to, Action<long> count, bool closeTarget)
+    {
+        var buffer = new byte[64 * 1024];
+        try
+        {
+            int read;
+            while ((read = await from.ReadAsync(buffer)) > 0)
+            {
+                await to.WriteAsync(buffer.AsMemory(0, read));
+                await to.FlushAsync();
+                count(read);
+            }
+        }
+        catch (IOException)
+        {
+            // The other side went away; borg's exit tells what happened.
+        }
+        finally
+        {
+            if (closeTarget)
+            {
+                to.Close();
             }
         }
     }

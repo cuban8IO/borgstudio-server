@@ -1,5 +1,6 @@
 using BorgStudio.Server.Domain.Access;
 using BorgStudio.Server.Domain.Settings;
+using BorgStudio.Server.Domain.Statistics;
 using BorgStudio.Server.Domain.Storage;
 using BorgStudio.Server.Domain.Users;
 using BorgStudio.Server.Infrastructure.Identity;
@@ -28,6 +29,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     public DbSet<SshKey> SshKeys => Set<SshKey>();
 
     public DbSet<RepositorySession> RepositorySessions => Set<RepositorySession>();
+
+    public DbSet<ConnectionRecord> ConnectionRecords => Set<ConnectionRecord>();
+
+    public DbSet<AppReport> AppReports => Set<AppReport>();
+
+    public DbSet<StorageSample> StorageSamples => Set<StorageSample>();
+
+    public DbSet<SystemSample> SystemSamples => Set<SystemSample>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -60,6 +69,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             datastore.HasIndex(d => d.Name).IsUnique();
             datastore.Property(d => d.Path).HasMaxLength(1024).IsRequired();
             datastore.HasIndex(d => d.Path).IsUnique();
+            datastore.Property(d => d.Kind).HasConversion<int>();
+            datastore.Property(d => d.Host).HasMaxLength(255);
+            datastore.Property(d => d.UserName).HasMaxLength(64);
+            datastore.Property(d => d.RemoteBorg).HasMaxLength(128);
+            datastore.Property(d => d.HostKey).HasMaxLength(4096);
+            datastore.Property(d => d.LastError).HasMaxLength(1000);
         });
 
         builder.Entity<BackupRepository>(repository =>
@@ -144,7 +159,57 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
             session.ToTable("RepositorySessions");
             session.HasKey(s => s.Id);
             session.HasIndex(s => s.RepositoryId);
+            session.Property(s => s.UserId).HasMaxLength(450);
+            session.Property(s => s.By).HasMaxLength(100);
             session.HasOne<BackupRepository>().WithMany().HasForeignKey(s => s.RepositoryId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Statistics: times as Unix milliseconds, so SQLite can compare and sort them in queries.
+        var unixMilliseconds = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTimeOffset, long>(
+            v => v.ToUnixTimeMilliseconds(), v => DateTimeOffset.FromUnixTimeMilliseconds(v));
+
+        builder.Entity<ConnectionRecord>(record =>
+        {
+            record.ToTable("ConnectionRecords");
+            record.HasKey(r => r.Id);
+            record.Property(r => r.UserId).HasMaxLength(450).IsRequired();
+            record.Property(r => r.By).HasMaxLength(100).IsRequired();
+            record.Property(r => r.StartedAt).HasConversion(unixMilliseconds);
+            record.Property(r => r.EndedAt).HasConversion(unixMilliseconds);
+            record.HasIndex(r => new { r.RepositoryId, r.StartedAt });
+            record.HasIndex(r => r.StartedAt);
+        });
+
+        builder.Entity<AppReport>(report =>
+        {
+            report.ToTable("AppReports");
+            report.HasKey(r => r.Id);
+            report.Property(r => r.UserId).HasMaxLength(450).IsRequired();
+            report.Property(r => r.By).HasMaxLength(100);
+            report.Property(r => r.Kind).HasConversion<int>();
+            report.Property(r => r.Outcome).HasConversion<int>();
+            report.Property(r => r.ArchiveName).HasMaxLength(200);
+            report.Property(r => r.Message).HasMaxLength(2000);
+            report.Property(r => r.StartedAt).HasConversion(unixMilliseconds);
+            report.Property(r => r.ReceivedAt).HasConversion(unixMilliseconds);
+            report.HasIndex(r => new { r.RepositoryId, r.StartedAt });
+        });
+
+        builder.Entity<StorageSample>(sample =>
+        {
+            sample.ToTable("StorageSamples");
+            sample.HasKey(s => s.Id);
+            sample.Property(s => s.Subject).HasConversion<int>();
+            sample.HasIndex(s => new { s.Subject, s.SubjectId, s.Day }).IsUnique();
+        });
+
+        builder.Entity<SystemSample>(sample =>
+        {
+            sample.ToTable("SystemSamples");
+            sample.HasKey(s => s.Id);
+            sample.Property(s => s.Resolution).HasConversion<int>();
+            sample.Property(s => s.At).HasConversion(unixMilliseconds);
+            sample.HasIndex(s => new { s.Resolution, s.At });
         });
 
         builder.Entity<ServerSettings>(settings =>

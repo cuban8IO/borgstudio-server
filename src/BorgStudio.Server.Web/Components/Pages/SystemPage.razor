@@ -1,0 +1,156 @@
+@page "/system"
+@attribute [Authorize(Policy = Policies.Administrator)]
+@using System.Globalization
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Statistics
+@using BorgStudio.Server.Domain.Statistics
+@using BorgStudio.Server.Web.Components.Pages.Repositories
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+
+<AppPageTitle Title="@Strings.NavSystem" />
+
+<div class="d-flex flex-wrap align-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="flex-grow-1">@Strings.NavSystem</MudText>
+    <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+        @foreach (var (range, text) in Ranges)
+        {
+            <MudButton Color="@(range == selected ? Color.Primary : Color.Default)" OnClick="() => SelectAsync(range)">@text</MudButton>
+        }
+    </MudButtonGroup>
+</div>
+
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-4">@Strings.SystemIntro</MudText>
+
+@if (statistics is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    @if (!statistics.Supported)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">@Strings.SystemUnsupported</MudAlert>
+    }
+
+    @if (statistics.Latest is { } now)
+    {
+        <div class="kpi-grid mb-4">
+            <div><div class="kpi-label">@Strings.SystemCpu</div><div class="kpi-value">@Formats.Percent(now.CpuPercent)</div></div>
+            <div><div class="kpi-label">@Strings.SystemMemory</div><div class="kpi-value">@ByteSize.Format(now.MemoryUsedBytes)</div></div>
+            <div><div class="kpi-label">@Strings.SystemDiskRead</div><div class="kpi-value">@Formats.Rate(now.DiskReadBytes / 60.0)</div></div>
+            <div><div class="kpi-label">@Strings.SystemDiskWrite</div><div class="kpi-value">@Formats.Rate(now.DiskWrittenBytes / 60.0)</div></div>
+            <div><div class="kpi-label">@Strings.SystemNetworkIn</div><div class="kpi-value">@Formats.Rate(now.NetworkReceivedBytes / 60.0)</div></div>
+            <div><div class="kpi-label">@Strings.SystemNetworkOut</div><div class="kpi-value">@Formats.Rate(now.NetworkSentBytes / 60.0)</div></div>
+        </div>
+    }
+
+    <MudGrid>
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SystemCpu</MudText>
+                <LineChart Series="Cpu" MinimumMax="100" FormatY="v => Formats.Percent(v)" FormatX="FormatX" Label="@Strings.SystemCpu" EmptyText="@Strings.SystemNoData" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SystemMemory</MudText>
+                <LineChart Series="Memory" Limit="@(statistics.Latest is { MemoryTotalBytes: > 0 } l ? l.MemoryTotalBytes : null)" LimitLabel="@Strings.SystemMemoryTotal"
+                           FormatY="v => ByteSize.Format((long)v)" FormatX="FormatX" Label="@Strings.SystemMemory" EmptyText="@Strings.SystemNoData" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SystemDisk</MudText>
+                <LineChart Series="Disk" FormatY="v => Formats.Rate(v)" FormatX="FormatX" Label="@Strings.SystemDisk" EmptyText="@Strings.SystemNoData" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SystemNetwork</MudText>
+                <LineChart Series="Network" FormatY="v => Formats.Rate(v)" FormatX="FormatX" Label="@Strings.SystemNetwork" EmptyText="@Strings.SystemNoData" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.SystemStorage</MudText>
+                <MudSimpleTable Dense="true" Elevation="0">
+                    <tbody>
+                        <tr>
+                            <td>@Strings.SystemDataDisk</td>
+                            <td style="min-width: 14rem">@if (statistics.DataDisk is { } data) { <UsageBar Used="data.TotalBytes - data.FreeBytes" Quota="data.TotalBytes" /> }</td>
+                        </tr>
+                        @foreach (var (name, space) in statistics.Datastores)
+                        {
+                            <tr>
+                                <td>@string.Format(Strings.SystemDatastore, name)</td>
+                                <td>@if (space is { } s) { <UsageBar Used="s.TotalBytes - s.FreeBytes" Quota="s.TotalBytes" /> } else { <span>–</span> }</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private string userId = string.Empty;
+    private SystemRange selected = SystemRange.Day;
+    private SystemStatistics? statistics;
+
+    private static readonly (SystemRange, string)[] Ranges =
+    [
+        (SystemRange.Day, Strings.SystemRangeDay),
+        (SystemRange.Month, Strings.SystemRangeMonth),
+        (SystemRange.Year, Strings.SystemRangeYear),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        await SelectAsync(SystemRange.Day);
+    }
+
+    private async Task SelectAsync(SystemRange range)
+    {
+        selected = range;
+        statistics = await Dispatcher.QueryAsync(new GetSystemStatisticsQuery(userId, range));
+    }
+
+    private string FormatX(DateTime at) => selected == SystemRange.Day
+        ? at.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)
+        : at.ToLocalTime().ToString("d", CultureInfo.CurrentCulture);
+
+    private IReadOnlyList<(DateTime, double)> Points(Func<SystemSample, double> value) =>
+        [.. statistics!.Samples.Select(s => (s.At.UtcDateTime, value(s)))];
+
+    private double PerSecond(long bytes) => bytes / statistics!.Period.TotalSeconds;
+
+    private IReadOnlyList<ChartSeries> Cpu =>
+    [
+        new(Strings.SystemAverage, Points(s => s.CpuPercent), ChartColors.Primary, Area: true),
+        .. selected == SystemRange.Day ? Array.Empty<ChartSeries>() : [new ChartSeries(Strings.SystemPeak, Points(s => s.CpuPercentPeak), ChartColors.Warning)],
+    ];
+
+    private IReadOnlyList<ChartSeries> Memory =>
+    [
+        new(Strings.SystemAverage, Points(s => s.MemoryUsedBytes), ChartColors.Primary, Area: true),
+        .. selected == SystemRange.Day ? Array.Empty<ChartSeries>() : [new ChartSeries(Strings.SystemPeak, Points(s => s.MemoryUsedPeak), ChartColors.Warning)],
+    ];
+
+    private IReadOnlyList<ChartSeries> Disk =>
+    [
+        new(Strings.SystemDiskRead, Points(s => PerSecond(s.DiskReadBytes)), ChartColors.Primary),
+        new(Strings.SystemDiskWrite, Points(s => PerSecond(s.DiskWrittenBytes)), ChartColors.Info),
+    ];
+
+    private IReadOnlyList<ChartSeries> Network =>
+    [
+        new(Strings.SystemNetworkIn, Points(s => PerSecond(s.NetworkReceivedBytes)), ChartColors.Primary),
+        new(Strings.SystemNetworkOut, Points(s => PerSecond(s.NetworkSentBytes)), ChartColors.Info),
+    ];
+}

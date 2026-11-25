@@ -81,7 +81,7 @@ public sealed class RepositoryFoldersTests : IDisposable
         File.WriteAllBytes(Path.Combine(datastore, "niklas", "laptop", "data", "0", "1"), new byte[5000]);
         File.WriteAllText(Path.Combine(datastore, "niklas", "laptop", "config"), "[repository]");
 
-        await folders.MoveToDatastoreAsync(datastore, other, "niklas/laptop", new Progress<long>(), CancellationToken.None);
+        await folders.MoveToDatastoreAsync(datastore, "niklas/laptop", other, "niklas/laptop", new Progress<long>(), CancellationToken.None);
 
         Assert.False(Directory.Exists(Path.Combine(datastore, "niklas")));
         Assert.Equal("[repository]", File.ReadAllText(Path.Combine(other, "niklas", "laptop", "config")));

@@ -3,6 +3,7 @@ using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Accounts;
 using BorgStudio.Server.Application.Abstractions.Settings;
 using BorgStudio.Server.Application.Abstractions.Setup;
+using BorgStudio.Server.Application.Abstractions.Statistics;
 using BorgStudio.Server.Application.Abstractions.Storage;
 using BorgStudio.Server.Application.Abstractions.Tls;
 using BorgStudio.Server.Application.Abstractions.Updates;
@@ -12,6 +13,7 @@ using BorgStudio.Server.Infrastructure.Persistence;
 using BorgStudio.Server.Infrastructure.Platform;
 using BorgStudio.Server.Infrastructure.Setup;
 using BorgStudio.Server.Infrastructure.Ssh;
+using BorgStudio.Server.Infrastructure.Statistics;
 using BorgStudio.Server.Infrastructure.Storage;
 using BorgStudio.Server.Infrastructure.Tls;
 using BorgStudio.Server.Infrastructure.Updates;
@@ -50,7 +52,11 @@ public static class DependencyInjection
         services.AddHostedService<StorageWorker>();
 
         services.AddScoped<IAccessStore, AccessStore>();
+        services.AddScoped<IStatisticsStore, StatisticsStore>();
+        services.AddSingleton<SystemMetrics>();
+        services.AddHostedService<SystemMetricsWorker>();
         services.AddSingleton<IProcessInfo, ProcessInfo>();
+        services.AddSingleton<IRemoteStorage, RemoteStorage>();
         services.Configure<SshOptions>(configuration.GetSection(SshOptions.SectionName));
         services.AddSingleton<SshServer>();
         services.AddSingleton<ISshService>(provider => provider.GetRequiredService<SshServer>());

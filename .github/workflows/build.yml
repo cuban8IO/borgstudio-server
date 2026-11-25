@@ -67,6 +67,16 @@ jobs:
       - name: Build
         run: dotnet build BorgStudio.Server.slnx --configuration Release --no-restore
 
+      # A real SSH server with borg and rsync for the external datastore test (Linux only).
+      - name: SSH server for the external datastore test
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server borgbackup rsync
+          sudo useradd --create-home --shell /bin/bash remotebox
+          sudo systemctl start ssh
+          echo "BORGSTUDIO_REMOTE_TEST_USER=remotebox" >> "$GITHUB_ENV"
+
       - name: Test
         run: dotnet test BorgStudio.Server.slnx --configuration Release --no-build
 

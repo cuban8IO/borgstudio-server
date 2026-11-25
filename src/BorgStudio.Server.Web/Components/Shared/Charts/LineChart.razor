@@ -1,0 +1,142 @@
+@using System.Globalization
+
+@* A line chart over time, drawn as SVG: one or more series, optionally filled, a dashed forecast and a limit line. *@
+<figure class="chart" role="img" aria-label="@Label">
+    <svg viewBox="0 0 @Width @Height" preserveAspectRatio="xMidYMid meet" class="chart-svg">
+        @if (!HasData)
+        {
+            @SvgText.Of(Width / 2, Height / 2, "middle", "chart-empty", EmptyText)
+        }
+        else
+        {
+            @foreach (var tick in YTicks)
+            {
+                <line x1="@Left" x2="@(Width - Right)" y1="@Fmt(Y(tick))" y2="@Fmt(Y(tick))" class="chart-grid" />
+                @SvgText.Of(Left - 6, Fmt(Y(tick) + 4), "end", "chart-label", FormatY(tick))
+            }
+
+            @foreach (var tick in XTicks)
+            {
+                @SvgText.Of(Fmt(X(tick)), Height - 6, "middle", "chart-label", FormatX(tick))
+            }
+
+            @if (Limit is { } limit)
+            {
+                <line x1="@Left" x2="@(Width - Right)" y1="@Fmt(Y(limit))" y2="@Fmt(Y(limit))" class="chart-limit" />
+                @SvgText.Of(Width - Right, Fmt(Y(limit) - 4), "end", "chart-label chart-limit-label", LimitLabel)
+            }
+
+            @foreach (var series in Series.Where(s => s.Points.Count > 0))
+            {
+                @if (series.Area && series.Points.Count > 1)
+                {
+                    <path d="@AreaPath(series)" fill="@series.Color" class="chart-area" />
+                }
+
+                <path d="@LinePath(series)" stroke="@series.Color" class="@(series.Dashed ? "chart-line chart-dashed" : "chart-line")" />
+                @if (series.Points.Count <= 62 && !series.Dashed)
+                {
+                    @foreach (var point in series.Points)
+                    {
+                        <circle cx="@Fmt(X(point.X))" cy="@Fmt(Y(point.Y))" r="3" fill="@series.Color" class="chart-point">
+                            <title>@($"{FormatX(point.X)}: {FormatY(point.Y)}")</title>
+                        </circle>
+                    }
+                }
+            }
+        }
+    </svg>
+    @if (Series.Count > 1)
+    {
+        <figcaption class="chart-legend">
+            @foreach (var series in Series)
+            {
+                <span><i style="background: @series.Color"></i>@series.Name</span>
+            }
+        </figcaption>
+    }
+</figure>
+
+@code {
+    private const int Left = 72;
+    private const int Right = 12;
+    private const int Top = 12;
+    private const int Bottom = 26;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ChartSeries> Series { get; set; } = [];
+
+    [Parameter]
+    public double? Limit { get; set; }
+
+    [Parameter]
+    public string? LimitLabel { get; set; }
+
+    [Parameter]
+    public Func<double, string> FormatY { get; set; } = v => v.ToString("0", CultureInfo.CurrentCulture);
+
+    [Parameter]
+    public Func<DateTime, string> FormatX { get; set; } = d => d.ToString("d", CultureInfo.CurrentCulture);
+
+    /// <summary>The lowest top of the y axis, e.g. 100 for percentages.</summary>
+    [Parameter]
+    public double? MinimumMax { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string EmptyText { get; set; } = string.Empty;
+
+    [Parameter]
+    public int Width { get; set; } = 800;
+
+    [Parameter]
+    public int Height { get; set; } = 240;
+
+    private bool HasData => Series.Any(s => s.Points.Count > 0);
+
+    private DateTime MinX => Series.SelectMany(s => s.Points).Min(p => p.X);
+
+    private DateTime MaxX
+    {
+        get
+        {
+            var max = Series.SelectMany(s => s.Points).Max(p => p.X);
+            return max > MinX ? max : MinX.AddDays(1);
+        }
+    }
+
+    private double MaxY
+    {
+        get
+        {
+            var max = Math.Max(Series.SelectMany(s => s.Points).Select(p => p.Y).DefaultIfEmpty(0).Max(), Limit ?? 0);
+            max = Math.Max(max, MinimumMax ?? 0);
+            return max <= 0 ? 1 : max * (MinimumMax is { } m && max <= m ? 1 : 1.1);
+        }
+    }
+
+    private IEnumerable<double> YTicks => Enumerable.Range(0, 5).Select(i => MaxY * i / 4);
+
+    private IEnumerable<DateTime> XTicks
+    {
+        get
+        {
+            var span = MaxX - MinX;
+            return Enumerable.Range(0, 5).Select(i => MinX + span * i / 4);
+        }
+    }
+
+    private double X(DateTime x) => Left + (x - MinX).TotalSeconds / Math.Max(1, (MaxX - MinX).TotalSeconds) * (Width - Left - Right);
+
+    private double Y(double y) => Height - Bottom - y / MaxY * (Height - Top - Bottom);
+
+    private string LinePath(ChartSeries series) =>
+        "M" + string.Join(" L", series.Points.Select(p => $"{Fmt(X(p.X))},{Fmt(Y(p.Y))}"));
+
+    private string AreaPath(ChartSeries series) =>
+        $"{LinePath(series)} L{Fmt(X(series.Points[^1].X))},{Fmt(Y(0))} L{Fmt(X(series.Points[0].X))},{Fmt(Y(0))} Z";
+
+    private static string Fmt(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+}

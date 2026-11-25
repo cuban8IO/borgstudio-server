@@ -231,3 +231,91 @@
 .usage-bar .mud-progress-linear {
     margin-top: 2px;
 }
+
+/* Charts (hand-drawn SVG, see Components/Shared/Charts). */
+.chart {
+    margin: 0;
+    width: 100%;
+}
+
+.chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.calendar-svg {
+    max-width: 260px;
+}
+
+.chart-grid {
+    stroke: var(--mud-palette-lines-default);
+    stroke-width: 1;
+}
+
+.chart-label {
+    fill: var(--mud-palette-text-secondary);
+    font-size: 11px;
+}
+
+.chart-empty {
+    fill: var(--mud-palette-text-secondary);
+    font-size: 16px;
+}
+
+.chart-line {
+    fill: none;
+    stroke-width: 2;
+}
+
+.chart-dashed {
+    stroke-dasharray: 6 4;
+}
+
+.chart-area {
+    opacity: 0.15;
+    stroke: none;
+}
+
+.chart-limit {
+    stroke: var(--mud-palette-error);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+}
+
+.chart-limit-label {
+    fill: var(--mud-palette-error);
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.chart-legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 4px;
+}
+
+/* Key figures: label above a big value. */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px 24px;
+}
+
+.kpi-grid .kpi-label {
+    color: var(--mud-palette-text-secondary);
+    font-size: 0.8rem;
+}
+
+.kpi-grid .kpi-value {
+    font-size: 1.25rem;
+    font-weight: 500;
+}

@@ -15,6 +15,11 @@
         else
         {
             <MudText Typo="Typo.body2" Class="mt-2"><code class="text-break">@Datastore.Path</code></MudText>
+            @if (Datastore.IsExternal)
+            {
+                <MudTextField @bind-Value="remoteBorg" Label="@Strings.ExternalBorg" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2"
+                              HelperText="@Strings.ExternalBorgHint" />
+            }
             <MudSwitch T="bool" @bind-Value="readOnly" Color="Color.Warning" Class="mt-3" Label="@Strings.DatastoreReadOnly" />
             <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@Strings.DatastoreReadOnlyHint</MudText>
         }
@@ -42,6 +47,7 @@
     private string name = string.Empty;
     private string path = string.Empty;
     private bool readOnly;
+    private string? remoteBorg;
     private IReadOnlyList<string>? errors;
     private bool busy;
 
@@ -51,6 +57,7 @@
         {
             name = Datastore.Name;
             readOnly = Datastore.IsReadOnly;
+            remoteBorg = Datastore.RemoteBorg;
         }
     }
 
@@ -61,7 +68,7 @@
         {
             var result = Datastore is null
                 ? await Dispatcher.SendAsync(new CreateDatastoreCommand(ActingUserId, name, path))
-                : await Dispatcher.SendAsync(new UpdateDatastoreCommand(ActingUserId, Datastore.Id, name, readOnly));
+                : await Dispatcher.SendAsync(new UpdateDatastoreCommand(ActingUserId, Datastore.Id, name, readOnly, remoteBorg));
             if (result.Succeeded)
             {
                 MudDialog.Close(DialogResult.Ok(true));

@@ -13,7 +13,15 @@ public sealed class SshOptions
 
     public string SshdPath { get; set; } = "/usr/sbin/sshd";
 
-    public string SshKeygenPath { get; set; } = "/usr/bin/ssh-keygen";
+    public string SshKeygenPath { get; set; } = "ssh-keygen";
+
+    /// <summary>OpenSSH's client, for external datastores (Storage Box, SSH servers).</summary>
+    public string SshPath { get; set; } = "ssh";
+
+    public string SshKeyscanPath { get; set; } = "ssh-keyscan";
+
+    /// <summary>Copies repositories to and from external datastores when they move.</summary>
+    public string RsyncPath { get; set; } = "rsync";
 
     /// <summary>The borg program that serves the repositories; by default the one shipped with the server.</summary>
     public string? BorgPath { get; set; }

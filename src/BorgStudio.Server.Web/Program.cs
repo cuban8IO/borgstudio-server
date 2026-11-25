@@ -16,6 +16,12 @@ using Microsoft.AspNetCore.Identity;
 
 using MudBlazor.Services;
 
+// ssh runs the program to ask for the password when a key is installed on an external datastore.
+if (SshConsole.TryAnswerPassword(Console.Out))
+{
+    return 0;
+}
+
 // appsettings.json, wwwroot and the like are found next to the program, wherever it is started from
 // (e.g. "reset-admin" from a home folder). Not when tests host the server.
 if (Assembly.GetEntryAssembly() == typeof(Program).Assembly)

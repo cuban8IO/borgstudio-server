@@ -1,0 +1,60 @@
+@using System.Globalization
+
+@* One column per item (e.g. per connection or backup), colored by its outcome. *@
+<figure class="chart" role="img" aria-label="@Label">
+    <svg viewBox="0 0 @Width @Height" preserveAspectRatio="xMidYMid meet" class="chart-svg">
+        @if (Columns.Count == 0)
+        {
+            @SvgText.Of(Width / 2, Height / 2, "middle", "chart-empty", EmptyText)
+        }
+        else
+        {
+            @foreach (var tick in Enumerable.Range(0, 3).Select(i => Max * i / 2))
+            {
+                <line x1="@Left" x2="@Width" y1="@Fmt(Y(tick))" y2="@Fmt(Y(tick))" class="chart-grid" />
+                @SvgText.Of(Left - 6, Fmt(Y(tick) + 4), "end", "chart-label", FormatY(tick))
+            }
+
+            @for (var i = 0; i < Columns.Count; i++)
+            {
+                var column = Columns[i];
+                var slot = (Width - Left) / (double)Columns.Count;
+                var height = Math.Max(2, Y(0) - Y(Math.Max(column.Value, 0)));
+                <rect x="@Fmt(Left + i * slot + slot * 0.15)" y="@Fmt(Y(0) - height)" width="@Fmt(slot * 0.7)" height="@Fmt(height)"
+                      rx="2" fill="@ChartColors.Of(column.Health)" class="chart-column">
+                    <title>@column.Tooltip</title>
+                </rect>
+            }
+        }
+    </svg>
+</figure>
+
+@code {
+    private const int Left = 72;
+    private const int Top = 10;
+    private const int Bottom = 8;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ChartColumn> Columns { get; set; } = [];
+
+    [Parameter]
+    public Func<double, string> FormatY { get; set; } = v => v.ToString("0", CultureInfo.CurrentCulture);
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string EmptyText { get; set; } = string.Empty;
+
+    [Parameter]
+    public int Width { get; set; } = 800;
+
+    [Parameter]
+    public int Height { get; set; } = 160;
+
+    private double Max => Math.Max(1, Columns.Select(c => c.Value).DefaultIfEmpty(0).Max()) * 1.1;
+
+    private double Y(double value) => Height - Bottom - value / Max * (Height - Top - Bottom);
+
+    private static string Fmt(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+}

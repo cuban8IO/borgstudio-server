@@ -103,12 +103,12 @@ internal sealed class RestoreRepositoryCommandHandler(
         var datastore = (await storage.Store.FindDatastoreAsync(repository.DatastoreId, cancellationToken))!;
         var from = repository.RelativePath;
         repository.Restore(owner.Id, owner.UserName, name);
-        if (storage.Folders.Exists(datastore.Path, repository.RelativePath))
+        if (from != repository.RelativePath && await storage.ExistsAsync(datastore, repository.RelativePath, cancellationToken))
         {
             return AccountResult.Failed(string.Format(texts.RepositoryNameTaken, $"{owner.UserName}/{name}"));
         }
 
-        if (storage.TryFolder(datastore, from, () => storage.Folders.Move(datastore.Path, from, repository.RelativePath)) is { } problem)
+        if (await storage.TryFolderAsync(datastore, from, () => storage.MoveAsync(datastore, from, repository.RelativePath)) is { } problem)
         {
             return AccountResult.Failed(problem);
         }

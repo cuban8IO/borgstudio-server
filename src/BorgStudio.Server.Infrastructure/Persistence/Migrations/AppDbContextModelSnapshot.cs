@@ -127,6 +127,11 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("By")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("ProcessId")
                         .HasColumnType("INTEGER");
 
@@ -137,6 +142,14 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UsedBefore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -236,6 +249,217 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BorgStudio.Server.Domain.Statistics.AppReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ArchiveName")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Archives")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("By")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("CompressedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("DeduplicatedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("DurationSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<long?>("Files")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("OriginalBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ReceivedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("RepositoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("StartedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("TotalCompressedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("TotalOriginalBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UniqueCompressedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RepositoryId", "StartedAt");
+
+                    b.ToTable("AppReports", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Statistics.ConnectionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("By")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("BytesReceived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("BytesSent")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("EndedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ExitCode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("RepositoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("StartedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UsedAfter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UsedBefore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("RepositoryId", "StartedAt");
+
+                    b.ToTable("ConnectionRecords", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Statistics.StorageSample", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("FreeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Subject")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("TotalBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UsedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Subject", "SubjectId", "Day")
+                        .IsUnique();
+
+                    b.ToTable("StorageSamples", (string)null);
+                });
+
+            modelBuilder.Entity("BorgStudio.Server.Domain.Statistics.SystemSample", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("At")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("CpuPercent")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CpuPercentPeak")
+                        .HasColumnType("REAL");
+
+                    b.Property<long>("DiskReadBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DiskReadPeak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DiskWrittenBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DiskWrittenPeak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("MemoryTotalBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("MemoryUsedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("MemoryUsedPeak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("NetworkReceivedBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("NetworkReceivedPeak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("NetworkSentBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("NetworkSentPeak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Resolution")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Resolution", "At");
+
+                    b.ToTable("SystemSamples", (string)null);
+                });
+
             modelBuilder.Entity("BorgStudio.Server.Domain.Storage.BackupRepository", b =>
                 {
                     b.Property<Guid>("Id")
@@ -250,6 +474,9 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("FolderById")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("FormerOwnerName")
                         .HasMaxLength(256)
@@ -313,8 +540,26 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("FreeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Host")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HostKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsReadOnly")
                         .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -324,6 +569,23 @@ namespace BorgStudio.Server.Infrastructure.Persistence.Migrations
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Port")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RemoteBorg")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("SpaceMeasuredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("TotalBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

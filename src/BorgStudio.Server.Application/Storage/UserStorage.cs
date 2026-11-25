@@ -65,8 +65,8 @@ internal sealed class RepositoryOwners(StorageContext storage, ILogger<Repositor
         {
             var datastore = datastores[repository.DatastoreId];
             var from = repository.RelativePath;
-            var to = RepositoryNames.RelativePath(newUserName, repository.Name);
-            if (storage.TryFolder(datastore, from, () => storage.Folders.Move(datastore.Path, from, to)) is { } problem)
+            var to = repository.FolderFor(newUserName, repository.Name);
+            if (await storage.TryFolderAsync(datastore, from, () => storage.MoveAsync(datastore, from, to)) is { } problem)
             {
                 // The database keeps the old folder, so the repository stays usable; it moves at the next rename.
                 logger.LogWarning("Repository {Name} keeps its folder {Folder}: {Problem}", repository.Name, from, problem);
@@ -94,7 +94,7 @@ internal sealed class RepositoryOwners(StorageContext storage, ILogger<Repositor
             var from = repository.RelativePath;
             repository.Orphan(userName, storage.Now);
             if (from != repository.RelativePath
-                && storage.TryFolder(datastore, from, () => storage.Folders.Move(datastore.Path, from, repository.RelativePath)) is { } problem)
+                && await storage.TryFolderAsync(datastore, from, () => storage.MoveAsync(datastore, from, repository.RelativePath)) is { } problem)
             {
                 return problem;
             }
