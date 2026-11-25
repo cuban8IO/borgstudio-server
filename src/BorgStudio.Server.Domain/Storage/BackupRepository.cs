@@ -27,8 +27,17 @@ public sealed class BackupRepository
 
     public Guid DatastoreId { get; private set; }
 
-    /// <summary>The folder inside the datastore, with '/' as separator: "owner/name" or ".trash/id".</summary>
+    /// <summary>
+    /// The folder inside the datastore, with '/' as separator: "owner/name" or ".trash/id" on a folder
+    /// datastore, the repository's id on an external one (see <see cref="FolderById"/>).
+    /// </summary>
     public string RelativePath { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// On external datastores (Storage Box, SSH server) the folder is named by the id and never moves:
+    /// borg there is reached through the account's home, so the clients' address must not change.
+    /// </summary>
+    public bool FolderById { get; private set; }
 
     /// <summary>Upper limit for this repository (borg's storage quota); <c>null</c> = no limit.</summary>
     public long? QuotaBytes { get; private set; }
@@ -67,16 +76,25 @@ public sealed class BackupRepository
     public DateTimeOffset? PurgeAt => DeletedAt + TrashRetention;
 
     public static BackupRepository Create(
-        string ownerId, string ownerName, string name, Guid datastoreId, long? quotaBytes, DateTimeOffset now) => new()
+        string ownerId, string ownerName, string name, Guid datastoreId, long? quotaBytes, DateTimeOffset now, bool folderById = false)
     {
-        Id = Guid.NewGuid(),
-        OwnerId = ownerId,
-        Name = name,
-        DatastoreId = datastoreId,
-        RelativePath = RepositoryNames.RelativePath(ownerName, name),
-        QuotaBytes = quotaBytes,
-        CreatedAt = now,
-    };
+        var repository = new BackupRepository
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = ownerId,
+            Name = name,
+            DatastoreId = datastoreId,
+            QuotaBytes = quotaBytes,
+            CreatedAt = now,
+            FolderById = folderById,
+        };
+        repository.RelativePath = repository.FolderFor(ownerName, name);
+        return repository;
+    }
+
+    /// <summary>Where the folder belongs for this owner and name.</summary>
+    public string FolderFor(string ownerName, string name) =>
+        FolderById ? RepositoryNames.IdFolder(Id) : RepositoryNames.RelativePath(ownerName, name);
 
     /// <summary>The access <paramref name="userId"/> has: owners always have full access.</summary>
     public RepositoryAccess? AccessFor(string userId)
@@ -92,11 +110,11 @@ public sealed class BackupRepository
     public void Rename(string name, string ownerName)
     {
         Name = name;
-        RelativePath = RepositoryNames.RelativePath(ownerName, name);
+        RelativePath = FolderFor(ownerName, name);
     }
 
     /// <summary>The folder follows the owner's user name, e.g. after the user was renamed.</summary>
-    public void FollowOwnerName(string ownerName) => RelativePath = RepositoryNames.RelativePath(ownerName, Name);
+    public void FollowOwnerName(string ownerName) => RelativePath = FolderFor(ownerName, Name);
 
     public void SetQuota(long? quotaBytes) => QuotaBytes = quotaBytes;
 
@@ -106,7 +124,7 @@ public sealed class BackupRepository
         OwnerId = ownerId;
         FormerOwnerName = null;
         shares.RemoveAll(s => s.UserId == ownerId);
-        RelativePath = RepositoryNames.RelativePath(ownerName, Name);
+        RelativePath = FolderFor(ownerName, Name);
     }
 
     /// <summary>Adds a share or changes its access.</summary>
@@ -133,7 +151,10 @@ public sealed class BackupRepository
     public void MoveToTrash(DateTimeOffset now)
     {
         DeletedAt = now;
-        RelativePath = RepositoryNames.TrashPath(Id);
+        if (!FolderById)
+        {
+            RelativePath = RepositoryNames.TrashPath(Id);
+        }
     }
 
     /// <summary>The owner was deleted: the repository goes to the trash and keeps the owner's name for reference.</summary>
@@ -154,7 +175,7 @@ public sealed class BackupRepository
         Name = name;
         DeletedAt = null;
         shares.RemoveAll(s => s.UserId == ownerId);
-        RelativePath = RepositoryNames.RelativePath(ownerName, name);
+        RelativePath = FolderFor(ownerName, name);
     }
 
     public void RecordAccess(string userId, string by, DateTimeOffset now)
@@ -181,11 +202,14 @@ public sealed class BackupRepository
         MoveError = null;
     }
 
-    public void CompleteMove()
+    /// <summary>The repository arrived at the target datastore, in <paramref name="relativePath"/>.</summary>
+    public void CompleteMove(string relativePath, bool folderById)
     {
         DatastoreId = MoveTargetDatastoreId ?? throw new InvalidOperationException("No move was requested.");
         MoveTargetDatastoreId = null;
         MoveError = null;
+        RelativePath = relativePath;
+        FolderById = folderById;
     }
 
     public void FailMove(string error)

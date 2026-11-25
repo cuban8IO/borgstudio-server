@@ -1,39 +1,169 @@
 @page "/"
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Statistics
 @using BorgStudio.Server.Application.Status
+@using BorgStudio.Server.Domain.Statistics
+@using BorgStudio.Server.Web.Components.Pages.Repositories
+@using BorgStudio.Server.Web.Localization
 @inject IDispatcher Dispatcher
 
 <AppPageTitle Title="@Strings.NavOverview" />
 
 <MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@Strings.NavOverview</MudText>
-<MudText Typo="Typo.body1" Class="mud-text-secondary mb-6">@Strings.OverviewIntro</MudText>
 
-<MudGrid>
-    <MudItem xs="12" md="6">
-        <MudPaper Outlined="true" Class="pa-4">
-            <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ServerStatusTitle</MudText>
-            @if (status is null)
-            {
-                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-            }
-            else
-            {
-                <dl class="status-list">
-                    <dt>@Strings.StatusVersion</dt>
-                    <dd><MudLink Href="changelog">@VersionText</MudLink></dd>
-                    <dt>@Strings.StatusOperatingSystem</dt>
-                    <dd>@status.OperatingSystem</dd>
-                    <dt>@Strings.StatusRuntime</dt>
-                    <dd>@status.Runtime</dd>
-                    <dt>@Strings.StatusRunningSince</dt>
-                    <dd>@status.StartedAt.ToLocalTime().ToString("g")</dd>
-                </dl>
-            }
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+@if (overview is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudGrid Class="mb-2">
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Outlined="true" Class="pa-4 tile">
+                <div class="kpi-label">@Strings.OverviewStored</div>
+                <div class="kpi-value">@ByteSize.Format(overview.StoredBytes)</div>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.OverviewRepositoryCount, overview.Rows.Count)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Outlined="true" Class="pa-4 tile">
+                <div class="kpi-label">@Strings.StatsSavings</div>
+                <div class="kpi-value">@Formats.Percent(overview.SavingsPercent)</div>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    @(overview.OriginalBytes is { } original ? string.Format(Strings.OverviewSavingsDetail, ByteSize.Format(original)) : Strings.OverviewSavingsUnknown)
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Outlined="true" Class="pa-4 tile">
+                <div class="kpi-label">@Strings.OverviewSuccess</div>
+                <div class="kpi-value">@Formats.Percent(overview.SuccessRate)</div>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.OverviewRuns, overview.RunsCounted)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Outlined="true" Class="pa-4 tile">
+                <div class="kpi-label">@Strings.OverviewFullSoonest</div>
+                @if (overview.FullSoonest is { } soonest)
+                {
+                    <div class="kpi-value" style="@(soonest.Day <= DateOnly.FromDateTime(DateTime.Today.AddDays(90)) ? "color: var(--mud-palette-warning)" : null)">
+                        @Formats.Month(soonest.Day)
+                    </div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@soonest.Subject</MudText>
+                }
+                else
+                {
+                    <div class="kpi-value">–</div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Strings.OverviewNotFilling</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (overview.System is { } system)
+    {
+        <MudGrid Class="mb-2">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Outlined="true" Class="pa-4 tile">
+                    <div class="kpi-label">@Strings.SystemCpu</div>
+                    <div class="kpi-value">@Formats.Percent(system.CpuPercent)</div>
+                    <MudLink Href="system" Typo="Typo.caption">@Strings.NavSystem</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Outlined="true" Class="pa-4 tile">
+                    <div class="kpi-label">@Strings.SystemMemory</div>
+                    <div class="kpi-value">@ByteSize.Format(system.MemoryUsedBytes)</div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.UsageOfQuota, ByteSize.Format(system.MemoryUsedBytes), ByteSize.Format(system.MemoryTotalBytes))</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Outlined="true" Class="pa-4 tile">
+                    <div class="kpi-label">@Strings.SystemNetwork</div>
+                    <div class="kpi-value">@Formats.Rate(system.NetworkBytesPerSecond)</div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.SystemDiskRate, Formats.Rate(system.DiskBytesPerSecond))</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Outlined="true" Class="pa-4 tile">
+                    <div class="kpi-label">@Strings.SystemDataDisk</div>
+                    @if (system.DataDisk is { } disk)
+                    {
+                        <UsageBar Used="disk.TotalBytes - disk.FreeBytes" Quota="disk.TotalBytes" />
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    <MudGrid>
+        <MudItem xs="12" lg="8">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.NavRepositories</MudText>
+                @if (overview.Rows.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@Strings.OverviewIntro</MudText>
+                }
+                else
+                {
+                    <MudSimpleTable Dense="true" Elevation="0">
+                        <tbody>
+                            @foreach (var row in overview.Rows)
+                            {
+                                <tr>
+                                    <td style="width: 1%">
+                                        <MudIcon Icon="@HealthIcon(row.Health)" Style="@($"color: {ChartColors.Of(row.Health)}")" Size="Size.Small" />
+                                    </td>
+                                    <td>
+                                        <MudLink Href="@($"repositories/{row.Repository.Id}")">@row.Repository.FullName</MudLink>
+                                        <div class="mud-text-secondary" style="font-size: 0.8rem">@ReasonText(row)</div>
+                                    </td>
+                                    <td style="min-width: 10rem"><UsageBar Used="row.Repository.UsedBytes" Quota="row.Repository.QuotaBytes" /></td>
+                                    <td class="mud-text-secondary" style="font-size: 0.8rem">@LastText(row)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudPaper Outlined="true" Class="pa-4 mb-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.StatsActivity</MudText>
+                <ActivityCalendar Days="overview.Calendar" Label="@Strings.StatsActivity"
+                                  Tooltip="@(d => string.Format(Strings.StatsCalendarTooltip, Formats.Day(d.Day), d.Count))" />
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
+                    @string.Format(Strings.OverviewTraffic, ByteSize.Format(overview.TrafficReceived30), ByteSize.Format(overview.TrafficSent30))
+                </MudText>
+            </MudPaper>
+
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.ServerStatusTitle</MudText>
+                @if (status is not null)
+                {
+                    <dl class="status-list">
+                        <dt>@Strings.StatusVersion</dt>
+                        <dd><MudLink Href="changelog">@VersionText</MudLink></dd>
+                        <dt>@Strings.StatusOperatingSystem</dt>
+                        <dd>@status.OperatingSystem</dd>
+                        <dt>@Strings.StatusRuntime</dt>
+                        <dd>@status.Runtime</dd>
+                        <dt>@Strings.StatusRunningSince</dt>
+                        <dd>@status.StartedAt.ToLocalTime().ToString("g")</dd>
+                    </dl>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
     private ServerStatus? status;
+    private OverviewStatistics? overview;
 
     private string VersionText => status!.Version switch
     {
@@ -44,6 +174,36 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
         status = await Dispatcher.QueryAsync(new GetServerStatusQuery());
+        overview = await Dispatcher.QueryAsync(new GetOverviewStatisticsQuery(userId));
     }
+
+    private static string HealthIcon(Health health) => health switch
+    {
+        Health.Ok => Icons.Material.Filled.CheckCircle,
+        Health.Warning => Icons.Material.Filled.Warning,
+        Health.Failed => Icons.Material.Filled.Error,
+        _ => Icons.Material.Filled.HelpOutline,
+    };
+
+    private static string ReasonText(OverviewRow row) => row.Reason switch
+    {
+        OverviewReason.NeverUsed => Strings.ReasonNeverUsed,
+        OverviewReason.QuotaFull => Strings.ReasonQuotaFull,
+        OverviewReason.QuotaAlmostFull => Strings.ReasonQuotaAlmostFull,
+        OverviewReason.FullSoon => string.Format(Strings.StatsFullAt, row.FullAt is { } d ? Formats.Month(d) : "–"),
+        OverviewReason.BackupFailed => Strings.ReasonBackupFailed,
+        OverviewReason.BackupWarnings => Strings.ReasonBackupWarnings,
+        OverviewReason.Idle => Strings.ReasonIdle,
+        OverviewReason.ConnectionFailed => Strings.ReasonConnectionFailed,
+        _ => row.FullAt is { } full ? string.Format(Strings.StatsFullAt, Formats.Month(full)) : Strings.ReasonOk,
+    };
+
+    private static string LastText(OverviewRow row) =>
+        row.LastBackupAt is { } backup
+            ? string.Format(Strings.OverviewLastBackup, Formats.When(backup), RepositoryStatisticsCard.OutcomeText(row.LastBackup!.Value))
+            : row.LastConnection is { } connection
+                ? string.Format(Strings.OverviewLastConnection, Formats.When(connection))
+                : "–";
 }

@@ -67,7 +67,7 @@ internal sealed class GetRepositoryStatsQueryHandler(StorageContext storage, Ssh
                 var datastore = datastores[r.DatastoreId];
                 if (!free.TryGetValue(datastore.Id, out var freeBytes))
                 {
-                    free[datastore.Id] = freeBytes = storage.Folders.GetSpace(datastore.Path)?.FreeBytes;
+                    free[datastore.Id] = freeBytes = storage.SpaceOf(datastore)?.FreeBytes;
                 }
 
                 StorageAllowance? ownerQuota = null;

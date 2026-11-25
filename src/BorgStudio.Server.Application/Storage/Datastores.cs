@@ -9,7 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace BorgStudio.Server.Application.Storage;
 
+/// <param name="Path">A folder's path, or an external datastore's address (ssh://user@host:port).</param>
 /// <param name="Problem">What is wrong with the folder right now (e.g. a disk that is not mounted).</param>
+/// <param name="Error">External datastores: why the last connection failed.</param>
 /// <param name="UsedBytes">Space its repositories take, those in the trash included.</param>
 public sealed record DatastoreInfo(
     Guid Id,
@@ -20,7 +22,14 @@ public sealed record DatastoreInfo(
     DatastoreProblem? Problem,
     int RepositoryCount,
     int TrashCount,
-    long UsedBytes);
+    long UsedBytes,
+    DatastoreKind Kind = DatastoreKind.Folder,
+    string? RemoteBorg = null,
+    string? Error = null,
+    DateTimeOffset? SpaceMeasuredAt = null)
+{
+    public bool IsExternal => Kind != DatastoreKind.Folder;
+}
 
 /// <summary>All datastores (administrators).</summary>
 public sealed record GetDatastoresQuery([property: Required] string ActingUserId) : IQuery<IReadOnlyList<DatastoreInfo>>;
@@ -41,11 +50,15 @@ internal sealed class GetDatastoresQueryHandler(StorageContext storage) : IQuery
                     d.Name,
                     d.Path,
                     d.IsReadOnly,
-                    storage.Folders.GetSpace(d.Path),
-                    storage.Folders.Check(d.Path),
+                    storage.SpaceOf(d),
+                    d.IsExternal ? null : storage.Folders.Check(d.Path),
                     on.Count(r => !r.IsDeleted),
                     on.Count(r => r.IsDeleted),
-                    on.Sum(r => r.UsedBytes));
+                    on.Sum(r => r.UsedBytes),
+                    d.Kind,
+                    d.RemoteBorg,
+                    d.LastError,
+                    d.IsExternal ? d.SpaceMeasuredAt : null);
             })
             .ToList();
     }
@@ -92,12 +105,16 @@ internal sealed class CreateDatastoreCommandHandler(StorageContext storage, ILog
     }
 }
 
-/// <summary>Renames a datastore or makes it read-only (no new repositories, no moves to it).</summary>
+/// <summary>
+/// Renames a datastore, makes it read-only (no new repositories, no moves to it), or for an external
+/// one chooses the borg program there.
+/// </summary>
 public sealed record UpdateDatastoreCommand(
     [property: Required] string ActingUserId,
     Guid DatastoreId,
     [property: Required] string Name,
-    bool IsReadOnly) : ICommand<AccountResult>;
+    bool IsReadOnly,
+    string? RemoteBorg = null) : ICommand<AccountResult>;
 
 internal sealed class UpdateDatastoreCommandHandler(StorageContext storage) : ICommandHandler<UpdateDatastoreCommand, AccountResult>
 {
@@ -114,6 +131,15 @@ internal sealed class UpdateDatastoreCommandHandler(StorageContext storage) : IC
 
         datastore.Rename(command.Name);
         datastore.SetReadOnly(command.IsReadOnly);
+        if (datastore.IsExternal && !string.IsNullOrWhiteSpace(command.RemoteBorg))
+        {
+            if (ExternalDatastoreRules.CheckBorg(storage, datastore.Kind, command.RemoteBorg) is { } borgError)
+            {
+                return AccountResult.Failed(borgError);
+            }
+
+            datastore.SetRemoteBorg(command.RemoteBorg.Trim());
+        }
         await storage.Store.SaveChangesAsync(cancellationToken);
         return AccountResult.Success;
     }
@@ -144,6 +170,11 @@ internal sealed class DeleteDatastoreCommandHandler(StorageContext storage) : IC
 
         storage.Store.Remove(datastore);
         await storage.Store.SaveChangesAsync(cancellationToken);
+        if (datastore.IsExternal)
+        {
+            storage.Remote.ForgetKey(datastore.Id);
+        }
+
         return AccountResult.Success;
     }
 }
@@ -177,9 +208,20 @@ internal sealed class MoveRepositoryCommandHandler(StorageContext storage, Repos
             return AccountResult.Failed(storage.Texts.DatastoreReadOnly);
         }
 
-        if (storage.Folders.Exists(target.Path, repository.RelativePath))
+        var owner = repository.OwnerId is { } ownerId ? await storage.Accounts.GetAsync(ownerId, cancellationToken) : null;
+        var targetPath = target.IsExternal
+            ? RepositoryNames.IdFolder(repository.Id)
+            : RepositoryNames.RelativePath(owner?.UserName ?? "_", repository.Name);
+        try
         {
-            return AccountResult.Failed(string.Format(storage.Texts.FolderProblem, $"{target.Path}/{repository.RelativePath}"));
+            if (await storage.ExistsAsync(target, targetPath, cancellationToken))
+            {
+                return AccountResult.Failed(string.Format(storage.Texts.FolderProblem, $"{target.Path}/{targetPath}"));
+            }
+        }
+        catch (RemoteStorageException e)
+        {
+            return AccountResult.Failed(string.Format(storage.Texts.FolderProblem, $"{target.Path}/{targetPath}") + " " + e.Message);
         }
 
         repository.RequestMove(target.Id);

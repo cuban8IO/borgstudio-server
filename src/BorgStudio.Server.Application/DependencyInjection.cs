@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<RepositoryOwners>();
         services.AddSingleton<RepositoryMoves>();
         services.AddScoped<SshEndpoints>();
+        services.AddScoped<Statistics.StatisticsRecorder>();
         services.AddRequestHandlers(typeof(DependencyInjection).Assembly);
         return services;
     }

@@ -64,4 +64,21 @@ public interface IStorageTexts
     string TokenExpiryInPast { get; }
 
     string SshAddressInvalid { get; }
+
+    string ExternalUserInvalid { get; }
+
+    string ExternalHostInvalid { get; }
+
+    string ExternalBorgInvalid { get; }
+
+    string ExternalHostKeyNotPublished { get; }
+
+    /// <summary>{0}: the address.</summary>
+    string ExternalAlreadyAdded { get; }
+
+    /// <summary>{0}: host and port; {1}: the reason.</summary>
+    string ExternalUnreachable { get; }
+
+    /// <summary>{0}: the reason.</summary>
+    string ExternalCheckFailed { get; }
 }

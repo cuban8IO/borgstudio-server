@@ -64,14 +64,14 @@ internal sealed class CreateRepositoryCommandHandler(StorageContext storage, ILo
             return AccountResult<Guid>.Failed(texts.DatastoreReadOnly);
         }
 
-        var repository = BackupRepository.Create(acting.Id, acting.UserName, name, datastore.Id, command.QuotaBytes, storage.Now);
-        if (storage.Folders.Exists(datastore.Path, repository.RelativePath))
+        var repository = BackupRepository.Create(acting.Id, acting.UserName, name, datastore.Id, command.QuotaBytes, storage.Now, datastore.IsExternal);
+        if (await storage.ExistsAsync(datastore, repository.RelativePath, cancellationToken))
         {
             // A leftover folder (e.g. restored by hand) is never taken over silently.
             return AccountResult<Guid>.Failed(string.Format(texts.RepositoryNameTaken, name));
         }
 
-        if (storage.TryFolder(datastore, repository.RelativePath, () => storage.Folders.Create(datastore.Path, repository.RelativePath)) is { } problem)
+        if (await storage.TryFolderAsync(datastore, repository.RelativePath, () => storage.CreateAsync(datastore, repository.RelativePath, cancellationToken)) is { } problem)
         {
             return AccountResult<Guid>.Failed(problem);
         }
@@ -90,7 +90,7 @@ internal sealed class CreateRepositoryCommandHandler(StorageContext storage, ILo
         }
 
         var writable = (await storage.Store.GetDatastoresAsync(cancellationToken)).Where(d => !d.IsReadOnly).ToList();
-        return writable.MaxBy(d => storage.Folders.GetSpace(d.Path)?.FreeBytes ?? -1);
+        return writable.MaxBy(d => storage.SpaceOf(d)?.FreeBytes ?? -1);
     }
 }
 
@@ -136,12 +136,12 @@ internal sealed class UpdateRepositoryCommandHandler(StorageContext storage) : I
             var datastore = (await storage.Store.FindDatastoreAsync(repository.DatastoreId, cancellationToken))!;
             var from = repository.RelativePath;
             repository.Rename(name, owner.UserName);
-            if (!RepositoryNames.AreSame(from, repository.RelativePath) && storage.Folders.Exists(datastore.Path, repository.RelativePath))
+            if (!RepositoryNames.AreSame(from, repository.RelativePath) && await storage.ExistsAsync(datastore, repository.RelativePath, cancellationToken))
             {
                 return AccountResult.Failed(string.Format(texts.RepositoryNameTaken, name));
             }
 
-            if (storage.TryFolder(datastore, from, () => storage.Folders.Move(datastore.Path, from, repository.RelativePath)) is { } problem)
+            if (await storage.TryFolderAsync(datastore, from, () => storage.MoveAsync(datastore, from, repository.RelativePath)) is { } problem)
             {
                 return AccountResult.Failed(problem);
             }
@@ -192,12 +192,12 @@ internal sealed class SetRepositoryOwnerCommandHandler(
         var datastore = (await storage.Store.FindDatastoreAsync(repository.DatastoreId, cancellationToken))!;
         var from = repository.RelativePath;
         repository.SetOwner(owner.Id, owner.UserName);
-        if (storage.Folders.Exists(datastore.Path, repository.RelativePath))
+        if (from != repository.RelativePath && await storage.ExistsAsync(datastore, repository.RelativePath, cancellationToken))
         {
             return AccountResult.Failed(string.Format(texts.RepositoryNameTaken, $"{owner.UserName}/{repository.Name}"));
         }
 
-        if (storage.TryFolder(datastore, from, () => storage.Folders.Move(datastore.Path, from, repository.RelativePath)) is { } problem)
+        if (await storage.TryFolderAsync(datastore, from, () => storage.MoveAsync(datastore, from, repository.RelativePath)) is { } problem)
         {
             return AccountResult.Failed(problem);
         }
@@ -287,7 +287,7 @@ internal sealed class DeleteRepositoryCommandHandler(StorageContext storage, ILo
         var datastore = (await storage.Store.FindDatastoreAsync(repository.DatastoreId, cancellationToken))!;
         var from = repository.RelativePath;
         repository.MoveToTrash(storage.Now);
-        if (storage.TryFolder(datastore, from, () => storage.Folders.Move(datastore.Path, from, repository.RelativePath)) is { } problem)
+        if (await storage.TryFolderAsync(datastore, from, () => storage.MoveAsync(datastore, from, repository.RelativePath)) is { } problem)
         {
             return AccountResult.Failed(problem);
         }
@@ -313,7 +313,7 @@ internal sealed class MeasureRepositoryCommandHandler(StorageContext storage) : 
         }
 
         var datastore = (await storage.Store.FindDatastoreAsync(repository.DatastoreId, cancellationToken))!;
-        repository.RecordUsage(StorageMaintenance.MeasureSafely(storage, datastore, repository), storage.Now);
+        repository.RecordUsage(await StorageMaintenance.MeasureSafelyAsync(storage, datastore, repository, cancellationToken), storage.Now);
         await storage.Store.SaveChangesAsync(cancellationToken);
     }
 }

@@ -67,7 +67,7 @@ internal sealed class GetRepositoriesQueryHandler(StorageContext storage) : IQue
         var choices = datastores.Values
             .Where(d => !d.IsReadOnly)
             .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(d => new DatastoreChoice(d.Id, d.Name, storage.Folders.GetSpace(d.Path)?.FreeBytes))
+            .Select(d => new DatastoreChoice(d.Id, d.Name, storage.SpaceOf(d)?.FreeBytes))
             .ToList();
         var trash = all.Count(r => r.IsDeleted && (acting.IsAdministrator || r.OwnerId == acting.Id));
         return new RepositoryListView(visible, allowance, choices, trash, storage.Folders.HostingSupported);
@@ -126,7 +126,7 @@ internal sealed class GetRepositoryQueryHandler(StorageContext storage, Reposito
         var target = repository.MoveTargetDatastoreId is { } targetId && datastores.TryGetValue(targetId, out var t) ? t.Name : null;
         return new RepositoryDetails(
             summary,
-            acting.IsAdministrator ? Path.Combine(datastore.Path, repository.RelativePath.Replace('/', Path.DirectorySeparatorChar)) : null,
+            acting.IsAdministrator ? StorageContext.LocationOf(datastore, repository.RelativePath) : null,
             shares,
             ownerAllowance,
             target,

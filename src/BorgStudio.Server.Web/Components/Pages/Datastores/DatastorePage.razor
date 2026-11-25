@@ -1,0 +1,129 @@
+@page "/datastores/{Id:guid}"
+@attribute [Authorize(Policy = Policies.Administrator)]
+@using System.Security.Claims
+@using BorgStudio.Server.Application.Statistics
+@using BorgStudio.Server.Web.Components.Pages.Repositories
+@using BorgStudio.Server.Web.Localization
+@inject IDispatcher Dispatcher
+
+<AppPageTitle Title="@(statistics?.Name ?? Strings.NavDatastores)" />
+
+<MudBreadcrumbs Items="breadcrumbs" Class="px-0 pt-0" />
+
+@if (!loaded)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (statistics is null)
+{
+    <MudText Typo="Typo.body1">@Strings.DatastoreNotFound</MudText>
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" GutterBottom="true">@statistics.Name</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        @DatastoreList.KindText(statistics.Kind) · <code class="text-break">@statistics.Path</code>
+    </MudText>
+
+    @if (statistics.Error is { } error)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@string.Format(Strings.DatastoreUnreachable, error)</MudAlert>
+    }
+
+    <MudGrid>
+        <MudItem xs="12" lg="8">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.StatsStorageOverTime</MudText>
+                <LineChart Series="Series" Limit="@(LastTotal is { } total ? (double)total : null)" LimitLabel="@Strings.DatastoreCapacity"
+                           FormatY="v => ByteSize.Format((long)v)" Label="@Strings.StatsStorageOverTime" EmptyText="@Strings.StatsNoHistory" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">
+                    @(statistics.FullAt is { } full ? string.Format(Strings.StatsFullAt, Formats.Month(full))
+                        : statistics.History.Count < 3 ? Strings.StatsForecastNeedsDays : Strings.StatsNoForecast)
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="4">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.DatastoreDisk</MudText>
+                @if (statistics.Space is { } space)
+                {
+                    <UsageBar Used="space.TotalBytes - space.FreeBytes" Quota="space.TotalBytes" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@string.Format(Strings.DatastoreFree, ByteSize.Format(space.FreeBytes))</MudText>
+                }
+                <MudText Typo="Typo.subtitle2" Class="mt-4">@Strings.NavRepositories</MudText>
+                <MudSimpleTable Dense="true" Elevation="0">
+                    <tbody>
+                        @foreach (var repository in statistics.Repositories)
+                        {
+                            <tr>
+                                <td><MudLink Href="@($"repositories/{repository.Id}")">@repository.FullName</MudLink></td>
+                                <td class="text-right">@ByteSize.Format(repository.UsedBytes)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.h6" HtmlTag="h2" GutterBottom="true">@Strings.DatastoreTraffic</MudText>
+                <LineChart Series="Traffic" FormatY="v => ByteSize.Format((long)v)" Label="@Strings.DatastoreTraffic" EmptyText="@Strings.StatsNoConnections" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private DatastoreStatistics? statistics;
+    private bool loaded;
+    private List<BreadcrumbItem> breadcrumbs = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var userId = (await AuthenticationState).User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        statistics = await Dispatcher.QueryAsync(new GetDatastoreStatisticsQuery(userId, Id));
+        loaded = true;
+        breadcrumbs =
+        [
+            new BreadcrumbItem(Strings.NavDatastores, "datastores"),
+            new BreadcrumbItem(statistics?.Name ?? "?", null, disabled: true),
+        ];
+    }
+
+    private long? LastTotal => statistics!.History.LastOrDefault(p => p.TotalBytes is not null)?.TotalBytes ?? statistics.Space?.TotalBytes;
+
+    private IReadOnlyList<ChartSeries> Series
+    {
+        get
+        {
+            var list = new List<ChartSeries>
+            {
+                new(Strings.DatastoreRepositoriesUsed, [.. statistics!.History.Select(p => (p.Day.ToDateTime(TimeOnly.MinValue), (double)p.UsedBytes))], ChartColors.Primary, Area: true),
+            };
+            var disk = statistics.History.Where(p => p.TotalBytes is not null && p.FreeBytes is not null)
+                .Select(p => (p.Day.ToDateTime(TimeOnly.MinValue), (double)(p.TotalBytes!.Value - p.FreeBytes!.Value))).ToList();
+            if (disk.Count > 0)
+            {
+                list.Add(new ChartSeries(Strings.DatastoreDiskUsed, disk, ChartColors.Info));
+                if (statistics.FullAt is { } full && LastTotal is { } total)
+                {
+                    list.Add(new ChartSeries(Strings.StatsForecast, [disk[^1], (full.ToDateTime(TimeOnly.MinValue), (double)total)], ChartColors.Warning, Dashed: true));
+                }
+            }
+
+            return list;
+        }
+    }
+
+    private IReadOnlyList<ChartSeries> Traffic =>
+    [
+        new(Strings.StatsReceived, [.. statistics!.Traffic.Select(t => (t.Day.ToDateTime(TimeOnly.MinValue), (double)t.BytesReceived))], ChartColors.Primary),
+        new(Strings.StatsSent, [.. statistics.Traffic.Select(t => (t.Day.ToDateTime(TimeOnly.MinValue), (double)t.BytesSent))], ChartColors.Info),
+    ];
+}

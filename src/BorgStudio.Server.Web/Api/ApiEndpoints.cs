@@ -5,8 +5,10 @@ using BorgStudio.Server.Application.Abstractions.Access;
 using BorgStudio.Server.Application.Abstractions.Messaging;
 using BorgStudio.Server.Application.Access;
 using BorgStudio.Server.Application.Settings;
+using BorgStudio.Server.Application.Statistics;
 using BorgStudio.Server.Application.Storage;
 using BorgStudio.Server.Domain;
+using BorgStudio.Server.Domain.Statistics;
 using BorgStudio.Server.Domain.Storage;
 using BorgStudio.Server.Web.Authentication;
 
@@ -41,6 +43,7 @@ internal static class ApiEndpoints
         secured.MapPost("/repositories", CreateRepositoryAsync);
         secured.MapGet("/repositories/{id:guid}", GetRepositoryAsync);
         secured.MapPut("/repositories/{id:guid}/ssh-key", SetSshKeyAsync);
+        secured.MapPost("/repositories/{id:guid}/reports", AddReportAsync);
 
         // Unknown paths below /api answer in JSON too, not with the HTML page for "not found".
         api.MapFallback(() => TypedResults.Json(new ApiError("not_found", "There is no such interface."), statusCode: StatusCodes.Status404NotFound))
@@ -171,6 +174,60 @@ internal static class ApiEndpoints
             : TypedResults.Json(new ApiError("rejected", string.Join(" ", result.Errors)), statusCode: StatusCodes.Status422UnprocessableEntity);
     }
 
+    /// <summary>
+    /// A run the app did (backup, check, prune, compact) and what borg said about it. The server
+    /// cannot read the repository, so this is where archives, savings and results come from.
+    /// </summary>
+    /// <param name="Kind">"backup", "check", "prune" or "compact".</param>
+    /// <param name="Outcome">"succeeded", "warnings", "failed", "cancelled" or "skipped".</param>
+    public sealed record ReportRequest(
+        string Kind,
+        string Outcome,
+        DateTimeOffset StartedAt,
+        double DurationSeconds,
+        string? ArchiveName,
+        long? OriginalSize,
+        long? CompressedSize,
+        long? DeduplicatedSize,
+        long? Files,
+        int? Archives,
+        long? TotalSize,
+        long? TotalCompressedSize,
+        long? UniqueCompressedSize,
+        string? Message);
+
+    private static async Task<Results<NoContent, JsonHttpResult<ApiError>>> AddReportAsync(
+        Guid id, ReportRequest request, IDispatcher dispatcher, HttpContext context)
+    {
+        if (!Enum.TryParse<AppReportKind>(request.Kind, ignoreCase: true, out var kind) || !Enum.IsDefined(kind)
+            || !Enum.TryParse<AppReportOutcome>(request.Outcome, ignoreCase: true, out var outcome) || !Enum.IsDefined(outcome))
+        {
+            return TypedResults.Json(new ApiError("invalid_request", "kind or outcome is unknown."), statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var result = await dispatcher.SendAsync(new AddAppReportCommand(
+            UserId(context.User),
+            context.User.FindFirstValue(ClaimTypes.Name) is { } user ? DeviceName(context.User) ?? user : null,
+            id,
+            kind,
+            outcome,
+            request.StartedAt,
+            request.DurationSeconds,
+            request.ArchiveName,
+            request.OriginalSize,
+            request.CompressedSize,
+            request.DeduplicatedSize,
+            request.Files,
+            request.Archives,
+            request.TotalSize,
+            request.TotalCompressedSize,
+            request.UniqueCompressedSize,
+            request.Message));
+        return result.Succeeded
+            ? TypedResults.NoContent()
+            : TypedResults.Json(new ApiError("not_found", string.Join(" ", result.Errors)), statusCode: StatusCodes.Status404NotFound);
+    }
+
     /// <param name="Access">"full" or "appendOnly".</param>
     public sealed record RepositoryResponse(
         Guid Id,
@@ -226,6 +283,8 @@ internal static class ApiEndpoints
         endpoint.HostKeys);
 
     private static string UserId(ClaimsPrincipal user) => user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+    private static string? DeviceName(ClaimsPrincipal user) => user.FindFirstValue(ApiTokenAuthenticationHandler.DeviceNameClaim);
 
     private static Guid DeviceId(ClaimsPrincipal user) =>
         Guid.TryParse(user.FindFirstValue(ApiTokenAuthenticationHandler.DeviceClaim), out var id) ? id : Guid.Empty;

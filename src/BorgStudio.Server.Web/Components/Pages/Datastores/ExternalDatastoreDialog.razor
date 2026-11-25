@@ -1,0 +1,166 @@
+@using BorgStudio.Server.Application.Abstractions.Access
+@using BorgStudio.Server.Application.Storage
+@using BorgStudio.Server.Domain.Storage
+@inject IDispatcher Dispatcher
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+@* Adds a Hetzner Storage Box or an SSH server with borg, in two steps: where it is (the server reads
+   its host key and prepares its own key), then the name, borg version and the password (used once). *@
+<MudDialog>
+    <DialogContent>
+        <FormErrors Errors="errors" />
+        @if (draft is null)
+        {
+            <MudText Typo="Typo.body2" Class="mb-3">@(Kind == DatastoreKind.HetznerStorageBox ? Strings.ExternalHetznerIntro : Strings.ExternalSshIntro)</MudText>
+            @if (Kind == DatastoreKind.Ssh)
+            {
+                <MudTextField @bind-Value="host" Label="@Strings.ExternalHost" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" AutoFocus="true"
+                              Placeholder="nas.example.org" />
+                <MudNumericField T="int" @bind-Value="port" Label="@Strings.ExternalPort" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="65535" Class="mt-2" />
+            }
+            <MudTextField @bind-Value="userName" Label="@Strings.ExternalUser" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Class="mt-2"
+                          AutoFocus="@(Kind == DatastoreKind.HetznerStorageBox)"
+                          Placeholder="@(Kind == DatastoreKind.HetznerStorageBox ? "u123456-sub1" : "borgstudio")"
+                          HelperText="@(Kind == DatastoreKind.HetznerStorageBox ? Strings.ExternalHetznerUserHint : Strings.ExternalSshUserHint)" />
+        }
+        else
+        {
+            <dl class="status-list mb-3">
+                <dt>@Strings.ExternalAddress</dt>
+                <dd><code class="text-break">@Datastore.ExternalAddress(draft.UserName, draft.Host, draft.Port)</code></dd>
+            </dl>
+
+            @if (draft.TrustedHostKey is { } trusted)
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3">@string.Format(Strings.ExternalHostKeyPublished, trusted.Fingerprint)</MudAlert>
+            }
+            else
+            {
+                <MudText Typo="Typo.subtitle2">@Strings.ExternalHostKeyConfirm</MudText>
+                <MudRadioGroup T="string" @bind-Value="hostKey">
+                    @foreach (var key in draft.HostKeys)
+                    {
+                        <MudRadio T="string" Value="key.PublicKey" Color="Color.Primary">
+                            <code>@key.Fingerprint</code> <span class="mud-text-secondary">(@key.Algorithm)</span>
+                        </MudRadio>
+                    }
+                </MudRadioGroup>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-3">@Strings.ExternalHostKeyHint</MudText>
+            }
+
+            <MudTextField @bind-Value="name" Label="@Strings.DatastoreNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                          MaxLength="BorgStudio.Server.Domain.Storage.Datastore.MaxNameLength" />
+            <MudSelect T="string" @bind-Value="borg" Label="@Strings.ExternalBorg" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2"
+                       HelperText="@Strings.ExternalBorgHint">
+                @foreach (var choice in draft.BorgChoices)
+                {
+                    <MudSelectItem T="string" Value="choice">@choice</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="password" Label="@Strings.ExternalPassword" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2"
+                          InputType="InputType.Password" HelperText="@Strings.ExternalPasswordHint" />
+
+            @if (Kind == DatastoreKind.Ssh)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mt-4">@Strings.ExternalPublicKey</MudText>
+                <div class="access-secret">@draft.PublicKey</div>
+                <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyKeyAsync">@Strings.Copy</MudButton>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@Strings.ExternalPublicKeyHint</MudText>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Strings.Cancel</MudButton>
+        @if (draft is null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PrepareAsync"
+                       Disabled="busy || string.IsNullOrWhiteSpace(userName) || (Kind == DatastoreKind.Ssh && string.IsNullOrWhiteSpace(host))">
+                @Strings.Continue
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync"
+                       Disabled="busy || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(hostKey)">
+                @Strings.DatastoreCreateSubmit
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string ActingUserId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public DatastoreKind Kind { get; set; }
+
+    private string? host;
+    private int port = 22;
+    private string userName = string.Empty;
+    private ExternalDatastoreDraft? draft;
+    private string? hostKey;
+    private string name = string.Empty;
+    private string borg = "borg";
+    private string? password;
+    private IReadOnlyList<string>? errors;
+    private bool busy;
+
+    private async Task PrepareAsync()
+    {
+        busy = true;
+        errors = null;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new PrepareExternalDatastoreCommand(ActingUserId, Kind, userName, host, port));
+            if (!result.Succeeded)
+            {
+                errors = result.Errors;
+                return;
+            }
+
+            draft = result.Value!;
+            hostKey = draft.TrustedHostKey?.PublicKey;
+            borg = draft.BorgChoices[0];
+            name = Kind == DatastoreKind.HetznerStorageBox ? $"Storage Box {draft.UserName}" : draft.Host;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        busy = true;
+        errors = null;
+        try
+        {
+            var result = await Dispatcher.SendAsync(new CreateExternalDatastoreCommand(
+                ActingUserId, draft!.DraftId, Kind, name, draft.UserName, draft.Host, draft.Port, hostKey!, borg, password));
+            password = null;
+            if (result.Succeeded)
+            {
+                Snackbar.Add(string.Format(Strings.ExternalAdded, name, result.Value), Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            errors = result.Errors;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task CopyKeyAsync()
+    {
+        var copied = await JS.InvokeAsync<bool>("borgStudio.copyText", draft!.PublicKey);
+        Snackbar.Add(copied ? Strings.Copied : Strings.CopyFailed, copied ? Severity.Success : Severity.Warning);
+    }
+}

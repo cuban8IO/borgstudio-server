@@ -166,6 +166,13 @@ else
         </MudItem>
 
         <MudItem xs="12">
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-2">@Strings.StatsTitle</MudText>
+        </MudItem>
+        <MudItem xs="12">
+            <RepositoryStatisticsCard ActingUserId="@actingUserId" RepositoryId="Id" />
+        </MudItem>
+
+        <MudItem xs="12">
             <SshAccessCard ActingUserId="@actingUserId" Repository="repository" />
         </MudItem>
 
