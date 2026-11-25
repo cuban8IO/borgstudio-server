@@ -61,7 +61,9 @@ internal sealed class RunUpdateCheckCommandHandler(
 {
     public async Task<UpdateStatus> HandleAsync(RunUpdateCheckCommand command, CancellationToken cancellationToken)
     {
-        var current = Changelog.ParseVersion(ProductVersion.Parse(environment.InformationalVersion).Version);
+        var running = ProductVersion.Parse(environment.InformationalVersion).Version;
+        var developmentBuild = Changelog.ParseDevelopmentBuild(running);
+        var current = developmentBuild ?? Changelog.ParseVersion(running);
         if (!(await settings.GetAsync(cancellationToken)).CheckForUpdates || current is null)
         {
             // Switched off, or a local build without a release version to compare.
@@ -70,11 +72,21 @@ internal sealed class RunUpdateCheckCommandHandler(
 
         try
         {
-            var releases = await feed.GetReleasesAsync(cancellationToken);
-            var newer = releases.Where(r => r.Version > current).OrderByDescending(r => r.Version).ToList();
+            // A development build looks for the next development build, a release for newer releases.
+            List<PublishedRelease> newer;
+            if (developmentBuild is not null)
+            {
+                newer = await feed.GetDevelopmentBuildAsync(cancellationToken) is { } build && build.Version > current ? [build] : [];
+            }
+            else
+            {
+                var releases = await feed.GetReleasesAsync(cancellationToken);
+                newer = [.. releases.Where(r => r.Version > current).OrderByDescending(r => r.Version)];
+            }
+
             if (newer.Count > 0)
             {
-                logger.LogInformation("BorgStudio Server {Version} is available (running {Current}).", newer[0].Version, current);
+                logger.LogInformation("BorgStudio Server {Version} is available (running {Current}).", newer[0].Label, running);
             }
 
             return store.Current = new UpdateStatus(timeProvider.GetUtcNow(), newer, false);
@@ -152,7 +164,7 @@ internal sealed class GetUpdateNoticesCommandHandler(
             }
         }
 
-        return new UpdateNotices(updatedTo, store.Current.Latest?.Version.ToString());
+        return new UpdateNotices(updatedTo, store.Current.Latest?.Label);
     }
 }
 
@@ -175,9 +187,10 @@ public sealed record ChangelogView(
     IReadOnlyList<ChangelogRelease> Releases,
     AvailableUpdate? Update);
 
+/// <param name="Latest">The newest version, e.g. "0.5.0" or "0.5.0-dev.42".</param>
 /// <param name="Releases">What the newer releases bring, newest first.</param>
 public sealed record AvailableUpdate(
-    Version Latest,
+    string Latest,
     string Url,
     IReadOnlyList<ChangelogRelease> Releases,
     InstallationKind Installation);
@@ -199,11 +212,29 @@ internal sealed class GetChangelogQueryHandler(
         if (account?.IsAdministrator == true && store.Current.Latest is { } latest)
         {
             var newer = store.Current.Newer
-                .Select(r => new ChangelogRelease(r.Version, DateOnly.FromDateTime(r.PublishedAt.UtcDateTime), Changelog.ParseNotes(r.Notes)))
+                .Select(r => new ChangelogRelease(r.Version, DateOnly.FromDateTime(r.PublishedAt.UtcDateTime), Changelog.ParseNotes(r.Notes), r.Name))
                 .ToList();
-            update = new AvailableUpdate(latest.Version, latest.Url, newer, installation.Kind);
+            update = new AvailableUpdate(latest.Label, latest.Url, newer, installation.Kind);
         }
 
         return new ChangelogView(running, releases, update);
     }
+}
+
+/// <summary>Which builds this server follows: "stable" (releases) or "dev" (development builds).</summary>
+public sealed record GetUpdateChannelQuery : IQuery<UpdateChannel>;
+
+/// <param name="Name">"stable" or "dev".</param>
+public sealed record UpdateChannel(string Name, InstallationKind Installation)
+{
+    public bool IsDevelopment => Name == "dev";
+}
+
+internal sealed class GetUpdateChannelQueryHandler(IServerEnvironment environment, IInstallationInfo installation)
+    : IQueryHandler<GetUpdateChannelQuery, UpdateChannel>
+{
+    public Task<UpdateChannel> HandleAsync(GetUpdateChannelQuery query, CancellationToken cancellationToken) =>
+        Task.FromResult(new UpdateChannel(
+            Changelog.ParseDevelopmentBuild(ProductVersion.Parse(environment.InformationalVersion).Version) is null ? "stable" : "dev",
+            installation.Kind));
 }

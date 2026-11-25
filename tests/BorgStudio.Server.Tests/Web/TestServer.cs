@@ -251,6 +251,12 @@ public sealed class FakeReleaseFeed : IReleaseFeed
             ? throw new HttpRequestException("GitHub is not reachable.")
             : Task.FromResult<IReadOnlyList<PublishedRelease>>([.. Releases]);
 
+    /// <summary>The pre-release "dev", if any.</summary>
+    public PublishedRelease? DevelopmentBuild { get; set; }
+
+    public Task<PublishedRelease?> GetDevelopmentBuildAsync(CancellationToken cancellationToken) =>
+        Fails ? throw new HttpRequestException("GitHub is not reachable.") : Task.FromResult(DevelopmentBuild);
+
     public void Add(string version, string notes) => Releases.Add(new PublishedRelease(
         Version.Parse(version), DateTimeOffset.UtcNow, notes, $"https://github.com/cuban8IO/borgstudio-server/releases/tag/v{version}"));
 }
